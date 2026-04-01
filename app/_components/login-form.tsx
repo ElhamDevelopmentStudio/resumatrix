@@ -140,7 +140,7 @@ export function LoginForm() {
             value={values.username}
             onChange={handleFieldChange("username")}
             aria-invalid={Boolean(errors.username)}
-            className="h-12 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
+            className="h-12 rounded-none border-card/50 bg-card/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
           />
           <FieldError>{errors.username}</FieldError>
         </FieldContent>
@@ -166,7 +166,7 @@ export function LoginForm() {
             value={values.password}
             onChange={handleFieldChange("password")}
             aria-invalid={Boolean(errors.password || formError)}
-            className="h-12 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
+            className="h-12 rounded-none border-card/50 bg-card/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
           />
           <FieldError>{errors.password}</FieldError>
 
@@ -186,7 +186,7 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-12 w-full gap-2 rounded-lg text-lg font-semibold tracking-wide xl:h-14"
+          className="h-12 w-full gap-2 rounded-none text-lg font-semibold tracking-wide xl:h-14"
         >
           {isSubmitting ? (
             <>

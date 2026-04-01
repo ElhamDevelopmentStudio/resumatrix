@@ -21,14 +21,14 @@ const stats: Array<ComponentProps<typeof StatCard>> = [
     label: "Storage",
     value: "2",
     sublabel: "Total CVs Created",
-    accentClassName: "bg-indigo-50 text-[#002fbb]",
+    accentClassName: "bg-primary-soft text-primary",
   },
   {
     icon: UserAccountIcon,
     label: "Identity",
     value: "3",
     sublabel: "Active Profiles",
-    accentClassName: "bg-purple-50 text-[#4623af]",
+    accentClassName: "bg-tertiary-soft text-tertiary",
   },
 ]
 
@@ -85,7 +85,7 @@ export default function DashboardPage() {
             <Link
               href="/cvs"
               prefetch={false}
-              className="group flex items-center gap-2 text-sm font-bold text-[#002fbb] hover:underline underline-offset-4"
+              className="group flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4"
             >
               <span>View Library</span>
               <HugeiconsIcon
@@ -116,7 +116,7 @@ export default function DashboardPage() {
             ))}
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-[1.5rem] border-2 border-dashed border-[#c5c5d4]/40 px-4 py-5 text-sm font-bold text-[#454652]/40 transition-all hover:border-[#002fbb] hover:bg-indigo-50/30 hover:text-[#002fbb]"
+              className="flex w-full items-center justify-center gap-2 rounded-none border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
             >
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
               <span>Create New Profile</span>

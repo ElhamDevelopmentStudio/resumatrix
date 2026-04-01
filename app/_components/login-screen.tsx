@@ -45,7 +45,7 @@ export function LoginScreen({
         aria-hidden="true"
         className="pointer-events-none fixed top-1/2 right-0 hidden h-[800px] w-[600px] -translate-y-1/2 rotate-6 opacity-40 xl:block"
       >
-        <div className="relative h-full w-full overflow-hidden rounded-[2rem] border-8 border-white shadow-2xl">
+        <div className="relative h-full w-full overflow-hidden rounded-[2rem] border-8 border-card shadow-2xl">
           <Image
             src={workspacePreviewImage}
             alt=""

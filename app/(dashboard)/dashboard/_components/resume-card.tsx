@@ -16,29 +16,29 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
   const isModernClean = type === "Modern Clean"
 
   return (
-    <Card className="flex h-full gap-0 rounded-[1.75rem] bg-white p-7 text-[#191c1d] shadow-sm ring-[#c5c5d4]/40 transition-all duration-200 hover:-translate-y-1 hover:ring-[#002fbb]/30">
+    <Card className="flex h-full gap-0 rounded-none bg-card p-7 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/30">
       <div className="mb-8 flex items-start justify-between">
         <div className="relative">
-          <div className="flex size-14 items-center justify-center rounded-2xl border border-[#c5c5d4]/20 bg-[#f8f9fa] text-[#454652] transition-colors group-hover/card:text-[#002fbb]">
+          <div className="flex size-14 items-center justify-center rounded-none border border-outline-variant/40 bg-surface-subtle text-on-surface-variant transition-colors group-hover/card:text-primary">
             <HugeiconsIcon icon={File01Icon} strokeWidth={2} className="size-8" />
           </div>
           {active ? (
-            <div className="absolute -top-1 -right-1 size-4 rounded-full border-2 border-white bg-[#002fbb]" />
+            <div className="absolute -top-1 -right-1 size-4 rounded-none border-2 border-card bg-primary" />
           ) : null}
         </div>
 
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold tracking-[0.15em] uppercase",
+            "inline-flex items-center gap-1.5 rounded-none border px-3 py-1 text-[10px] font-bold tracking-[0.15em] uppercase",
             isModernClean
-              ? "border-indigo-100 bg-indigo-50 text-indigo-700"
-              : "border-purple-100 bg-purple-50 text-purple-700"
+              ? "border-primary/10 bg-primary-soft text-primary"
+              : "border-tertiary/10 bg-tertiary-soft text-tertiary"
           )}
         >
           <span
             className={cn(
-              "size-1.5 rounded-full",
-              isModernClean ? "bg-indigo-500" : "bg-purple-500"
+              "size-1.5 rounded-none",
+              isModernClean ? "bg-primary" : "bg-tertiary"
             )}
           />
           {type}
@@ -46,15 +46,15 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
       </div>
 
       <div className="mb-8">
-        <h3 className="mb-2 font-headline text-xl font-bold leading-tight text-[#191c1d]">
+        <h3 className="mb-2 font-headline text-xl font-bold leading-tight text-on-surface">
           {title}
         </h3>
         <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[#454652]/60">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant/60">
             <HugeiconsIcon icon={UserAccountIcon} strokeWidth={2} className="size-3.5" />
             <span>{profile}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[#454652]/60">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant/60">
             <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-3.5" />
             <span>{time}</span>
           </div>
@@ -64,14 +64,14 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
       <div className="mt-auto flex items-center gap-3">
         <button
           type="button"
-          className="flex-1 rounded-xl border border-[#c5c5d4]/20 bg-[#f8f9fa] px-4 py-3 font-bold text-[#454652] transition-colors hover:bg-[#c5c5d4]/20"
+          className="flex-1 rounded-none border border-outline-variant/60 bg-surface-subtle px-4 py-3 font-bold text-on-surface-variant transition-colors hover:bg-muted"
         >
           Edit Document
         </button>
         <button
           type="button"
           aria-label={`Download ${title}`}
-          className="flex w-12 items-center justify-center rounded-xl bg-[#002fbb] py-3 text-white shadow-[0_12px_24px_rgba(0,47,187,0.2)] transition-all active:translate-y-px"
+          className="flex w-12 items-center justify-center rounded-none bg-primary py-3 text-primary-foreground shadow-lg shadow-primary/15 transition-all active:translate-y-px"
         >
           <HugeiconsIcon icon={CloudDownloadIcon} strokeWidth={2} className="size-5" />
         </button>
