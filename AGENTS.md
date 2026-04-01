@@ -12,4 +12,15 @@ For every task in this repository:
 3. Review `README.md` and update it only if your changes make the current README inaccurate or incomplete. Otherwise, leave it unchanged.
 4. Commit the finished work with an appropriate commit message that uses the required prefix or convention.
 
+## Component placement rules
+
+- If you are working on `/dashboard`, place components that are only used by that route in `app/(dashboard)/dashboard/_components`.
+- If a component is reusable across routes, place it in `components`.
+- Shared layout elements that will be reused across pages, such as the footer, must be implemented as reusable shared components instead of being duplicated inside route files.
+
+## File naming rules
+
+- Use kebab-case for every file name you create or rename.
+- Do not use PascalCase, camelCase, or any other file-name casing.
+
 <!-- END:nextjs-agent-rules -->
