@@ -55,6 +55,7 @@ This fallback is for local development only. Set real values before deploying.
 ## Main routes
 
 - `/` — login page
+- `/dashboard` — dashboard workspace
 - `POST /api/auth/login` — login endpoint
 
 ## Scripts

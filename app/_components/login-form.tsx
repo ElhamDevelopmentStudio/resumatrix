@@ -107,7 +107,7 @@ export function LoginForm() {
         ...currentValues,
         password: "",
       }))
-      router.refresh()
+      router.push("/dashboard")
     } catch {
       setFormError("We couldn't sign you in right now. Try again.")
     } finally {
