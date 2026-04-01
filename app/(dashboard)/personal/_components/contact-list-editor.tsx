@@ -80,7 +80,7 @@ export function ContactListEditor({
                   onChange={(event) => onChange(contact.clientId, "value", event.target.value)}
                   aria-invalid={Boolean(contactError.value)}
                   placeholder="Add the contact value"
-                  className="h-12 w-full rounded-none border-outline-variant/50 bg-surface-subtle px-4 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
+                  className="h-12 w-full rounded-sm border-outline-variant/50 bg-surface-subtle px-4 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
                 />
                 <FieldError>{contactError.value}</FieldError>
               </div>
@@ -92,7 +92,7 @@ export function ContactListEditor({
                   size="icon"
                   onClick={() => onRemove(contact)}
                   aria-label="Remove contact"
-                  className="size-12 rounded-none border-outline-variant/60 text-on-surface-variant hover:border-destructive hover:text-destructive"
+                  className="size-12 rounded-sm border-outline-variant/60 text-on-surface-variant hover:border-destructive hover:text-destructive"
                 >
                   <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-5" />
                 </Button>
@@ -106,7 +106,7 @@ export function ContactListEditor({
         type="button"
         variant="ghost"
         onClick={onAdd}
-        className="mt-6 h-auto rounded-none px-0 py-0 text-sm font-bold text-primary hover:bg-transparent hover:text-primary/80"
+        className="mt-6 h-auto rounded-sm px-0 py-0 text-sm font-bold text-primary hover:bg-transparent hover:text-primary/80"
       >
         <span className="flex items-center gap-2">
           <span className="flex size-7 items-center justify-center bg-primary-soft text-primary">

@@ -41,7 +41,7 @@ export function FormSection({
         </div>
       </div>
 
-      <Card className={cn("rounded-none border border-outline-variant/50 bg-card p-8 shadow-sm", contentClassName)}>
+      <Card className={cn("rounded-sm border border-outline-variant/50 bg-card p-8 shadow-sm", contentClassName)}>
         {children}
       </Card>
     </section>

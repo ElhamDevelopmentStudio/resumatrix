@@ -16,20 +16,20 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
   const isModernClean = type === "Modern Clean"
 
   return (
-    <Card className="flex h-full gap-0 rounded-none bg-card p-7 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/30">
+    <Card className="flex h-full gap-0 rounded-sm bg-card p-7 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/30">
       <div className="mb-8 flex items-start justify-between">
         <div className="relative">
-          <div className="flex size-14 items-center justify-center rounded-none border border-outline-variant/40 bg-surface-subtle text-on-surface-variant transition-colors group-hover/card:text-primary">
+          <div className="flex size-14 items-center justify-center rounded-sm border border-outline-variant/40 bg-surface-subtle text-on-surface-variant transition-colors group-hover/card:text-primary">
             <HugeiconsIcon icon={File01Icon} strokeWidth={2} className="size-8" />
           </div>
           {active ? (
-            <div className="absolute -top-1 -right-1 size-4 rounded-none border-2 border-card bg-primary" />
+            <div className="absolute -top-1 -right-1 size-4 rounded-sm border-2 border-card bg-primary" />
           ) : null}
         </div>
 
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-none border px-3 py-1 text-[10px] font-bold tracking-[0.15em] uppercase",
+            "inline-flex items-center gap-1.5 rounded-sm border px-3 py-1 text-[10px] font-bold tracking-[0.15em] uppercase",
             isModernClean
               ? "border-primary/10 bg-primary-soft text-primary"
               : "border-tertiary/10 bg-tertiary-soft text-tertiary"
@@ -37,7 +37,7 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
         >
           <span
             className={cn(
-              "size-1.5 rounded-none",
+              "size-1.5 rounded-sm",
               isModernClean ? "bg-primary" : "bg-tertiary"
             )}
           />
@@ -64,14 +64,14 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
       <div className="mt-auto flex items-center gap-3">
         <button
           type="button"
-          className="flex-1 rounded-none border border-outline-variant/60 bg-surface-subtle px-4 py-3 font-bold text-on-surface-variant transition-colors hover:bg-muted"
+          className="flex-1 rounded-sm border border-outline-variant/60 bg-surface-subtle px-4 py-3 font-bold text-on-surface-variant transition-colors hover:bg-muted"
         >
           Edit Document
         </button>
         <button
           type="button"
           aria-label={`Download ${title}`}
-          className="flex w-12 items-center justify-center rounded-none bg-primary py-3 text-primary-foreground shadow-lg shadow-primary/15 transition-all active:translate-y-px"
+          className="flex w-12 items-center justify-center rounded-sm bg-primary py-3 text-primary-foreground shadow-lg shadow-primary/15 transition-all active:translate-y-px"
         >
           <HugeiconsIcon icon={CloudDownloadIcon} strokeWidth={2} className="size-5" />
         </button>

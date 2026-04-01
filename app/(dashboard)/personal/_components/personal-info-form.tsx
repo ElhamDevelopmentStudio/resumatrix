@@ -471,7 +471,7 @@ export function PersonalInfoForm() {
         {topAlert ? (
           <Alert
             variant="destructive"
-            className="rounded-none border-outline-variant/60 px-4 py-3"
+            className="rounded-sm border-outline-variant/60 px-4 py-3"
           >
             <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4" />
             <AlertTitle>{topAlert.title}</AlertTitle>
@@ -493,7 +493,7 @@ export function PersonalInfoForm() {
                   value={personal.full_name}
                   onChange={(event) => handlePersonalChange("full_name", event.target.value)}
                   aria-invalid={Boolean(personalErrors.full_name)}
-                  className="h-12 rounded-none border-outline-variant/50 bg-surface-subtle px-4 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
+                  className="h-12 rounded-sm border-outline-variant/50 bg-surface-subtle px-4 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
                 />
                 <FieldError>{personalErrors.full_name}</FieldError>
               </div>
@@ -508,7 +508,7 @@ export function PersonalInfoForm() {
                   placeholder="e.g. Frontend Developer"
                   value={personal.title}
                   onChange={(event) => handlePersonalChange("title", event.target.value)}
-                  className="h-12 rounded-none border-outline-variant/50 bg-primary-soft px-4 text-sm font-medium text-on-surface focus-visible:border-primary focus-visible:ring-primary/20"
+                  className="h-12 rounded-sm border-outline-variant/50 bg-primary-soft px-4 text-sm font-medium text-on-surface focus-visible:border-primary focus-visible:ring-primary/20"
                 />
               </div>
             </div>
@@ -523,7 +523,7 @@ export function PersonalInfoForm() {
                 placeholder="Briefly describe your career goals and key achievements…"
                 value={personal.summary}
                 onChange={(event) => handlePersonalChange("summary", event.target.value)}
-                className="min-h-36 rounded-none border-outline-variant/50 bg-surface-subtle px-4 py-3 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
+                className="min-h-36 rounded-sm border-outline-variant/50 bg-surface-subtle px-4 py-3 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
               />
             </div>
           </FormSection>
@@ -548,13 +548,13 @@ export function PersonalInfoForm() {
               <Button
                 variant="outline"
                 onClick={handleDiscard}
-                className="h-11 rounded-none px-6 text-sm font-bold"
+                className="h-11 rounded-sm px-6 text-sm font-bold"
               >
                 Discard
               </Button>
               <Button
                 onClick={() => void handleSaveNow()}
-                className="h-11 rounded-none px-6 text-sm font-bold"
+                className="h-11 rounded-sm px-6 text-sm font-bold"
               >
                 Save changes
               </Button>

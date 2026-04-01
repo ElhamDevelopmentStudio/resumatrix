@@ -111,7 +111,7 @@
   --chart-3: var(--brand-tertiary);
   --chart-4: var(--neutral-500);
   --chart-5: var(--neutral-300);
-  --radius: 0rem;
+  --radius: 0.4rem;
   --sidebar: var(--neutral-100);
   --sidebar-foreground: var(--neutral-900);
   --sidebar-primary: var(--brand-primary);

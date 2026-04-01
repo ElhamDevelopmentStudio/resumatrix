@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 
 export function OptimizerCard() {
   return (
-    <Card className="relative col-span-1 gap-0 overflow-hidden rounded-none border-0 bg-gradient-to-br from-primary to-tertiary p-6 text-primary-foreground shadow-lg lg:col-span-2">
+    <Card className="relative col-span-1 gap-0 overflow-hidden rounded-sm border-0 bg-gradient-to-br from-primary to-tertiary p-6 text-primary-foreground shadow-lg lg:col-span-2">
       <div className="relative z-10 max-w-[280px]">
         <div className="mb-2 flex items-center gap-2">
           <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} className="size-5" />
@@ -16,7 +16,7 @@ export function OptimizerCard() {
         </p>
         <button
           type="button"
-          className="mt-6 rounded-none bg-card px-6 py-2.5 text-sm font-bold text-primary shadow-md transition-all active:translate-y-px"
+          className="mt-6 rounded-sm bg-card px-6 py-2.5 text-sm font-bold text-primary shadow-md transition-all active:translate-y-px"
         >
           Run Performance Audit
         </button>

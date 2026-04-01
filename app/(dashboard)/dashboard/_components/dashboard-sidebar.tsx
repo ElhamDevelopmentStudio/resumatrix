@@ -80,7 +80,7 @@ export function DashboardSidebar() {
     <aside className="border-b border-outline-variant/60 bg-surface-muted px-6 py-6 lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-b-0">
       <div className="mb-8 flex flex-col gap-1 lg:mb-10">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-none bg-primary text-primary-foreground">
+          <div className="flex size-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <HugeiconsIcon icon={TerminalIcon} strokeWidth={2} className="size-[18px]" />
           </div>
           <span className="font-headline text-xl font-bold text-primary">Resumatrix</span>
@@ -100,7 +100,7 @@ export function DashboardSidebar() {
               aria-current={isActive ? "page" : undefined}
               prefetch={isPlaceholder ? false : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-none px-4 py-3 text-sm font-medium transition-all duration-200",
+                "flex items-center gap-3 rounded-sm px-4 py-3 text-sm font-medium transition-all duration-200",
                 isActive
                   ? "border border-outline-variant bg-card font-bold text-primary shadow-sm"
                   : "text-on-surface-variant hover:bg-card/80 hover:text-primary"
@@ -117,7 +117,7 @@ export function DashboardSidebar() {
         <Link
           href="/cvs"
           prefetch={false}
-          className="flex w-full items-center justify-center gap-2 rounded-none bg-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:bg-primary/90 active:translate-y-px"
+          className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:bg-primary/90 active:translate-y-px"
         >
           <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
           <span>New CV</span>

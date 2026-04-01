@@ -116,7 +116,7 @@ export default function DashboardPage() {
             ))}
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-none border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
             >
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
               <span>Create New Profile</span>

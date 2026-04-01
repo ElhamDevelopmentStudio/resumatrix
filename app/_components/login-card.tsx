@@ -26,7 +26,7 @@ export function LoginCard({
   isAuthenticated: boolean
 }) {
   return (
-    <Card className="glass-card gap-0 rounded-none border border-card/40 p-8 text-on-surface shadow-lg ring-0 md:p-10 xl:p-14">
+    <Card className="glass-card gap-0 rounded-sm border border-card/40 p-8 text-on-surface shadow-lg ring-0 md:p-10 xl:p-14">
       <div className="mb-8 text-left md:mb-9 xl:mb-10">
         <h1 className="mb-3 text-4xl font-headline font-bold tracking-tight text-on-surface lg:text-[2.75rem] xl:mb-4 xl:text-5xl">
           Welcome back
@@ -37,9 +37,9 @@ export function LoginCard({
       </div>
 
       {isAuthenticated ? (
-        <div className="animate-in rounded-none border border-primary/10 bg-primary/5 p-5 text-left fade-in-0 duration-300">
+        <div className="animate-in rounded-sm border border-primary/10 bg-primary/5 p-5 text-left fade-in-0 duration-300">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex size-9 items-center justify-center rounded-none bg-primary/10 text-primary">
+            <div className="mt-0.5 flex size-9 items-center justify-center rounded-sm bg-primary/10 text-primary">
               <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-5" />
             </div>
             <div className="space-y-1.5">

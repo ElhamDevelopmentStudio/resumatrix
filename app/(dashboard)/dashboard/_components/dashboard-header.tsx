@@ -21,11 +21,11 @@ export function DashboardHeader() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="Alex Mercer avatar"
-              className="size-10 rounded-none object-cover ring-2 ring-card shadow-sm"
+              className="size-10 rounded-sm object-cover ring-2 ring-card shadow-sm"
               referrerPolicy="no-referrer"
               src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
             />
-            <span className="absolute right-0 bottom-0 size-3 rounded-none border-2 border-card bg-success" />
+            <span className="absolute right-0 bottom-0 size-3 rounded-sm border-2 border-card bg-success" />
           </div>
         </div>
 

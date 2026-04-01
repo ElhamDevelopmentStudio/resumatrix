@@ -17,12 +17,12 @@ type ProfileCardProps = {
 
 export function ProfileCard({ icon, title, category, description, primary = false }: ProfileCardProps) {
   return (
-    <Card className="gap-0 rounded-none bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/20">
+    <Card className="gap-0 rounded-sm bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/20">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <div
             className={cn(
-              "flex size-12 items-center justify-center rounded-none ring-4",
+              "flex size-12 items-center justify-center rounded-sm ring-4",
               primary
                 ? "bg-primary-soft text-primary ring-primary/10"
                 : "bg-surface-subtle text-on-surface-variant ring-surface-subtle/60"
@@ -56,7 +56,7 @@ export function ProfileCard({ icon, title, category, description, primary = fals
 
       <button
         type="button"
-        className="w-full rounded-none border border-outline-variant/60 bg-surface-subtle px-4 py-2.5 text-[11px] font-bold tracking-[0.2em] text-on-surface-variant uppercase transition-all hover:bg-primary-soft hover:text-primary"
+        className="w-full rounded-sm border border-outline-variant/60 bg-surface-subtle px-4 py-2.5 text-[11px] font-bold tracking-[0.2em] text-on-surface-variant uppercase transition-all hover:bg-primary-soft hover:text-primary"
       >
         Edit Profile
       </button>
