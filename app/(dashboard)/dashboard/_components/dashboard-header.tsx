@@ -1,7 +1,7 @@
 import { Logout01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-export function Header() {
+export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#c5c5d4]/20 bg-[#f8f9fa]/80 px-6 py-6 backdrop-blur-md md:px-8 xl:px-12">
       <h1 className="font-headline text-2xl font-bold tracking-tight text-[#191c1d]">

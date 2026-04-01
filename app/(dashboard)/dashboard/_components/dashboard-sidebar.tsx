@@ -21,14 +21,14 @@ import { cn } from "@/lib/utils"
 
 type IconDefinition = ComponentProps<typeof HugeiconsIcon>["icon"]
 
-type NavItem = {
+type NavigationItem = {
   label: string
   href: string
   icon: IconDefinition
   active?: boolean
 }
 
-const navigationItems: NavItem[] = [
+const navigationItems: NavigationItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -72,7 +72,7 @@ const navigationItems: NavItem[] = [
   },
 ]
 
-export function Sidebar() {
+export function DashboardSidebar() {
   const pathname = usePathname()
 
   return (

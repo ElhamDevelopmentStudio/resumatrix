@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
-type SectionProps = {
+type DashboardSectionProps = {
   title: string
   description?: string
   action?: ReactNode
@@ -12,7 +12,7 @@ type SectionProps = {
   as?: "section" | "aside" | "div"
 }
 
-export function Section({
+export function DashboardSection({
   title,
   description,
   action,
@@ -20,7 +20,7 @@ export function Section({
   className,
   contentClassName,
   as: Component = "section",
-}: SectionProps) {
+}: DashboardSectionProps) {
   return (
     <Component className={className}>
       <div className="mb-10 flex items-end justify-between gap-4">

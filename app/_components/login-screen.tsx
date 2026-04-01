@@ -1,9 +1,9 @@
 import Image from "next/image"
 
 import { LoginCard } from "@/app/_components/login-card"
+import { Footer } from "@/components/layout/footer"
 import { Logo } from "@/components/logo"
 
-const footerLinks = ["Privacy Policy", "Terms of Service", "Security"]
 const workspacePreviewImage =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBpMKEOTB_JIQ8D1dm7VMY9yXEgwwyBSP8A-NSdPR0m56qCJqW6Iw1hKGfvAmWDIxF4Mm60xCLxm870d1MaHrJSv_Gl1Fz2FSu2hnZEcJvl9QLknSMHECtVQPZlNzD09dgq3lcycn1UxzlrTYw1HKZKNWuN3f6Fji6gmXlgx3X1m4NoB_BUo_qFkRchlPwMnLjekP1USzD7_K7lSGGbr8JcEZhwc4Me2S-dGJsrZ6z6SQMV87b9Ejsv7B7dZRw6pp88EdCdJYEwP1A"
 
@@ -12,8 +12,6 @@ export function LoginScreen({
 }: {
   isAuthenticated: boolean
 }) {
-  const currentYear = new Date().getFullYear()
-
   return (
     <div className="relative grid min-h-screen grid-rows-[auto,minmax(0,1fr),auto] overflow-hidden bg-background lg:h-screen">
       <header className="relative z-50 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 md:px-8 md:py-7 xl:py-8">
@@ -35,22 +33,13 @@ export function LoginScreen({
         </div>
       </main>
 
-      <footer className="flex w-full flex-col items-center justify-between gap-3 border-t border-outline-variant/10 bg-transparent px-6 py-5 md:flex-row md:gap-4 md:px-8 md:py-6 xl:py-7">
-        <div className="text-xs font-medium text-outline">
-          © {currentYear} Resumatrix. Precision Engineering for professionals.
-        </div>
-        <div className="flex flex-wrap justify-center gap-6 md:justify-end md:gap-8">
-          {footerLinks.map((link) => (
-            <a
-              key={link}
-              href="#"
-              className="text-xs font-medium text-outline transition-all hover:underline decoration-primary/50"
-            >
-              {link}
-            </a>
-          ))}
-        </div>
-      </footer>
+      <Footer
+        copyText="Precision Engineering for professionals."
+        links={["Privacy Policy", "Terms of Service", "Security"]}
+        className="gap-3 border-t border-outline-variant/10 bg-transparent px-6 py-5 md:flex-row md:gap-4 md:px-8 md:py-6 xl:py-7"
+        copyClassName="text-xs font-medium text-outline"
+        linkClassName="text-xs font-medium text-outline transition-all hover:underline decoration-primary/50"
+      />
 
       <div
         aria-hidden="true"
