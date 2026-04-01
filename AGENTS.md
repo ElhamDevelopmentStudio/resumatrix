@@ -23,4 +23,11 @@ For every task in this repository:
 - Use kebab-case for every file name you create or rename.
 - Do not use PascalCase, camelCase, or any other file-name casing.
 
+## Design system rules
+
+- Reuse the existing design system before introducing new visual styles.
+- Prefer shared tokens, semantic color variables, and existing UI primitives over one-off styling.
+- Do not hardcode colors, radius values, or other design-token values in feature code when the design system already provides them.
+- If a new visual token is truly needed, add it to the shared design system first and then consume it from there.
+
 <!-- END:nextjs-agent-rules -->
