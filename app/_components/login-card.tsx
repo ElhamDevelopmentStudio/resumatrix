@@ -26,9 +26,9 @@ export function LoginCard({
   isAuthenticated: boolean
 }) {
   return (
-    <Card className="glass-card gap-0 rounded-xl border border-white/40 p-10 text-on-surface shadow-[0_20px_40px_rgba(25,28,29,0.06)] ring-0 md:p-14">
-      <div className="mb-10 text-left">
-        <h1 className="mb-4 text-4xl font-headline font-bold tracking-tight text-on-surface md:text-5xl">
+    <Card className="glass-card gap-0 rounded-xl border border-white/40 p-8 text-on-surface shadow-[0_20px_40px_rgba(25,28,29,0.06)] ring-0 md:p-10 xl:p-14">
+      <div className="mb-8 text-left md:mb-9 xl:mb-10">
+        <h1 className="mb-3 text-4xl font-headline font-bold tracking-tight text-on-surface lg:text-[2.75rem] xl:mb-4 xl:text-5xl">
           Welcome back
         </h1>
         <p className="max-w-xs text-lg leading-relaxed font-body text-on-surface-variant">
@@ -54,7 +54,7 @@ export function LoginCard({
         <LoginForm />
       )}
 
-      <div className="mt-12 flex items-center gap-6 opacity-30 grayscale transition-all duration-500 hover:opacity-100 hover:grayscale-0">
+      <div className="mt-8 flex items-center gap-4 opacity-30 grayscale transition-all duration-500 hover:opacity-100 hover:grayscale-0 md:mt-10 md:gap-6 xl:mt-12">
         {statusItems.map((item, index) => (
           <Fragment key={item.label}>
             {index > 0 ? <div className="h-px flex-1 bg-outline-variant/30" /> : null}

@@ -15,12 +15,12 @@ export function LoginScreen({
   const currentYear = new Date().getFullYear()
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      <header className="fixed top-0 left-1/2 z-50 flex w-full max-w-7xl -translate-x-1/2 items-center justify-between px-8 py-8">
+    <div className="relative grid min-h-screen grid-rows-[auto,minmax(0,1fr),auto] overflow-hidden bg-background lg:h-screen">
+      <header className="relative z-50 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 md:px-8 md:py-7 xl:py-8">
         <Logo />
       </header>
 
-      <main className="relative flex flex-1 items-center justify-center p-6 pt-32 pb-12">
+      <main className="relative flex min-h-0 items-center justify-center px-6 py-4 md:px-8 md:py-5 xl:py-6">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-[10%] -right-[10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px]"
@@ -30,16 +30,16 @@ export function LoginScreen({
           className="pointer-events-none absolute -bottom-[10%] -left-[10%] h-[400px] w-[400px] rounded-full bg-primary/5 blur-[100px]"
         />
 
-        <div className="z-10 w-full max-w-[480px] animate-in fade-in-0 slide-in-from-bottom-5 duration-700 ease-out">
+        <div className="z-10 w-full max-w-[480px] max-h-full animate-in fade-in-0 slide-in-from-bottom-5 duration-700 ease-out">
           <LoginCard isAuthenticated={isAuthenticated} />
         </div>
       </main>
 
-      <footer className="flex w-full flex-col items-center justify-between gap-4 border-t border-outline-variant/10 bg-transparent px-8 py-12 md:flex-row">
+      <footer className="flex w-full flex-col items-center justify-between gap-3 border-t border-outline-variant/10 bg-transparent px-6 py-5 md:flex-row md:gap-4 md:px-8 md:py-6 xl:py-7">
         <div className="text-xs font-medium text-outline">
           © {currentYear} Resumatrix. Precision Engineering for professionals.
         </div>
-        <div className="flex gap-8">
+        <div className="flex flex-wrap justify-center gap-6 md:justify-end md:gap-8">
           {footerLinks.map((link) => (
             <a
               key={link}
@@ -54,7 +54,7 @@ export function LoginScreen({
 
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed top-1/2 -right-64 hidden h-[800px] w-[600px] -translate-y-1/2 rotate-6 opacity-40 xl:block"
+        className="pointer-events-none fixed top-1/2 right-0 hidden h-[800px] w-[600px] -translate-y-1/2 rotate-6 opacity-40 xl:block"
       >
         <div className="relative h-full w-full overflow-hidden rounded-[2rem] border-8 border-white shadow-2xl">
           <Image

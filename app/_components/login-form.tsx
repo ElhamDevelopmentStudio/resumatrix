@@ -116,7 +116,7 @@ export function LoginForm() {
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-8">
+    <form noValidate onSubmit={handleSubmit} className="space-y-6 md:space-y-7 xl:space-y-8">
       <Field className="gap-2">
         <FieldLabel
           htmlFor="username"
@@ -140,7 +140,7 @@ export function LoginForm() {
             value={values.username}
             onChange={handleFieldChange("username")}
             aria-invalid={Boolean(errors.username)}
-            className="h-14 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base"
+            className="h-12 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
           />
           <FieldError>{errors.username}</FieldError>
         </FieldContent>
@@ -166,7 +166,7 @@ export function LoginForm() {
             value={values.password}
             onChange={handleFieldChange("password")}
             aria-invalid={Boolean(errors.password || formError)}
-            className="h-14 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base"
+            className="h-12 rounded-lg border-white/50 bg-white/70 px-4 text-base text-on-surface shadow-none backdrop-blur-sm placeholder:text-outline focus-visible:border-primary/30 focus-visible:ring-primary/15 md:text-base xl:h-14"
           />
           <FieldError>{errors.password}</FieldError>
 
@@ -182,11 +182,11 @@ export function LoginForm() {
         </FieldContent>
       </Field>
 
-      <div className="pt-4">
+      <div className="pt-2 md:pt-3 xl:pt-4">
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-14 w-full gap-2 rounded-lg text-lg font-semibold tracking-wide"
+          className="h-12 w-full gap-2 rounded-lg text-lg font-semibold tracking-wide xl:h-14"
         >
           {isSubmitting ? (
             <>
