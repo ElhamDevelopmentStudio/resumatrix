@@ -25,7 +25,7 @@ type NavigationItem = {
   label: string
   href: string
   icon: IconDefinition
-  active?: boolean
+  activeHref?: string
 }
 
 const navigationItems: NavigationItem[] = [
@@ -33,12 +33,13 @@ const navigationItems: NavigationItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: DashboardSquare01Icon,
-    active: true,
+    activeHref: "/dashboard",
   },
   {
     label: "Personal Info",
-    href: "/cvs",
+    href: "/personal",
     icon: ProfileIcon,
+    activeHref: "/personal",
   },
   {
     label: "Experience",
@@ -89,8 +90,8 @@ export function DashboardSidebar() {
 
       <nav className="flex flex-col gap-1 lg:flex-1" aria-label="Primary">
         {navigationItems.map((item) => {
-          const isActive = item.active && pathname === item.href
-          const isPlaceholder = item.href !== "/dashboard"
+          const isActive = item.activeHref ? pathname === item.activeHref : false
+          const isPlaceholder = !item.activeHref
 
           return (
             <Link

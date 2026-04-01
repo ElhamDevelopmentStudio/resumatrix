@@ -56,7 +56,11 @@ This fallback is for local development only. Set real values before deploying.
 
 - `/` — login page
 - `/dashboard` — dashboard workspace
+- `/personal` — personal info form
 - `POST /api/auth/login` — login endpoint
+- `GET, PUT /api/personal` — personal details API
+- `GET, POST /api/contacts` — contacts collection API
+- `PUT, DELETE /api/contacts/:id` — single contact API
 
 ## Scripts
 
