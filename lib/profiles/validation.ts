@@ -1,6 +1,7 @@
 import {
   defaultProfileConfig,
   type ProfileConfig,
+  type ProfileSelections,
   type ProfilePayload,
 } from "@/lib/profiles/types"
 
@@ -40,6 +41,43 @@ export function normalizeTagList(value: unknown) {
   )
 }
 
+function normalizeIdList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  )
+}
+
+function normalizeProfileSelections(value: unknown): ProfileSelections {
+  const nextSelections = (value ?? {}) as Partial<ProfileSelections>
+
+  return {
+    experiences: Array.isArray(nextSelections.experiences)
+      ? normalizeIdList(nextSelections.experiences)
+      : defaultProfileConfig.selections.experiences,
+    projects: Array.isArray(nextSelections.projects)
+      ? normalizeIdList(nextSelections.projects)
+      : defaultProfileConfig.selections.projects,
+    education: Array.isArray(nextSelections.education)
+      ? normalizeIdList(nextSelections.education)
+      : defaultProfileConfig.selections.education,
+    skills: Array.isArray(nextSelections.skills)
+      ? normalizeIdList(nextSelections.skills)
+      : defaultProfileConfig.selections.skills,
+    contacts: Array.isArray(nextSelections.contacts)
+      ? normalizeIdList(nextSelections.contacts)
+      : defaultProfileConfig.selections.contacts,
+  }
+}
+
 export function normalizeProfileConfig(value: unknown): ProfileConfig {
   const nextConfig = (value ?? {}) as Partial<ProfileConfig>
   const nextOrdering = (nextConfig.ordering ?? {}) as Partial<ProfileConfig["ordering"]>
@@ -64,6 +102,7 @@ export function normalizeProfileConfig(value: unknown): ProfileConfig {
       experiences: normalizePositiveInteger(nextLimits.experiences),
       projects: normalizePositiveInteger(nextLimits.projects),
     },
+    selections: normalizeProfileSelections(nextConfig.selections),
   }
 }
 

@@ -4,14 +4,19 @@ import type {
   ExperienceData,
   ProjectData,
 } from "@/lib/career-data/types"
-import type { ProfileData, ProfilePayload, ProfilePreview } from "@/lib/profiles/types"
+import type {
+  ProfileData,
+  ProfilePayload,
+  ProfilePreview,
+  ProfileSelectableSection,
+} from "@/lib/profiles/types"
 import { normalizeTagList } from "@/lib/profiles/validation"
 
 function compareDateValues(left: string, right: string) {
   return right.localeCompare(left)
 }
 
-function matchesTaggedItem(tags: string[], profile: ProfileData | ProfilePayload) {
+export function matchesProfileTagRules(tags: string[], profile: ProfileData | ProfilePayload) {
   const itemTags = normalizeTagList(tags)
   const includeTags = normalizeTagList(profile.include_tags)
   const excludeTags = new Set(normalizeTagList(profile.exclude_tags))
@@ -25,6 +30,25 @@ function matchesTaggedItem(tags: string[], profile: ProfileData | ProfilePayload
   }
 
   return itemTags.some((tag) => includeTags.includes(tag))
+}
+
+function filterEntriesBySelection<T extends { id: string }>(
+  entries: T[],
+  selectedIds: string[] | null
+) {
+  if (selectedIds === null) {
+    return entries
+  }
+
+  const selectedIdSet = new Set(selectedIds)
+  return entries.filter((entry) => selectedIdSet.has(entry.id))
+}
+
+function getProfileSelection(
+  profile: ProfileData | ProfilePayload,
+  section: ProfileSelectableSection
+) {
+  return profile.config.selections[section]
 }
 
 function sortExperiences(entries: ExperienceData[], profile: ProfileData | ProfilePayload) {
@@ -73,11 +97,17 @@ export function buildProfilePreview(
   careerData: CareerWorkspaceData
 ): ProfilePreview {
   const matchingExperiences = sortExperiences(
-    careerData.experiences.filter((entry) => matchesTaggedItem(entry.tags, profile)),
+    filterEntriesBySelection(
+      careerData.experiences.filter((entry) => matchesProfileTagRules(entry.tags, profile)),
+      getProfileSelection(profile, "experiences")
+    ),
     profile
   )
   const matchingProjects = sortProjects(
-    careerData.projects.filter((entry) => matchesTaggedItem(entry.tags, profile)),
+    filterEntriesBySelection(
+      careerData.projects.filter((entry) => matchesProfileTagRules(entry.tags, profile)),
+      getProfileSelection(profile, "projects")
+    ),
     profile
   )
   const visibleExperiences = profile.config.limits.experiences
@@ -86,7 +116,18 @@ export function buildProfilePreview(
   const visibleProjects = profile.config.limits.projects
     ? matchingProjects.slice(0, profile.config.limits.projects)
     : matchingProjects
-  const education = sortEducation(careerData.education, profile)
+  const education = sortEducation(
+    filterEntriesBySelection(careerData.education, getProfileSelection(profile, "education")),
+    profile
+  )
+  const skills = filterEntriesBySelection(
+    careerData.skills,
+    getProfileSelection(profile, "skills")
+  )
+  const contacts = filterEntriesBySelection(
+    careerData.contacts,
+    getProfileSelection(profile, "contacts")
+  )
 
   return {
     matchedExperiences: matchingExperiences.length,
@@ -94,10 +135,14 @@ export function buildProfilePreview(
     matchedProjects: matchingProjects.length,
     displayedProjects: visibleProjects.length,
     educationCount: education.length,
-    skillsCount: careerData.skills.length,
-    contactsCount: careerData.contacts.length,
+    skillsCount: skills.length,
+    contactsCount: contacts.length,
     totalDisplayedItems:
-      visibleExperiences.length + visibleProjects.length + education.length + careerData.skills.length,
+      visibleExperiences.length +
+      visibleProjects.length +
+      education.length +
+      skills.length +
+      contacts.length,
     primaryMatchCount: matchingExperiences.length + matchingProjects.length,
     hasEmptyPrimaryResults:
       careerData.experiences.length + careerData.projects.length > 0 &&
@@ -126,6 +171,7 @@ export function profileHasActiveRules(profile: ProfileData | ProfilePayload) {
     profile.config.limits.projects !== null ||
     profile.config.ordering.experiences !== "recent" ||
     profile.config.ordering.projects !== "manual" ||
-    profile.config.ordering.education !== "recent"
+    profile.config.ordering.education !== "recent" ||
+    Object.values(profile.config.selections).some((selection) => selection !== null)
   )
 }

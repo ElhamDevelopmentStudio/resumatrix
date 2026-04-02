@@ -22,6 +22,21 @@ export function buildProfileRuleSummary(profile: ProfileData) {
     profile.config.ordering.experiences === "oldest" ? "oldest experience first" : null,
     profile.config.ordering.projects === "name" ? "projects sorted A–Z" : null,
     profile.config.ordering.education === "oldest" ? "oldest education first" : null,
+    profile.config.selections.experiences !== null
+      ? `${profile.config.selections.experiences.length} chosen experience${profile.config.selections.experiences.length === 1 ? "" : "s"}`
+      : null,
+    profile.config.selections.projects !== null
+      ? `${profile.config.selections.projects.length} chosen project${profile.config.selections.projects.length === 1 ? "" : "s"}`
+      : null,
+    profile.config.selections.education !== null
+      ? `${profile.config.selections.education.length} chosen education item${profile.config.selections.education.length === 1 ? "" : "s"}`
+      : null,
+    profile.config.selections.skills !== null
+      ? `${profile.config.selections.skills.length} chosen skill${profile.config.selections.skills.length === 1 ? "" : "s"}`
+      : null,
+    profile.config.selections.contacts !== null
+      ? `${profile.config.selections.contacts.length} chosen contact${profile.config.selections.contacts.length === 1 ? "" : "s"}`
+      : null,
   ].filter((item): item is string => Boolean(item))
 
   return items

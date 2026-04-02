@@ -3,6 +3,20 @@ import type { CareerWorkspaceData } from "@/lib/career-data/types"
 export type ExperienceOrdering = "recent" | "oldest"
 export type ProjectOrdering = "manual" | "name"
 export type EducationOrdering = "recent" | "oldest"
+export type ProfileSelectableSection =
+  | "experiences"
+  | "projects"
+  | "education"
+  | "skills"
+  | "contacts"
+
+export type ProfileSelections = {
+  experiences: string[] | null
+  projects: string[] | null
+  education: string[] | null
+  skills: string[] | null
+  contacts: string[] | null
+}
 
 export type ProfileConfig = {
   ordering: {
@@ -14,6 +28,7 @@ export type ProfileConfig = {
     experiences: number | null
     projects: number | null
   }
+  selections: ProfileSelections
 }
 
 export type ProfileData = {
@@ -58,6 +73,14 @@ export type ProfileSortKey =
 export type ProfileViewMode = "cards" | "grid" | "list"
 export type ProfileBuilderMode = "create" | "edit"
 
+export const profileSelectableSections: ProfileSelectableSection[] = [
+  "experiences",
+  "projects",
+  "education",
+  "skills",
+  "contacts",
+]
+
 export const defaultProfileConfig: ProfileConfig = {
   ordering: {
     experiences: "recent",
@@ -67,6 +90,13 @@ export const defaultProfileConfig: ProfileConfig = {
   limits: {
     experiences: null,
     projects: null,
+  },
+  selections: {
+    experiences: null,
+    projects: null,
+    education: null,
+    skills: null,
+    contacts: null,
   },
 }
 

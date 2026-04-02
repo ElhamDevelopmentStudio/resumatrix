@@ -27,7 +27,12 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner"
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
 import { createProfile, deleteProfile, updateProfile } from "@/lib/profiles/api"
-import { buildProfilePreview, getWorkspaceTagSuggestions, profileHasActiveRules } from "@/lib/profiles/engine"
+import {
+  buildProfilePreview,
+  getWorkspaceTagSuggestions,
+  matchesProfileTagRules,
+  profileHasActiveRules,
+} from "@/lib/profiles/engine"
 import { buildProfileCoverageSummary, getProfileStatus } from "@/lib/profiles/presentation"
 import {
   defaultProfileConfig,
@@ -38,6 +43,7 @@ import {
   type ProfileBuilderMode,
   type ProfileData,
   type ProfilePayload,
+  type ProfileSelectableSection,
 } from "@/lib/profiles/types"
 import {
   getFirstProfileValidationMessage,
@@ -47,6 +53,10 @@ import {
 } from "@/lib/profiles/validation"
 import { cn } from "@/lib/utils"
 
+import {
+  ProfileSectionSelectorDialog,
+  type ProfileSectionSelectorItem,
+} from "./profile-section-selector-dialog"
 import { ProfileTagEditor } from "./profile-tag-editor"
 
 const inputClassName =
@@ -70,6 +80,7 @@ type ProfileFormState = {
   experience_order: ProfilePayload["config"]["ordering"]["experiences"]
   project_order: ProfilePayload["config"]["ordering"]["projects"]
   education_order: ProfilePayload["config"]["ordering"]["education"]
+  selections: ProfilePayload["config"]["selections"]
 }
 
 function buildFormState(profile: ProfileData | null): ProfileFormState {
@@ -83,6 +94,7 @@ function buildFormState(profile: ProfileData | null): ProfileFormState {
       experience_order: defaultProfileConfig.ordering.experiences,
       project_order: defaultProfileConfig.ordering.projects,
       education_order: defaultProfileConfig.ordering.education,
+      selections: defaultProfileConfig.selections,
     }
   }
 
@@ -95,6 +107,7 @@ function buildFormState(profile: ProfileData | null): ProfileFormState {
     experience_order: profile.config.ordering.experiences,
     project_order: profile.config.ordering.projects,
     education_order: profile.config.ordering.education,
+    selections: profile.config.selections,
   }
 }
 
@@ -113,12 +126,25 @@ function buildPayload(state: ProfileFormState) {
         experiences: state.experience_limit,
         projects: state.project_limit,
       },
+      selections: state.selections,
     },
   })
 }
 
 function buildSnapshot(payload: ProfilePayload) {
   return JSON.stringify(payload)
+}
+
+type SelectionSectionDefinition = {
+  key: ProfileSelectableSection
+  label: string
+  itemLabel: string
+  description: string
+  automaticDescription: string
+  items: ProfileSectionSelectorItem[]
+  currentCount: number
+  helper: string
+  selection: string[] | null
 }
 
 function ProgressItem({
@@ -174,6 +200,8 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [activeSelectionSection, setActiveSelectionSection] =
+    useState<ProfileSelectableSection | null>(null)
 
   const payload = useMemo(() => buildPayload(state), [state])
   const payloadSnapshot = useMemo(() => buildSnapshot(payload), [payload])
@@ -184,6 +212,127 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
   const currentMode: ProfileBuilderMode = savedProfile ? "edit" : mode
   const status = getProfileStatus(preview)
   const hasRules = profileHasActiveRules(payload)
+  const selectionSections = useMemo<SelectionSectionDefinition[]>(
+    () => [
+      {
+        key: "experiences",
+        label: "Experiences",
+        itemLabel: "experience",
+        description:
+          "Choose which saved experience entries this profile is allowed to use. All items start enabled. Tag rules and limits still apply after you save this selection.",
+        automaticDescription:
+          "Automatic mode keeps every saved experience available. Include tags, exclude tags, and limits still decide what appears.",
+        items: careerData.experiences.map((entry) => ({
+          id: entry.id,
+          title: `${entry.role} · ${entry.company}`,
+          description: entry.location || "No location added",
+          meta: [
+            `${entry.start_date} → ${entry.end_date || "Present"}`,
+            ...entry.tags.map((tag) => `#${tag}`),
+          ],
+          available: matchesProfileTagRules(entry.tags, payload),
+        })),
+        currentCount: preview.displayedExperiences,
+        helper:
+          payload.config.selections.experiences === null
+            ? `${preview.displayedExperiences} currently appear in the preview after tag rules and limits.`
+            : `${payload.config.selections.experiences.length} of ${careerData.experiences.length} experiences are allowed. ${preview.displayedExperiences} currently appear in the preview.`,
+        selection: state.selections.experiences,
+      },
+      {
+        key: "projects",
+        label: "Projects",
+        itemLabel: "project",
+        description:
+          "Choose which saved projects this profile is allowed to use. All items start enabled. Tag rules and limits still apply after you save this selection.",
+        automaticDescription:
+          "Automatic mode keeps every saved project available. Include tags, exclude tags, and limits still decide what appears.",
+        items: careerData.projects.map((entry) => ({
+          id: entry.id,
+          title: entry.name,
+          description: entry.description || "No description added",
+          meta: [...entry.tech_stack, ...entry.tags.map((tag) => `#${tag}`)],
+          available: matchesProfileTagRules(entry.tags, payload),
+        })),
+        currentCount: preview.displayedProjects,
+        helper:
+          payload.config.selections.projects === null
+            ? `${preview.displayedProjects} currently appear in the preview after tag rules and limits.`
+            : `${payload.config.selections.projects.length} of ${careerData.projects.length} projects are allowed. ${preview.displayedProjects} currently appear in the preview.`,
+        selection: state.selections.projects,
+      },
+      {
+        key: "education",
+        label: "Education",
+        itemLabel: "education item",
+        description:
+          "Choose which education entries this profile can use. All items start enabled unless you switch to a custom list.",
+        automaticDescription:
+          "Automatic mode keeps every saved education entry available for this profile.",
+        items: careerData.education.map((entry) => ({
+          id: entry.id,
+          title: `${entry.degree} · ${entry.institution}`,
+          description: entry.details || "No extra details added",
+          meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
+          available: true,
+        })),
+        currentCount: preview.educationCount,
+        helper:
+          payload.config.selections.education === null
+            ? `${preview.educationCount} education entries currently appear in the preview.`
+            : `${payload.config.selections.education.length} of ${careerData.education.length} education entries are allowed.`,
+        selection: state.selections.education,
+      },
+      {
+        key: "skills",
+        label: "Skills",
+        itemLabel: "skill",
+        description:
+          "Choose which saved skills this profile can use. All skills start enabled unless you switch to a custom list.",
+        automaticDescription:
+          "Automatic mode keeps every saved skill available for this profile.",
+        items: careerData.skills.map((entry) => ({
+          id: entry.id,
+          title: entry.name,
+          description: `${entry.category} · ${entry.level}`,
+          meta: [entry.category, entry.level],
+          available: true,
+        })),
+        currentCount: preview.skillsCount,
+        helper:
+          payload.config.selections.skills === null
+            ? `${preview.skillsCount} skills currently appear in the preview.`
+            : `${payload.config.selections.skills.length} of ${careerData.skills.length} skills are allowed.`,
+        selection: state.selections.skills,
+      },
+      {
+        key: "contacts",
+        label: "Contacts",
+        itemLabel: "contact method",
+        description:
+          "Choose which contact methods this profile should keep. All contact methods start enabled unless you switch to a custom list.",
+        automaticDescription:
+          "Automatic mode keeps every saved contact method available for this profile.",
+        items: careerData.contacts.map((entry) => ({
+          id: entry.id,
+          title: entry.type,
+          description: entry.value,
+          meta: [entry.type],
+          available: true,
+        })),
+        currentCount: preview.contactsCount,
+        helper:
+          payload.config.selections.contacts === null
+            ? `${preview.contactsCount} contact methods currently appear in the preview.`
+            : `${payload.config.selections.contacts.length} of ${careerData.contacts.length} contact methods are allowed.`,
+        selection: state.selections.contacts,
+      },
+    ],
+    [careerData, payload, preview, state.selections]
+  )
+  const activeSelectionDefinition = activeSelectionSection
+    ? selectionSections.find((section) => section.key === activeSelectionSection) ?? null
+    : null
 
   const visibleErrors = hasAttemptedSubmit ? validationErrors : {}
 
@@ -191,6 +340,20 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
     setState((currentState) => updater(currentState))
     setSubmitError(null)
     setSaveNotice(null)
+  }
+
+  const handleSelectionSave = (
+    section: ProfileSelectableSection,
+    nextSelection: string[] | null
+  ) => {
+    updateState((currentState) => ({
+      ...currentState,
+      selections: {
+        ...currentState.selections,
+        [section]: nextSelection,
+      },
+    }))
+    setActiveSelectionSection(null)
   }
 
   const saveStatusLabel = isSubmitting
@@ -224,6 +387,14 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
         ? `${payload.exclude_tags.length} exclude tag${payload.exclude_tags.length === 1 ? "" : "s"} selected.`
         : "Use exclude tags to hide work that weakens this version.",
       done: payload.exclude_tags.length > 0,
+      optional: true,
+    },
+    {
+      label: "Choose exact items",
+      helper: selectionSections.some((section) => section.selection !== null)
+        ? "At least one section now uses a custom item list."
+        : "Optional. Use this when you want direct control over which saved items can appear.",
+      done: selectionSections.some((section) => section.selection !== null),
       optional: true,
     },
     {
@@ -361,6 +532,7 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
             {[
               ["profile-basics", "Basics"],
               ["profile-rules", "Filtering rules"],
+              ["profile-selection", "Choose items"],
               ["profile-display", "Ordering and limits"],
             ].map(([target, label]) => (
               <a
@@ -475,10 +647,81 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
               </FormSection>
             </div>
 
+            <div id="profile-selection">
+              <FormSection
+                title="Choose items"
+                step="03"
+                description="Use this when you want direct control over which saved items are allowed to appear in the profile."
+                action={<Badge variant="outline">Optional</Badge>}
+                contentClassName="space-y-5 p-6"
+              >
+                <Alert className="border-outline-variant/60 bg-surface-subtle/50">
+                  <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4 text-primary" />
+                  <AlertTitle>How manual selection works</AlertTitle>
+                  <AlertDescription>
+                    All items start enabled. Custom selections only narrow the list. Your include tags, exclude tags, and limits still apply.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {selectionSections.map((section) => {
+                    const selectedCount =
+                      section.selection === null ? section.items.length : section.selection.length
+                    const isCustom = section.selection !== null
+
+                    return (
+                      <Card
+                        key={section.key}
+                        className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none"
+                      >
+                        <div className="flex h-full flex-col gap-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-sm font-medium text-on-surface">{section.label}</h3>
+                              <Badge variant={isCustom ? "default" : "outline"}>
+                                {isCustom ? "Custom" : "Automatic"}
+                              </Badge>
+                              <Badge variant="outline">
+                                {selectedCount} of {section.items.length}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-on-surface-variant/75">
+                              {section.description}
+                            </p>
+                            <p className="text-xs text-on-surface-variant/70">{section.helper}</p>
+                          </div>
+
+                          <div className="mt-auto flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setActiveSelectionSection(section.key)}
+                              disabled={section.items.length === 0}
+                            >
+                              Customize {section.label.toLowerCase()}
+                            </Button>
+                            {isCustom ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => handleSelectionSave(section.key, null)}
+                              >
+                                Reset
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </FormSection>
+            </div>
+
             <div id="profile-display">
               <FormSection
                 title="Ordering and limits"
-                step="03"
+                step="04"
                 description="Fine-tune how much content appears and how it should be arranged."
                 action={<Badge variant="outline">Optional</Badge>}
                 contentClassName="space-y-5 p-6"
@@ -667,6 +910,27 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
           </aside>
         </div>
       </form>
+
+      {activeSelectionDefinition ? (
+        <ProfileSectionSelectorDialog
+          key={`${activeSelectionDefinition.key}-${activeSelectionDefinition.selection === null ? "automatic" : activeSelectionDefinition.selection.join(",")}`}
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveSelectionSection(null)
+            }
+          }}
+          sectionLabel={activeSelectionDefinition.label}
+          itemLabel={activeSelectionDefinition.itemLabel}
+          description={activeSelectionDefinition.description}
+          automaticDescription={activeSelectionDefinition.automaticDescription}
+          items={activeSelectionDefinition.items}
+          value={activeSelectionDefinition.selection}
+          onSave={(nextSelection) =>
+            handleSelectionSave(activeSelectionDefinition.key, nextSelection)
+          }
+        />
+      ) : null}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
