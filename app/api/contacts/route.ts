@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 
-import { buildApiError, buildApiSuccess } from "@/lib/personal/http"
-import { createContactData, listContacts } from "@/lib/personal/store"
+import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
+import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
+import { createContactData, listContacts } from "@/lib/career-data/store"
+import { type ContactPayload } from "@/lib/career-data/types"
 
 export async function GET() {
   const contacts = await listContacts()
@@ -9,19 +11,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  let body: Partial<{ type: string; value: string }> | null = null
+  const body = await parseJsonBody<ContactPayload>(request)
 
-  try {
-    body = (await request.json()) as Partial<{ type: string; value: string }>
-  } catch {
+  if (!body) {
     return NextResponse.json(
       buildApiError("Enter a contact type and value before saving.", "INVALID_REQUEST"),
       { status: 400 }
     )
   }
 
-  const type = typeof body?.type === "string" ? body.type.trim() : ""
-  const value = typeof body?.value === "string" ? body.value.trim() : ""
+  const type = readString(body.type)
+  const value = readString(body.value)
 
   if (!type || !value) {
     return NextResponse.json(
@@ -30,10 +30,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const contact = await createContactData({
-    type,
-    value,
-  })
+  const contact = await createContactData({ type, value })
 
   return NextResponse.json(buildApiSuccess(contact), { status: 201 })
 }

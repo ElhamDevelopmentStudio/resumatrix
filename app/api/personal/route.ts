@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 
-import { buildApiError, buildApiSuccess } from "@/lib/personal/http"
-import { getPersonalData, updatePersonalData } from "@/lib/personal/store"
+import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
+import { getPersonalData, updatePersonalData } from "@/lib/career-data/store"
+import { type PersonalData } from "@/lib/career-data/types"
+import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 
 export async function GET() {
   const personal = await getPersonalData()
@@ -9,20 +11,18 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  let body: Partial<{ full_name: string; title: string; summary: string }> | null = null
+  const body = await parseJsonBody<PersonalData>(request)
 
-  try {
-    body = (await request.json()) as Partial<{ full_name: string; title: string; summary: string }>
-  } catch {
+  if (!body) {
     return NextResponse.json(
       buildApiError("Enter your personal details before saving.", "INVALID_REQUEST"),
       { status: 400 }
     )
   }
 
-  const full_name = typeof body?.full_name === "string" ? body.full_name.trim() : ""
-  const title = typeof body?.title === "string" ? body.title.trim() : ""
-  const summary = typeof body?.summary === "string" ? body.summary.trim() : ""
+  const full_name = readString(body.full_name)
+  const title = readString(body.title)
+  const summary = readString(body.summary)
 
   if (!full_name) {
     return NextResponse.json(buildApiError("Full name is required.", "VALIDATION_ERROR"), {

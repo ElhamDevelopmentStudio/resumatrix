@@ -84,11 +84,10 @@ export default function DashboardPage() {
           description="Manage and curate your professional career documents."
           action={
             <Link
-              href="/cvs"
-              prefetch={false}
+              href="/career-data"
               className="group flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4"
             >
-              <span>View Library</span>
+              <span>Open Career Data</span>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
                 strokeWidth={2}

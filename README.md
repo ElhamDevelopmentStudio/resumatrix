@@ -56,11 +56,20 @@ This fallback is for local development only. Set real values before deploying.
 
 - `/` — login page
 - `/dashboard` — dashboard workspace
-- `/personal` — personal info form
+- `/career-data` — unified career data workspace
+- `/personal` — redirects to `/career-data`
 - `POST /api/auth/login` — login endpoint
 - `GET, PUT /api/personal` — personal details API
 - `GET, POST /api/contacts` — contacts collection API
 - `PUT, DELETE /api/contacts/:id` — single contact API
+- `GET, POST /api/experiences` — experiences collection API
+- `PUT, DELETE /api/experiences/:id` — single experience API
+- `GET, POST /api/projects` — projects collection API
+- `PUT, DELETE /api/projects/:id` — single project API
+- `GET, POST /api/education` — education collection API
+- `PUT, DELETE /api/education/:id` — single education API
+- `GET, POST /api/skills` — skills collection API
+- `PUT, DELETE /api/skills/:id` — single skill API
 
 ## Scripts
 

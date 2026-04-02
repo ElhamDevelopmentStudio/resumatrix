@@ -1,4 +1,4 @@
-import type { ApiFailure, ApiSuccess } from "@/lib/personal/types"
+import type { ApiFailure, ApiSuccess } from "@/lib/career-data/types"
 
 export function buildApiSuccess<T>(data: T): ApiSuccess<T> {
   return {

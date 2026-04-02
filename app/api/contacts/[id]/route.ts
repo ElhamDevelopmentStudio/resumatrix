@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server"
 
-import { buildApiError, buildApiSuccess } from "@/lib/personal/http"
-import { deleteContactData, updateContactData } from "@/lib/personal/store"
+import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
+import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
+import { deleteContactData, updateContactData } from "@/lib/career-data/store"
+import { type ContactPayload } from "@/lib/career-data/types"
 
 export async function PUT(
   request: Request,
   context: RouteContext<"/api/contacts/[id]">
 ) {
   const { id } = await context.params
-  let body: Partial<{ type: string; value: string }> | null = null
+  const body = await parseJsonBody<ContactPayload>(request)
 
-  try {
-    body = (await request.json()) as Partial<{ type: string; value: string }>
-  } catch {
+  if (!body) {
     return NextResponse.json(
       buildApiError("Enter a contact type and value before saving.", "INVALID_REQUEST"),
       { status: 400 }
     )
   }
 
-  const type = typeof body?.type === "string" ? body.type.trim() : ""
-  const value = typeof body?.value === "string" ? body.value.trim() : ""
+  const type = readString(body.type)
+  const value = readString(body.value)
 
   if (!type || !value) {
     return NextResponse.json(
