@@ -17,6 +17,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 type IconDefinition = ComponentProps<typeof HugeiconsIcon>["icon"]
@@ -117,7 +118,10 @@ export function DashboardSidebar() {
         <Link
           href="/cvs"
           prefetch={false}
-          className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:bg-primary/90 active:translate-y-px"
+          className={cn(
+            buttonVariants({ variant: "default" }),
+            "h-auto w-full gap-2 px-4 py-4 text-sm font-bold shadow-lg shadow-primary/15"
+          )}
         >
           <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
           <span>New CV</span>

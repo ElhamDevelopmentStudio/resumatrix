@@ -2,6 +2,7 @@ import type { ComponentProps } from "react"
 import { MoreHorizontalIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +18,7 @@ type ProfileCardProps = {
 
 export function ProfileCard({ icon, title, category, description, primary = false }: ProfileCardProps) {
   return (
-    <Card className="gap-0 rounded-sm bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/20">
+    <Card className="gap-0 bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/20">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <div
@@ -43,23 +44,26 @@ export function ProfileCard({ icon, title, category, description, primary = fals
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
           aria-label={`More actions for ${title}`}
-          className="text-on-surface-variant/30 transition-colors hover:text-on-surface-variant"
+          variant="ghost"
+          size="icon-sm"
+          className="text-on-surface-variant/30 hover:bg-transparent hover:text-on-surface-variant"
         >
           <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} className="size-[18px]" />
-        </button>
+        </Button>
       </div>
 
       <p className="mb-6 text-sm leading-relaxed font-medium text-on-surface-variant">{description}</p>
 
-      <button
+      <Button
         type="button"
-        className="w-full rounded-sm border border-outline-variant/60 bg-surface-subtle px-4 py-2.5 text-[11px] font-bold tracking-[0.2em] text-on-surface-variant uppercase transition-all hover:bg-primary-soft hover:text-primary"
+        variant="outline"
+        className="h-auto w-full border-outline-variant/60 bg-surface-subtle px-4 py-2.5 text-[11px] font-bold tracking-[0.2em] text-on-surface-variant uppercase hover:bg-primary-soft hover:text-primary"
       >
         Edit Profile
-      </button>
+      </Button>
     </Card>
   )
 }

@@ -1,6 +1,8 @@
 import { Logout01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Button } from "@/components/ui/button"
+
 export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-outline-variant/60 bg-background/90 px-6 py-6 backdrop-blur-md md:px-8 xl:px-12">
@@ -29,13 +31,15 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
           aria-label="Sign out"
-          className="flex items-center justify-center p-2 text-on-surface-variant/40 transition-colors hover:text-destructive"
+          variant="ghost"
+          size="icon-lg"
+          className="text-on-surface-variant/40 hover:bg-transparent hover:text-destructive"
         >
           <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-5" />
-        </button>
+        </Button>
       </div>
     </header>
   )

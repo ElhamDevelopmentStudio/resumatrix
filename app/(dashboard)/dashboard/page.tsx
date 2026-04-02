@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Add01Icon, ArrowRight01Icon, CodeIcon, File01Icon, TerminalIcon, UserAccountIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Button } from "@/components/ui/button"
 import { DashboardSection } from "./_components/dashboard-section"
 import { OptimizerCard } from "./_components/optimizer-card"
 import { ProfileCard } from "./_components/profile-card"
@@ -114,13 +115,14 @@ export default function DashboardPage() {
             {profiles.map((profile) => (
               <ProfileCard key={profile.title} {...profile} />
             ))}
-            <button
+            <Button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-sm border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
+              variant="outline"
+              className="h-auto w-full border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 hover:border-primary hover:bg-primary-soft hover:text-primary"
             >
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
               <span>Create New Profile</span>
-            </button>
+            </Button>
           </div>
         </DashboardSection>
       </div>

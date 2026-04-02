@@ -1,6 +1,7 @@
 import { Clock01Icon, CloudDownloadIcon, File01Icon, UserAccountIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -16,7 +17,7 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
   const isModernClean = type === "Modern Clean"
 
   return (
-    <Card className="flex h-full gap-0 rounded-sm bg-card p-7 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/30">
+    <Card className="flex h-full gap-0 bg-card p-7 text-on-surface shadow-sm ring-outline-variant/60 transition-all duration-200 hover:-translate-y-1 hover:ring-primary/30">
       <div className="mb-8 flex items-start justify-between">
         <div className="relative">
           <div className="flex size-14 items-center justify-center rounded-sm border border-outline-variant/40 bg-surface-subtle text-on-surface-variant transition-colors group-hover/card:text-primary">
@@ -62,19 +63,21 @@ export function ResumeCard({ title, profile, time, type, active = false }: Resum
       </div>
 
       <div className="mt-auto flex items-center gap-3">
-        <button
+        <Button
           type="button"
-          className="flex-1 rounded-sm border border-outline-variant/60 bg-surface-subtle px-4 py-3 font-bold text-on-surface-variant transition-colors hover:bg-muted"
+          variant="outline"
+          className="flex-1 h-auto border-outline-variant/60 bg-surface-subtle px-4 py-3 font-bold text-on-surface-variant hover:bg-muted hover:text-on-surface-variant"
         >
           Edit Document
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           aria-label={`Download ${title}`}
-          className="flex w-12 items-center justify-center rounded-sm bg-primary py-3 text-primary-foreground shadow-lg shadow-primary/15 transition-all active:translate-y-px"
+          size="icon-lg"
+          className="size-12 bg-primary text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
         >
           <HugeiconsIcon icon={CloudDownloadIcon} strokeWidth={2} className="size-5" />
-        </button>
+        </Button>
       </div>
     </Card>
   )

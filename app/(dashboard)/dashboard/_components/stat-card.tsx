@@ -16,7 +16,7 @@ type StatCardProps = {
 
 export function StatCard({ icon, label, value, sublabel, accentClassName }: StatCardProps) {
   return (
-    <Card className="gap-0 rounded-sm bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-transform duration-200 hover:-translate-y-1">
+    <Card className="gap-0 bg-card p-6 text-on-surface shadow-sm ring-outline-variant/60 transition-transform duration-200 hover:-translate-y-1">
       <div className="mb-4 flex items-start justify-between">
         <div className={cn("rounded-sm p-2.5", accentClassName)}>
           <HugeiconsIcon icon={icon} strokeWidth={2} className="size-6" />
