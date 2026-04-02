@@ -103,7 +103,7 @@ export function ProfileSectionSelectorDialog({
       <DialogContent className="max-h-[calc(100vh-3rem)] gap-0 overflow-hidden p-0 sm:max-w-4xl">
         <DialogHeader className="border-b border-outline-variant/60 px-6 py-5">
           <DialogTitle className="text-lg font-semibold text-on-surface">
-            Customize {sectionLabel.toLowerCase()}
+            Choose which {sectionLabel.toLowerCase()} stay on
           </DialogTitle>
           <DialogDescription>
             {description}
@@ -127,7 +127,7 @@ export function ProfileSectionSelectorDialog({
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={() => setMode("automatic")}>
-                Use automatic
+                Use everything
               </Button>
               <Button
                 type="button"
@@ -137,7 +137,7 @@ export function ProfileSectionSelectorDialog({
                   setSelectedIds(allIds)
                 }}
               >
-                Select all
+                Turn all on
               </Button>
               <Button
                 type="button"
@@ -147,7 +147,7 @@ export function ProfileSectionSelectorDialog({
                   setSelectedIds([])
                 }}
               >
-                Clear all
+                Turn all off
               </Button>
             </div>
           </div>
@@ -157,7 +157,7 @@ export function ProfileSectionSelectorDialog({
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium text-on-surface">
-                    {mode === "automatic" ? "Automatic selection" : "Custom selection"}
+                    {mode === "automatic" ? "Everything is on" : "Choosing by hand"}
                   </p>
                   <Badge variant="outline">
                     {selectedCount} of {items.length} selected
@@ -166,7 +166,7 @@ export function ProfileSectionSelectorDialog({
                 <p className="text-sm text-on-surface-variant/75">
                   {mode === "automatic"
                     ? automaticDescription
-                    : `Only the ${itemLabel}${selectedCount === 1 ? "" : "s"} you keep selected here can appear in this profile.`}
+                    : `Only the ${itemLabel}${selectedCount === 1 ? "" : "s"} that stay on here can appear in this profile.`}
                 </p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function ProfileSectionSelectorDialog({
                           size="sm"
                           onClick={() => toggleItem(item.id)}
                         >
-                          {selected ? "Included" : "Hidden"}
+                          {selected ? "On" : "Off"}
                         </Button>
                       </div>
 
@@ -215,13 +215,13 @@ export function ProfileSectionSelectorDialog({
                           </Badge>
                         ))}
                         {!item.available ? (
-                          <Badge variant="destructive">Blocked by current tag rules</Badge>
+                          <Badge variant="destructive">Filtered out by tags</Badge>
                         ) : null}
                       </div>
 
                       {!item.available ? (
                         <p className="text-xs text-on-surface-variant/70">
-                          This item is currently filtered out by your include or exclude tags.
+                          Your current tags filter this item out right now.
                         </p>
                       ) : null}
                     </div>
@@ -246,7 +246,7 @@ export function ProfileSectionSelectorDialog({
             Cancel
           </Button>
           <Button type="button" onClick={handleSave}>
-            Save selection
+            Save changes
           </Button>
         </DialogFooter>
       </DialogContent>
