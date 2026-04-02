@@ -52,7 +52,7 @@ export default async function CvsPage() {
           <EmptyHeader>
             <EmptyTitle>No CVs yet</EmptyTitle>
             <EmptyDescription>
-              Start by creating one CV from a profile and the ATS Standard template.
+              Start by creating one CV from a profile and choosing the template that fits it best.
             </EmptyDescription>
           </EmptyHeader>
           <div className="mt-6 flex justify-center">

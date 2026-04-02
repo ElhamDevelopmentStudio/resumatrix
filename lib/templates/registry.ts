@@ -1,8 +1,15 @@
-import { AtsStandardTemplate } from "@/components/cv-templates/ats-standard-template"
+import {
+  AtsStandardTemplate,
+  buildAtsStandardHtml,
+} from "@/components/cv-templates/ats-standard-template"
+import {
+  buildSplitHeaderHtml,
+  SplitHeaderTemplate,
+} from "@/components/cv-templates/split-header-template"
 import type { CvTemplateMetadata } from "@/lib/cvs/types"
 import type { CvTemplateDefinition } from "@/lib/templates/types"
 
-export type CvTemplateOption = Omit<CvTemplateDefinition, "renderer">
+export type CvTemplateOption = Omit<CvTemplateDefinition, "renderer" | "html_builder">
 
 const templates: CvTemplateDefinition[] = [
   {
@@ -15,6 +22,19 @@ const templates: CvTemplateDefinition[] = [
     export_formats: ["pdf", "html", "markdown", "json"],
     preview_blurb: "Best starting point when you want a simple CV that stays readable everywhere.",
     renderer: AtsStandardTemplate,
+    html_builder: buildAtsStandardHtml,
+  },
+  {
+    id: "split-header",
+    slug: "split-header",
+    name: "Split Header",
+    description: "Large two-line name, right-aligned contact block, and strong editorial section dividers.",
+    layout_type: "single-column",
+    sections: ["contacts", "experiences", "projects", "education", "skills"],
+    export_formats: ["pdf", "html", "markdown", "json"],
+    preview_blurb: "Best when you want a more polished first impression without losing a simple, readable layout.",
+    renderer: SplitHeaderTemplate,
+    html_builder: buildSplitHeaderHtml,
   },
 ]
 

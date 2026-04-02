@@ -12,4 +12,5 @@ export type CvTemplateComponentProps = {
 export type CvTemplateDefinition = CvTemplateMetadata & {
   preview_blurb: string
   renderer: ComponentType<CvTemplateComponentProps>
+  html_builder: (model: CvRenderModel) => string
 }

@@ -120,7 +120,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="flex flex-col items-start gap-4 rounded-sm border-2 border-dashed border-outline-variant/60 bg-card p-8">
               <p className="text-sm text-on-surface-variant/75">
-                You haven’t generated a CV yet. Create one from a profile and the ATS Standard template to get started.
+                You haven’t generated a CV yet. Create one from a profile and choose a template to get started.
               </p>
               <Link
                 href={profiles.length ? "/cvs/new" : hasCareerData ? "/profiles/new" : "/career-data"}

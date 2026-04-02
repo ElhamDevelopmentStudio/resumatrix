@@ -1,4 +1,5 @@
 import type { CvOverrideSection, CvRenderModel } from "@/lib/cvs/types"
+import { buildHtmlDocument, escapeHtml } from "@/lib/cvs/html"
 import type { CvTemplateComponentProps } from "@/lib/templates/types"
 
 export const atsStandardStyles = `
@@ -412,5 +413,200 @@ export function AtsStandardTemplate({ model, mode = "preview" }: CvTemplateCompo
         </div>
       </article>
     </div>
+  )
+}
+
+function renderContactsHtml(model: CvRenderModel) {
+  if (!model.contacts.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Contacts">
+      <h2 class="cv-section-title">${sectionTitles.contacts}</h2>
+      <div class="cv-item">
+        ${model.contacts
+          .map(
+            (contact) =>
+              `<p class="cv-item-description"><strong>${escapeHtml(contact.label)}:</strong> ${escapeHtml(contact.value)}</p>`
+          )
+          .join("")}
+      </div>
+    </section>
+  `
+}
+
+function renderExperiencesHtml(model: CvRenderModel) {
+  if (!model.experiences.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Experience">
+      <h2 class="cv-section-title">${sectionTitles.experiences}</h2>
+      ${model.experiences
+        .map(
+          (experience) => `
+            <article class="cv-item">
+              <div class="cv-item-header">
+                <div>
+                  <h3 class="cv-item-title">${escapeHtml(experience.role || "Role")}</h3>
+                  <p class="cv-item-subtitle">${escapeHtml(
+                    [experience.company, experience.location].filter(Boolean).join(" • ") || "Company details"
+                  )}</p>
+                </div>
+                <p class="cv-item-date">${escapeHtml(experience.date_label)}</p>
+              </div>
+              ${
+                experience.bullets.length
+                  ? `<ul class="cv-bullet-list">${experience.bullets
+                      .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
+                      .join("")}</ul>`
+                  : ""
+              }
+            </article>
+          `
+        )
+        .join("")}
+    </section>
+  `
+}
+
+function renderProjectsHtml(model: CvRenderModel) {
+  if (!model.projects.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Projects">
+      <h2 class="cv-section-title">${sectionTitles.projects}</h2>
+      ${model.projects
+        .map(
+          (project) => `
+            <article class="cv-item">
+              <div class="cv-item-header">
+                <div>
+                  <h3 class="cv-item-title">${escapeHtml(project.name || "Project")}</h3>
+                  ${project.description ? `<p class="cv-item-description">${escapeHtml(project.description)}</p>` : ""}
+                </div>
+              </div>
+              ${
+                project.tech_stack.length
+                  ? `<div class="cv-tech-list">${project.tech_stack
+                      .map((tech) => `<span class="cv-tech-pill">${escapeHtml(tech)}</span>`)
+                      .join("")}</div>`
+                  : ""
+              }
+              ${
+                project.bullets.length
+                  ? `<ul class="cv-bullet-list">${project.bullets
+                      .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
+                      .join("")}</ul>`
+                  : ""
+              }
+            </article>
+          `
+        )
+        .join("")}
+    </section>
+  `
+}
+
+function renderEducationHtml(model: CvRenderModel) {
+  if (!model.education.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Education">
+      <h2 class="cv-section-title">${sectionTitles.education}</h2>
+      ${model.education
+        .map(
+          (entry) => `
+            <article class="cv-item">
+              <div class="cv-item-header">
+                <div>
+                  <h3 class="cv-item-title">${escapeHtml(entry.degree || "Degree")}</h3>
+                  <p class="cv-item-subtitle">${escapeHtml(entry.institution || "Institution")}</p>
+                  ${entry.details ? `<p class="cv-item-details">${escapeHtml(entry.details)}</p>` : ""}
+                </div>
+                <p class="cv-item-date">${escapeHtml(entry.date_label)}</p>
+              </div>
+            </article>
+          `
+        )
+        .join("")}
+    </section>
+  `
+}
+
+function renderSkillsHtml(model: CvRenderModel) {
+  if (!model.skills.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Skills">
+      <h2 class="cv-section-title">${sectionTitles.skills}</h2>
+      <ul class="cv-skill-list">
+        ${model.skills
+          .map((skill) => {
+            const detail = [skill.category, skill.level].filter(Boolean).join(" • ")
+            return `<li><strong>${escapeHtml(skill.name)}</strong>${detail ? ` — ${escapeHtml(detail)}` : ""}</li>`
+          })
+          .join("")}
+      </ul>
+    </section>
+  `
+}
+
+function renderHtmlSection(section: CvOverrideSection, model: CvRenderModel) {
+  switch (section) {
+    case "contacts":
+      return renderContactsHtml(model)
+    case "experiences":
+      return renderExperiencesHtml(model)
+    case "projects":
+      return renderProjectsHtml(model)
+    case "education":
+      return renderEducationHtml(model)
+    case "skills":
+      return renderSkillsHtml(model)
+    default:
+      return ""
+  }
+}
+
+export function buildAtsStandardHtml(model: CvRenderModel) {
+  const displayName = getDisplayName(model, "print")
+  const displayTitle = getDisplayTitle(model, "print")
+
+  return buildHtmlDocument(
+    model.meta.cv_name,
+    `
+      <div class="cv-preview-root">
+        <style>${atsStandardStyles}</style>
+        <article class="cv-document" aria-label="${escapeHtml(model.meta.cv_name)} preview">
+          <div class="cv-page">
+            <header class="cv-header">
+              <h1 class="cv-name">${escapeHtml(displayName || "Untitled")}</h1>
+              ${displayTitle ? `<p class="cv-role">${escapeHtml(displayTitle)}</p>` : ""}
+              ${
+                model.contacts.length
+                  ? `<ul class="cv-contact-list" aria-label="Primary contact details">${model.contacts
+                      .map(
+                        (contact) =>
+                          `<li class="cv-contact-item"><strong>${escapeHtml(contact.label)}</strong> ${escapeHtml(contact.value)}</li>`
+                      )
+                      .join("")}</ul>`
+                  : ""
+              }
+              ${model.personal.summary ? `<p class="cv-summary">${escapeHtml(model.personal.summary)}</p>` : ""}
+            </header>
+            ${model.section_order.map((section) => renderHtmlSection(section, model)).join("")}
+          </div>
+        </article>
+      </div>
+    `
   )
 }

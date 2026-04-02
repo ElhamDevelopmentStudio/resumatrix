@@ -202,7 +202,7 @@ export function CvCreator({ profiles, careerData, templates }: CvCreatorProps) {
                   <p className="text-xs font-medium tracking-[0.16em] text-primary uppercase">Step 2</p>
                   <h2 className="mt-2 text-xl font-semibold text-on-surface">Choose a template</h2>
                   <p className="mt-1 text-sm text-on-surface-variant/75">
-                    Start with one clean, reliable template now. More templates can be added later without changing your data.
+                    Pick the layout that matches how you want this CV to read. You can switch templates later without losing your data.
                   </p>
                 </div>
 

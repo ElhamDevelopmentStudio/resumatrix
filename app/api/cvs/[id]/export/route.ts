@@ -75,7 +75,7 @@ export async function GET(request: Request, { params }: CvExportRouteProps) {
 
   const body =
     format === "html"
-      ? buildCvHtmlExport(renderModel)
+      ? buildCvHtmlExport(template, renderModel)
       : format === "markdown"
         ? buildCvMarkdownExport(renderModel)
         : buildCvJsonExport(renderModel)
