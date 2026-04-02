@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { ComponentProps } from "react"
 
 import { Button } from "@/components/ui/button"
 import { cvExportFormatOptions, type CvExportFormat } from "@/lib/cvs/types"
@@ -9,6 +10,7 @@ type CvExportLinksProps = {
   cvId: string
   disabled?: boolean
   onBeforeExport?: () => Promise<void> | void
+  buttonSize?: ComponentProps<typeof Button>["size"]
 }
 
 function buildExportHref(cvId: string, format: CvExportFormat) {
@@ -19,7 +21,12 @@ function buildExportHref(cvId: string, format: CvExportFormat) {
   return `/api/cvs/${cvId}/export?format=${format}`
 }
 
-export function CvExportLinks({ cvId, disabled = false, onBeforeExport }: CvExportLinksProps) {
+export function CvExportLinks({
+  cvId,
+  disabled = false,
+  onBeforeExport,
+  buttonSize = "default",
+}: CvExportLinksProps) {
   const [busyFormat, setBusyFormat] = useState<CvExportFormat | null>(null)
 
   const handleExport = async (format: CvExportFormat) => {
@@ -53,6 +60,7 @@ export function CvExportLinks({ cvId, disabled = false, onBeforeExport }: CvExpo
           key={format.value}
           type="button"
           variant={format.value === "pdf" ? "default" : "outline"}
+          size={buttonSize}
           disabled={disabled || busyFormat !== null}
           onClick={() => void handleExport(format.value)}
         >

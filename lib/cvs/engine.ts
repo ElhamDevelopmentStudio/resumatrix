@@ -2,6 +2,7 @@ import { format, isValid, parse } from "date-fns"
 
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
 import type {
+  CvContentOverrides,
   CvData,
   CvOverrideSection,
   CvPayload,
@@ -61,23 +62,60 @@ function normalizeSectionOrder(
   )
 }
 
+function applyEntryOverrides<T extends { id: string }, TOverride extends Partial<Omit<T, "id">>>(
+  entries: T[],
+  overrides: Record<string, TOverride>
+) {
+  return entries.map((entry) => ({
+    ...entry,
+    ...(overrides[entry.id] ?? {}),
+  }))
+}
+
+export function applyCvContentOverrides(
+  dataset: CareerWorkspaceData,
+  overrides: CvContentOverrides
+): CareerWorkspaceData {
+  return {
+    personal: {
+      ...dataset.personal,
+      ...overrides.personal,
+    },
+    contacts: applyEntryOverrides(dataset.contacts, overrides.contacts),
+    experiences: applyEntryOverrides(dataset.experiences, overrides.experiences),
+    projects: applyEntryOverrides(dataset.projects, overrides.projects),
+    education: applyEntryOverrides(dataset.education, overrides.education),
+    skills: applyEntryOverrides(dataset.skills, overrides.skills),
+  }
+}
+
 export function buildCvDataset(
   cv: CvData | CvPayload,
   profile: ProfileData | ProfilePayload,
   careerData: CareerWorkspaceData
 ): CareerWorkspaceData {
   const profileDataset = buildProfileDataset(profile, careerData)
+  const contentAdjustedDataset = applyCvContentOverrides(profileDataset, cv.overrides.content)
 
   return {
-    personal: profileDataset.personal,
-    contacts: filterEntriesBySelection(profileDataset.contacts, cv.overrides.selections.contacts),
+    personal: contentAdjustedDataset.personal,
+    contacts: filterEntriesBySelection(
+      contentAdjustedDataset.contacts,
+      cv.overrides.selections.contacts
+    ),
     experiences: filterEntriesBySelection(
-      profileDataset.experiences,
+      contentAdjustedDataset.experiences,
       cv.overrides.selections.experiences
     ),
-    projects: filterEntriesBySelection(profileDataset.projects, cv.overrides.selections.projects),
-    education: filterEntriesBySelection(profileDataset.education, cv.overrides.selections.education),
-    skills: filterEntriesBySelection(profileDataset.skills, cv.overrides.selections.skills),
+    projects: filterEntriesBySelection(
+      contentAdjustedDataset.projects,
+      cv.overrides.selections.projects
+    ),
+    education: filterEntriesBySelection(
+      contentAdjustedDataset.education,
+      cv.overrides.selections.education
+    ),
+    skills: filterEntriesBySelection(contentAdjustedDataset.skills, cv.overrides.selections.skills),
   }
 }
 

@@ -1,11 +1,18 @@
 import {
   cvOverrideSections,
   defaultCvOverrides,
+  emptyCvContentOverrides,
   emptyCvPayload,
+  type CvContactContentOverride,
+  type CvContentOverrides,
+  type CvEducationContentOverride,
+  type CvExperienceContentOverride,
   type CvOverrideSection,
   type CvOverrides,
   type CvPayload,
+  type CvProjectContentOverride,
   type CvSelections,
+  type CvSkillContentOverride,
 } from "@/lib/cvs/types"
 
 export type CvValidationErrors = {
@@ -83,6 +90,216 @@ function normalizeSelections(value: unknown): CvSelections {
   }
 }
 
+function normalizeStringList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function normalizeMappedEntries<T extends Record<string, unknown>>(
+  value: unknown,
+  normalizeEntry: (entry: unknown) => T
+) {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([id, entry]) => [id.trim(), normalizeEntry(entry)] as const)
+      .filter(([id, entry]) => Boolean(id) && Object.keys(entry).length > 0)
+  )
+}
+
+function normalizeContactContentOverride(value: unknown): CvContactContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvContactContentOverride>
+  const nextOverride: CvContactContentOverride = {}
+
+  if (typeof nextValue.type === "string") {
+    nextOverride.type = nextValue.type.trim()
+  }
+
+  if (typeof nextValue.value === "string") {
+    nextOverride.value = nextValue.value.trim()
+  }
+
+  return nextOverride
+}
+
+function normalizeExperienceContentOverride(value: unknown): CvExperienceContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvExperienceContentOverride>
+  const nextOverride: CvExperienceContentOverride = {}
+
+  if (typeof nextValue.company === "string") {
+    nextOverride.company = nextValue.company.trim()
+  }
+
+  if (typeof nextValue.role === "string") {
+    nextOverride.role = nextValue.role.trim()
+  }
+
+  if (typeof nextValue.start_date === "string") {
+    nextOverride.start_date = nextValue.start_date.trim()
+  }
+
+  if (typeof nextValue.end_date === "string") {
+    nextOverride.end_date = nextValue.end_date.trim()
+  }
+
+  if (typeof nextValue.location === "string") {
+    nextOverride.location = nextValue.location.trim()
+  }
+
+  const bullets = normalizeStringList(nextValue.bullets)
+
+  if (bullets !== undefined) {
+    nextOverride.bullets = bullets
+  }
+
+  return nextOverride
+}
+
+function normalizeProjectContentOverride(value: unknown): CvProjectContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvProjectContentOverride>
+  const nextOverride: CvProjectContentOverride = {}
+
+  if (typeof nextValue.name === "string") {
+    nextOverride.name = nextValue.name.trim()
+  }
+
+  if (typeof nextValue.description === "string") {
+    nextOverride.description = nextValue.description.trim()
+  }
+
+  const techStack = normalizeStringList(nextValue.tech_stack)
+
+  if (techStack !== undefined) {
+    nextOverride.tech_stack = techStack
+  }
+
+  const bullets = normalizeStringList(nextValue.bullets)
+
+  if (bullets !== undefined) {
+    nextOverride.bullets = bullets
+  }
+
+  return nextOverride
+}
+
+function normalizeEducationContentOverride(value: unknown): CvEducationContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvEducationContentOverride>
+  const nextOverride: CvEducationContentOverride = {}
+
+  if (typeof nextValue.institution === "string") {
+    nextOverride.institution = nextValue.institution.trim()
+  }
+
+  if (typeof nextValue.degree === "string") {
+    nextOverride.degree = nextValue.degree.trim()
+  }
+
+  if (typeof nextValue.start_date === "string") {
+    nextOverride.start_date = nextValue.start_date.trim()
+  }
+
+  if (typeof nextValue.end_date === "string") {
+    nextOverride.end_date = nextValue.end_date.trim()
+  }
+
+  if (typeof nextValue.details === "string") {
+    nextOverride.details = nextValue.details.trim()
+  }
+
+  return nextOverride
+}
+
+function normalizeSkillContentOverride(value: unknown): CvSkillContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvSkillContentOverride>
+  const nextOverride: CvSkillContentOverride = {}
+
+  if (typeof nextValue.name === "string") {
+    nextOverride.name = nextValue.name.trim()
+  }
+
+  if (typeof nextValue.category === "string") {
+    nextOverride.category = nextValue.category.trim()
+  }
+
+  if (typeof nextValue.level === "string") {
+    nextOverride.level = nextValue.level.trim()
+  }
+
+  return nextOverride
+}
+
+function normalizePersonalContentOverride(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return emptyCvContentOverrides.personal
+  }
+
+  const nextValue = value as Partial<CvContentOverrides["personal"]>
+  const nextOverride: CvContentOverrides["personal"] = {}
+
+  if (typeof nextValue.full_name === "string") {
+    nextOverride.full_name = nextValue.full_name.trim()
+  }
+
+  if (typeof nextValue.title === "string") {
+    nextOverride.title = nextValue.title.trim()
+  }
+
+  if (typeof nextValue.summary === "string") {
+    nextOverride.summary = nextValue.summary.trim()
+  }
+
+  return nextOverride
+}
+
+function normalizeContentOverrides(value: unknown): CvContentOverrides {
+  if (!value || typeof value !== "object") {
+    return emptyCvContentOverrides
+  }
+
+  const nextValue = value as Partial<CvContentOverrides>
+
+  return {
+    personal: normalizePersonalContentOverride(nextValue.personal),
+    contacts: normalizeMappedEntries(nextValue.contacts, normalizeContactContentOverride),
+    experiences: normalizeMappedEntries(
+      nextValue.experiences,
+      normalizeExperienceContentOverride
+    ),
+    projects: normalizeMappedEntries(nextValue.projects, normalizeProjectContentOverride),
+    education: normalizeMappedEntries(nextValue.education, normalizeEducationContentOverride),
+    skills: normalizeMappedEntries(nextValue.skills, normalizeSkillContentOverride),
+  }
+}
+
 export function normalizeCvOverrides(value: unknown): CvOverrides {
   if (!value || typeof value !== "object") {
     return defaultCvOverrides
@@ -94,6 +311,7 @@ export function normalizeCvOverrides(value: unknown): CvOverrides {
     hidden_sections: normalizeSectionList(nextValue.hidden_sections),
     section_order: normalizeSectionOrder(nextValue.section_order),
     selections: normalizeSelections(nextValue.selections),
+    content: normalizeContentOverrides(nextValue.content),
   }
 }
 

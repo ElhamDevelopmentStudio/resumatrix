@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
 import { createCv } from "@/lib/cvs/api"
-import { buildCvPreview, buildCvRenderModel } from "@/lib/cvs/engine"
+import { buildCvRenderModel } from "@/lib/cvs/engine"
 import { defaultCvOverrides, type CvTemplateMetadata } from "@/lib/cvs/types"
 import {
   getFirstCvValidationMessage,
@@ -83,8 +83,6 @@ export function CvCreator({ profiles, careerData, templates }: CvCreatorProps) {
 
     return buildCvRenderModel(payload, selectedProfile, careerData, selectedTemplate)
   }, [careerData, payload, selectedProfile, selectedTemplate])
-
-  const preview = useMemo(() => (renderModel ? buildCvPreview(renderModel) : null), [renderModel])
 
   const handleCreate = async () => {
     setErrorMessage(null)
@@ -282,13 +280,10 @@ export function CvCreator({ profiles, careerData, templates }: CvCreatorProps) {
         </div>
 
         <div className="xl:sticky xl:top-24 xl:self-start">
-          {renderModel && preview ? (
+          {renderModel ? (
             <CvPreviewPanel
-              title="Live preview"
-              description="This is exactly how your chosen profile and template fit together right now."
               templateId={selectedTemplate?.id ?? ""}
               model={renderModel}
-              preview={preview}
             />
           ) : (
             <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-16">

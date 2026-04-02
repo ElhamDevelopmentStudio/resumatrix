@@ -24,10 +24,33 @@ export type CvSelections = {
   skills: string[] | null
 }
 
+export type CvPersonalContentOverride = Partial<PersonalData>
+export type CvContactContentOverride = Partial<Pick<ContactData, "type" | "value">>
+export type CvExperienceContentOverride = Partial<
+  Pick<ExperienceData, "company" | "role" | "start_date" | "end_date" | "location" | "bullets">
+>
+export type CvProjectContentOverride = Partial<
+  Pick<ProjectData, "name" | "description" | "tech_stack" | "bullets">
+>
+export type CvEducationContentOverride = Partial<
+  Pick<EducationData, "institution" | "degree" | "start_date" | "end_date" | "details">
+>
+export type CvSkillContentOverride = Partial<Pick<SkillData, "name" | "category" | "level">>
+
+export type CvContentOverrides = {
+  personal: CvPersonalContentOverride
+  contacts: Record<string, CvContactContentOverride>
+  experiences: Record<string, CvExperienceContentOverride>
+  projects: Record<string, CvProjectContentOverride>
+  education: Record<string, CvEducationContentOverride>
+  skills: Record<string, CvSkillContentOverride>
+}
+
 export type CvOverrides = {
   hidden_sections: CvOverrideSection[]
   section_order: CvOverrideSection[]
   selections: CvSelections
+  content: CvContentOverrides
 }
 
 export type CvData = {
@@ -110,6 +133,15 @@ export const cvOverrideSections: CvOverrideSection[] = [
   "skills",
 ]
 
+export const emptyCvContentOverrides: CvContentOverrides = {
+  personal: {},
+  contacts: {},
+  experiences: {},
+  projects: {},
+  education: {},
+  skills: {},
+}
+
 export const defaultCvOverrides: CvOverrides = {
   hidden_sections: [],
   section_order: [...cvOverrideSections],
@@ -120,6 +152,7 @@ export const defaultCvOverrides: CvOverrides = {
     education: null,
     skills: null,
   },
+  content: emptyCvContentOverrides,
 }
 
 export const emptyCvPayload: CvPayload = {

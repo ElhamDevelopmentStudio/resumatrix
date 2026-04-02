@@ -24,14 +24,20 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Spinner } from "@/components/ui/spinner"
-import type { CareerWorkspaceData } from "@/lib/career-data/types"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
 import { deleteCv, updateCv } from "@/lib/cvs/api"
-import { buildCvPreview, buildCvRenderModel } from "@/lib/cvs/engine"
+import { applyCvContentOverrides, buildCvRenderModel } from "@/lib/cvs/engine"
 import { getCvSectionLabel } from "@/lib/cvs/presentation"
 import {
+  type CvContactContentOverride,
   type CvData,
+  type CvEducationContentOverride,
+  type CvExperienceContentOverride,
   type CvOverrideSection,
   type CvPayload,
+  type CvProjectContentOverride,
+  type CvSkillContentOverride,
   type CvTemplateMetadata,
 } from "@/lib/cvs/types"
 import {
@@ -42,6 +48,7 @@ import {
 import { buildProfileDataset } from "@/lib/profiles/engine"
 import type { ProfileData } from "@/lib/profiles/types"
 
+import { CvContentEditor } from "./cv-content-editor"
 import { CvExportLinks } from "./cv-export-links"
 import { CvPreviewPanel } from "./cv-preview-panel"
 import {
@@ -77,6 +84,8 @@ type SelectionSection = {
   items: CvSectionSelectorItem[]
 }
 
+type CvContentSectionKey = Exclude<keyof CvPayload["overrides"]["content"], "personal">
+
 function buildPayload(cv: CvData): CvPayload {
   return {
     name: cv.name,
@@ -100,10 +109,10 @@ function buildSelectionSections(
       key: "contacts",
       label: "Contacts",
       itemLabel: "contact method",
-      description: "Turn contact methods on or off for this CV.",
+      description: "Turn contact lines on or off for this CV.",
       helper:
         payload.overrides.selections.contacts === null
-          ? `All ${dataset.contacts.length} contact methods from this profile are on.`
+          ? `All ${dataset.contacts.length} contact methods are on.`
           : `${payload.overrides.selections.contacts.length} of ${dataset.contacts.length} contact methods are on.`,
       currentCount: counts.contacts,
       selection: payload.overrides.selections.contacts,
@@ -118,36 +127,36 @@ function buildSelectionSections(
       key: "experiences",
       label: "Experience",
       itemLabel: "experience",
-      description: "Turn experience entries on or off for this CV after profile filtering.",
+      description: "Turn experience entries on or off after profile filtering.",
       helper:
         payload.overrides.selections.experiences === null
-          ? `All ${dataset.experiences.length} experience entries from this profile are on.`
+          ? `All ${dataset.experiences.length} experience entries are on.`
           : `${payload.overrides.selections.experiences.length} of ${dataset.experiences.length} experience entries are on.`,
       currentCount: counts.experiences,
       selection: payload.overrides.selections.experiences,
       items: dataset.experiences.map((entry) => ({
         id: entry.id,
-        title: `${entry.role} · ${entry.company}`,
+        title: `${entry.role || "Role"} · ${entry.company || "Company"}`,
         description: entry.location || "No location added",
-        meta: [`${entry.start_date} → ${entry.end_date || "Present"}`, ...entry.tags.map((tag) => `#${tag}`)],
+        meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
       })),
     },
     {
       key: "projects",
       label: "Projects",
       itemLabel: "project",
-      description: "Turn projects on or off for this CV after profile filtering.",
+      description: "Turn projects on or off after profile filtering.",
       helper:
         payload.overrides.selections.projects === null
-          ? `All ${dataset.projects.length} projects from this profile are on.`
+          ? `All ${dataset.projects.length} projects are on.`
           : `${payload.overrides.selections.projects.length} of ${dataset.projects.length} projects are on.`,
       currentCount: counts.projects,
       selection: payload.overrides.selections.projects,
       items: dataset.projects.map((project) => ({
         id: project.id,
-        title: project.name,
+        title: project.name || "Project",
         description: project.description || "No description added",
-        meta: [...project.tech_stack, ...project.tags.map((tag) => `#${tag}`)],
+        meta: project.tech_stack,
       })),
     },
     {
@@ -157,13 +166,13 @@ function buildSelectionSections(
       description: "Turn education entries on or off for this CV.",
       helper:
         payload.overrides.selections.education === null
-          ? `All ${dataset.education.length} education entries from this profile are on.`
+          ? `All ${dataset.education.length} education entries are on.`
           : `${payload.overrides.selections.education.length} of ${dataset.education.length} education entries are on.`,
       currentCount: counts.education,
       selection: payload.overrides.selections.education,
       items: dataset.education.map((entry) => ({
         id: entry.id,
-        title: `${entry.degree} · ${entry.institution}`,
+        title: `${entry.degree || "Degree"} · ${entry.institution || "Institution"}`,
         description: entry.details || "No extra details added",
         meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
       })),
@@ -175,14 +184,16 @@ function buildSelectionSections(
       description: "Turn skills on or off for this CV.",
       helper:
         payload.overrides.selections.skills === null
-          ? `All ${dataset.skills.length} skills from this profile are on.`
+          ? `All ${dataset.skills.length} skills are on.`
           : `${payload.overrides.selections.skills.length} of ${dataset.skills.length} skills are on.`,
       currentCount: counts.skills,
       selection: payload.overrides.selections.skills,
       items: dataset.skills.map((skill) => ({
         id: skill.id,
-        title: skill.name,
-        description: [skill.category, skill.level].filter(Boolean).join(" · ") || "No category or level added",
+        title: skill.name || "Skill",
+        description:
+          [skill.category, skill.level].filter(Boolean).join(" · ") ||
+          "No category or level added",
         meta: [skill.category, skill.level].filter(Boolean),
       })),
     },
@@ -211,8 +222,11 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
       return null
     }
 
-    return buildProfileDataset(selectedProfile, careerData)
-  }, [careerData, selectedProfile])
+    return applyCvContentOverrides(
+      buildProfileDataset(selectedProfile, careerData),
+      state.overrides.content
+    )
+  }, [careerData, selectedProfile, state.overrides.content])
 
   const renderModel = useMemo(() => {
     if (!selectedProfile || !selectedTemplate) {
@@ -221,8 +235,6 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
 
     return buildCvRenderModel(state, selectedProfile, careerData, selectedTemplate)
   }, [careerData, selectedProfile, selectedTemplate, state])
-
-  const preview = useMemo(() => (renderModel ? buildCvPreview(renderModel) : null), [renderModel])
 
   const selectionSections = useMemo(() => {
     if (!baseProfileDataset || !renderModel) {
@@ -306,12 +318,12 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
 
   const saveStatusLabel =
     saveState === "saving"
-      ? "Saving automatically…"
+      ? "Saving…"
       : saveState === "error"
         ? "Save failed"
         : isDirty
           ? "Unsaved changes"
-          : "Saved automatically"
+          : "Saved"
 
   const moveSection = (section: CvOverrideSection, direction: -1 | 1) => {
     updateState((currentState) => {
@@ -366,59 +378,98 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
     setActiveSelectionSection(null)
   }
 
+  const updatePersonalContent = (field: keyof PersonalData, value: string) => {
+    updateState((currentState) => ({
+      ...currentState,
+      overrides: {
+        ...currentState.overrides,
+        content: {
+          ...currentState.overrides.content,
+          personal: {
+            ...currentState.overrides.content.personal,
+            [field]: value,
+          },
+        },
+      },
+    }))
+  }
+
+  const updateContentItem = <K extends CvContentSectionKey>(
+    section: K,
+    id: string,
+    patch: CvPayload["overrides"]["content"][K][string]
+  ) => {
+    updateState((currentState) => ({
+      ...currentState,
+      overrides: {
+        ...currentState.overrides,
+        content: {
+          ...currentState.overrides.content,
+          [section]: {
+            ...currentState.overrides.content[section],
+            [id]: {
+              ...(currentState.overrides.content[section][id] ?? {}),
+              ...patch,
+            },
+          },
+        },
+      },
+    }))
+  }
+
   return (
-    <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-8 xl:px-12">
-      <div className="space-y-4">
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-6 md:px-8 xl:px-12">
+      <div className="space-y-3">
         <Link href="/cvs" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
           Back to CVs
         </Link>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-2">
-            <Badge variant="outline" className="border-primary/20 bg-primary-soft text-primary">
-              CV editor
-            </Badge>
-            <h1 className="text-3xl font-bold tracking-tight text-on-surface md:text-4xl">
-              {state.name || "Untitled CV"}
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-on-surface md:text-3xl">
+                {state.name || "Untitled CV"}
+              </h1>
+              <Badge variant="outline" className="border-outline-variant/70 bg-card text-on-surface-variant/80">
+                {saveStatusLabel}
+              </Badge>
+            </div>
             <p className="text-sm text-on-surface-variant/75 md:text-base">
-              Changes save automatically. Reorder sections, choose exact items, preview instantly, and export when you are ready.
+              {selectedProfile?.name || "No profile selected"} · {selectedTemplate?.name || "No template selected"}
             </p>
           </div>
 
-          <div className="rounded-sm border border-outline-variant/60 bg-card px-4 py-3 shadow-sm">
-            <p className="text-xs font-medium text-on-surface-variant/70">Status</p>
-            <p className="mt-1 text-sm font-medium text-on-surface">{saveStatusLabel}</p>
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <CvExportLinks cvId={cv.id} disabled={!canSave} onBeforeExport={flushSave} buttonSize="sm" />
           </div>
         </div>
       </div>
 
       {saveError ? (
-        <Alert variant="destructive" className="mt-6 border-destructive/20 bg-destructive/5">
+        <Alert variant="destructive" className="mt-4 border-destructive/20 bg-destructive/5">
           <AlertTitle>We couldn’t save this CV.</AlertTitle>
           <AlertDescription>{saveError}</AlertDescription>
         </Alert>
       ) : null}
 
       {!selectedProfile || !selectedTemplate ? (
-        <Alert variant="destructive" className="mt-6 border-destructive/20 bg-destructive/5">
+        <Alert variant="destructive" className="mt-4 border-destructive/20 bg-destructive/5">
           <AlertTitle>This CV needs attention</AlertTitle>
-          <AlertDescription>
-            {getFirstCvValidationMessage(validationErrors)}
-          </AlertDescription>
+          <AlertDescription>{getFirstCvValidationMessage(validationErrors)}</AlertDescription>
         </Alert>
       ) : null}
 
-      <div className="mt-6 overflow-hidden rounded-sm border border-outline-variant/60 bg-card shadow-sm">
-        <ResizablePanelGroup orientation="horizontal" className="min-h-[78vh]">
-          <ResizablePanel defaultSize={34} minSize={28}>
-            <div className="h-full overflow-auto bg-card p-6">
-              <div className="space-y-6">
-                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+      <div className="mt-5 overflow-hidden rounded-sm border border-outline-variant/60 bg-card shadow-sm">
+        <ResizablePanelGroup orientation="horizontal" className="min-h-[76vh]">
+          <ResizablePanel defaultSize={38} minSize={30}>
+            <div className="h-full overflow-auto bg-card p-4 md:p-5">
+              <div className="space-y-5">
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-4 shadow-none">
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-lg font-semibold text-on-surface">Document setup</h2>
+                      <h2 className="text-lg font-semibold text-on-surface">Setup</h2>
                       <p className="mt-1 text-sm text-on-surface-variant/75">
-                        Control the name, profile, and template this CV uses.
+                        Choose the name, profile, and template for this CV.
                       </p>
                     </div>
 
@@ -440,7 +491,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
 
                     <div className="space-y-2">
                       <FieldLabel className="text-sm font-medium text-on-surface">Profile</FieldLabel>
-                      <FieldDescription>Switch profiles any time to rebuild this CV from a different ruleset.</FieldDescription>
+                      <FieldDescription>Pick the profile that supplies the base content for this CV.</FieldDescription>
                       <NativeSelect
                         value={state.profile_id}
                         onChange={(event) =>
@@ -462,7 +513,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
 
                     <div className="space-y-2">
                       <FieldLabel className="text-sm font-medium text-on-surface">Template</FieldLabel>
-                      <FieldDescription>Templates stay separate from your data, so you can switch layouts later without rebuilding anything.</FieldDescription>
+                      <FieldDescription>Templates stay separate from your data, so you can switch layouts any time.</FieldDescription>
                       <NativeSelect
                         value={state.template_id}
                         onChange={(event) =>
@@ -481,161 +532,212 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                       </NativeSelect>
                       <FieldError>{validationErrors.template_id}</FieldError>
                     </div>
-                  </div>
-                </Card>
 
-                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-on-surface">Section order</h2>
-                      <p className="mt-1 text-sm text-on-surface-variant/75">
-                        Move sections up or down, and hide any section you do not want in this version.
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      {state.overrides.section_order.map((section, index) => {
-                        const isHidden = state.overrides.hidden_sections.includes(section)
-                        const count = selectionSections.find((item) => item.key === section)?.currentCount ?? 0
-
-                        return (
-                          <div key={section} className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-outline-variant/60 bg-surface-subtle/40 px-4 py-3">
-                            <div>
-                              <p className="text-sm font-medium text-on-surface">{getCvSectionLabel(section)}</p>
-                              <p className="text-sm text-on-surface-variant/75">
-                                {isHidden ? "Hidden in this CV" : `${count} item${count === 1 ? "" : "s"} currently visible`}
-                              </p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button type="button" variant="outline" onClick={() => moveSection(section, -1)} disabled={index === 0}>
-                                Move up
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => moveSection(section, 1)}
-                                disabled={index === state.overrides.section_order.length - 1}
-                              >
-                                Move down
-                              </Button>
-                              <Button type="button" variant={isHidden ? "outline" : "default"} onClick={() => toggleSectionVisibility(section)}>
-                                {isHidden ? "Show" : "Hide"}
-                              </Button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-on-surface">Choose exact items</h2>
-                      <p className="mt-1 text-sm text-on-surface-variant/75">
-                        Everything from the chosen profile starts on. Only customize a section when you want to hand-pick specific items.
-                      </p>
-                    </div>
-
-                    {selectionSections.length ? (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {selectionSections.map((section) => {
-                          const isCustom = section.selection !== null
-                          const enabledCount = section.selection?.length ?? section.items.length
-
-                          return (
-                            <Card key={section.key} className="rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4 shadow-none">
-                              <div className="space-y-3">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h3 className="text-sm font-medium text-on-surface">{section.label}</h3>
-                                  <Badge variant={isCustom ? "default" : "outline"}>
-                                    {isCustom ? "Choosing by hand" : "Everything on"}
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-on-surface-variant/75">{section.helper}</p>
-                                <p className="text-xs text-on-surface-variant/70">
-                                  {enabledCount} of {section.items.length} turned on • {section.currentCount} currently visible
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button type="button" variant="outline" onClick={() => setActiveSelectionSection(section.key)} disabled={!section.items.length}>
-                                    Choose {section.label.toLowerCase()}
-                                  </Button>
-                                  {isCustom ? (
-                                    <Button type="button" variant="ghost" onClick={() => handleSelectionSave(section.key, null)}>
-                                      Use everything again
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </Card>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-14">
-                        <EmptyHeader>
-                          <EmptyTitle>Choose a profile first</EmptyTitle>
-                          <EmptyDescription>
-                            The item controls will appear here as soon as this CV is linked to a valid profile.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                      </Empty>
-                    )}
-                  </div>
-                </Card>
-
-                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-on-surface">Export</h2>
-                      <p className="mt-1 text-sm text-on-surface-variant/75">
-                        Export uses the same render model and template as the live preview. If you changed something just now, we save first before exporting.
-                      </p>
-                    </div>
-
-                    <CvExportLinks cvId={cv.id} disabled={!canSave} onBeforeExport={flushSave} />
-                  </div>
-                </Card>
-
-                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
-                  <div className="space-y-3">
-                    <h2 className="text-lg font-semibold text-on-surface">Need to change the source data?</h2>
-                    <p className="text-sm text-on-surface-variant/75">
-                      Edit your master data or profile rules, then come back here. This CV will stay connected to them.
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      <Link href="/career-data" className="inline-flex rounded-sm border border-outline-variant/60 px-4 py-3 text-sm font-medium text-on-surface">
+                    <div className="flex flex-wrap gap-3 border-t border-outline-variant/60 pt-4 text-sm">
+                      <Link href="/career-data" className="font-medium text-primary underline-offset-4 hover:underline">
                         Open career data
                       </Link>
-                      <Link href="/profiles" className="inline-flex rounded-sm border border-outline-variant/60 px-4 py-3 text-sm font-medium text-on-surface">
+                      <Link href="/profiles" className="font-medium text-primary underline-offset-4 hover:underline">
                         Open profiles
                       </Link>
                     </div>
                   </div>
                 </Card>
+
+                <Tabs defaultValue="content" className="gap-4">
+                  <div className="overflow-x-auto">
+                    <TabsList
+                      variant="line"
+                      className="w-full min-w-max justify-start gap-1 rounded-none border-b border-outline-variant/60 bg-transparent p-0"
+                    >
+                      <TabsTrigger value="content" className="rounded-none px-3 py-2 text-sm">
+                        Content
+                      </TabsTrigger>
+                      <TabsTrigger value="layout" className="rounded-none px-3 py-2 text-sm">
+                        Layout
+                      </TabsTrigger>
+                      <TabsTrigger value="items" className="rounded-none px-3 py-2 text-sm">
+                        Choose items
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="content" className="mt-0 outline-none">
+                    <CvContentEditor
+                      model={renderModel}
+                      onPersonalChange={updatePersonalContent}
+                      onContactChange={(id, patch: CvContactContentOverride) =>
+                        updateContentItem("contacts", id, patch)
+                      }
+                      onExperienceChange={(id, patch: CvExperienceContentOverride) =>
+                        updateContentItem("experiences", id, patch)
+                      }
+                      onProjectChange={(id, patch: CvProjectContentOverride) =>
+                        updateContentItem("projects", id, patch)
+                      }
+                      onEducationChange={(id, patch: CvEducationContentOverride) =>
+                        updateContentItem("education", id, patch)
+                      }
+                      onSkillChange={(id, patch: CvSkillContentOverride) =>
+                        updateContentItem("skills", id, patch)
+                      }
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="layout" className="mt-0 outline-none">
+                    <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                      <div className="space-y-4">
+                        <div>
+                          <h2 className="text-lg font-semibold text-on-surface">Layout</h2>
+                          <p className="mt-1 text-sm text-on-surface-variant/75">
+                            Move sections up or down, or hide a section when you do not want it in this version.
+                          </p>
+                        </div>
+
+                        <div className="space-y-3">
+                          {state.overrides.section_order.map((section, index) => {
+                            const isHidden = state.overrides.hidden_sections.includes(section)
+                            const count = selectionSections.find((item) => item.key === section)?.currentCount ?? 0
+
+                            return (
+                              <div
+                                key={section}
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-outline-variant/60 bg-surface-subtle/40 px-4 py-3"
+                              >
+                                <div>
+                                  <p className="text-sm font-medium text-on-surface">
+                                    {getCvSectionLabel(section)}
+                                  </p>
+                                  <p className="text-sm text-on-surface-variant/75">
+                                    {isHidden
+                                      ? "Hidden in this CV"
+                                      : `${count} item${count === 1 ? "" : "s"} currently visible`}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => moveSection(section, -1)}
+                                    disabled={index === 0}
+                                  >
+                                    Move up
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => moveSection(section, 1)}
+                                    disabled={index === state.overrides.section_order.length - 1}
+                                  >
+                                    Move down
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={isHidden ? "outline" : "default"}
+                                    onClick={() => toggleSectionVisibility(section)}
+                                  >
+                                    {isHidden ? "Show" : "Hide"}
+                                  </Button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="items" className="mt-0 outline-none">
+                    <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                      <div className="space-y-4">
+                        <div>
+                          <h2 className="text-lg font-semibold text-on-surface">Choose items</h2>
+                          <p className="mt-1 text-sm text-on-surface-variant/75">
+                            Everything from the chosen profile starts on. Only customize a section when you want to hand-pick what shows here.
+                          </p>
+                        </div>
+
+                        {selectionSections.length ? (
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {selectionSections.map((section) => {
+                              const isCustom = section.selection !== null
+                              const enabledCount = section.selection?.length ?? section.items.length
+
+                              return (
+                                <Card
+                                  key={section.key}
+                                  className="rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4 shadow-none"
+                                >
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h3 className="text-sm font-medium text-on-surface">{section.label}</h3>
+                                      <Badge variant={isCustom ? "default" : "outline"}>
+                                        {isCustom ? "Choosing by hand" : "Everything on"}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-on-surface-variant/75">{section.helper}</p>
+                                    <p className="text-xs text-on-surface-variant/70">
+                                      {enabledCount} of {section.items.length} turned on • {section.currentCount} currently visible
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setActiveSelectionSection(section.key)}
+                                        disabled={!section.items.length}
+                                      >
+                                        Choose {section.label.toLowerCase()}
+                                      </Button>
+                                      {isCustom ? (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleSelectionSave(section.key, null)}
+                                        >
+                                          Use everything again
+                                        </Button>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </Card>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-14">
+                            <EmptyHeader>
+                              <EmptyTitle>Choose a profile first</EmptyTitle>
+                              <EmptyDescription>
+                                The item controls will appear here as soon as this CV is linked to a valid profile.
+                              </EmptyDescription>
+                            </EmptyHeader>
+                          </Empty>
+                        )}
+                      </div>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={66} minSize={38}>
-            <div className="h-full overflow-auto bg-surface-subtle/40 p-6">
-              {renderModel && preview ? (
-                <CvPreviewPanel
-                  title="Live preview"
-                  description="This preview updates immediately as you change the document setup."
-                  templateId={selectedTemplate?.id ?? ""}
-                  model={renderModel}
-                  preview={preview}
-                />
+          <ResizablePanel defaultSize={62} minSize={36}>
+            <div className="h-full overflow-auto bg-surface-subtle/30 p-4 md:p-5">
+              {renderModel ? (
+                <CvPreviewPanel templateId={selectedTemplate?.id ?? ""} model={renderModel} />
               ) : (
                 <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-16">
                   <EmptyHeader>
                     <EmptyTitle>Preview unavailable</EmptyTitle>
                     <EmptyDescription>
-                      Link this CV to a valid profile and template to see the live preview again.
+                      Link this CV to a valid profile and template to see the preview again.
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -645,7 +747,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
         </ResizablePanelGroup>
       </div>
 
-      <Card className="mt-6 rounded-sm border border-destructive/20 bg-card p-5 shadow-sm">
+      <Card className="mt-5 rounded-sm border border-destructive/20 bg-card p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-on-surface">Delete this CV</h2>
