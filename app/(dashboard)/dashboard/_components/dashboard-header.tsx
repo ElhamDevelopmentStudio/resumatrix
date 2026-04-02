@@ -9,17 +9,20 @@ import { Button } from "@/components/ui/button"
 export function DashboardHeader() {
   const pathname = usePathname()
   const isCareerDataPage = pathname === "/career-data"
+  const isProfilesPage = pathname === "/profiles"
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-outline-variant/60 bg-background/90 px-6 py-6 backdrop-blur-md md:px-8 xl:px-12">
       <div>
         <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-          {isCareerDataPage ? "Career Data" : "Dashboard"}
+          {isCareerDataPage ? "Career Data" : isProfilesPage ? "Profiles" : "Dashboard"}
         </h1>
         <p className="mt-1 text-sm font-medium text-on-surface-variant/70">
           {isCareerDataPage
             ? "Work through one section at a time. Everything saves automatically."
-            : "Overview of your resume workspace."}
+            : isProfilesPage
+              ? "Create focused resume variants from the data you already saved."
+              : "Overview of your resume workspace."}
         </p>
       </div>
 

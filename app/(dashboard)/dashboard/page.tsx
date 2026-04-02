@@ -4,7 +4,6 @@ import Link from "next/link"
 import { Add01Icon, ArrowRight01Icon, CodeIcon, File01Icon, TerminalIcon, UserAccountIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import { Button } from "@/components/ui/button"
 import { DashboardSection } from "./_components/dashboard-section"
 import { OptimizerCard } from "./_components/optimizer-card"
 import { ProfileCard } from "./_components/profile-card"
@@ -107,21 +106,33 @@ export default function DashboardPage() {
         <DashboardSection
           as="aside"
           title="Profiles"
-          description="Specialized identities."
+          description="Focused resume variants built from your saved data."
+          action={
+            <Link
+              href="/profiles"
+              className="group flex items-center gap-2 text-sm font-bold text-primary underline-offset-4 hover:underline"
+            >
+              <span>Manage Profiles</span>
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                strokeWidth={2}
+                className="size-[18px] transition-transform group-hover:translate-x-1"
+              />
+            </Link>
+          }
           className="w-full shrink-0 lg:w-80"
         >
           <div className="space-y-6">
             {profiles.map((profile) => (
               <ProfileCard key={profile.title} {...profile} />
             ))}
-            <Button
-              type="button"
-              variant="outline"
-              className="h-auto w-full border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 hover:border-primary hover:bg-primary-soft hover:text-primary"
+            <Link
+              href="/profiles"
+              className="flex h-auto w-full items-center justify-center gap-2 rounded-sm border-2 border-dashed border-outline-variant/60 px-4 py-5 text-sm font-bold text-on-surface-variant/40 transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
             >
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-5" />
               <span>Create New Profile</span>
-            </Button>
+            </Link>
           </div>
         </DashboardSection>
       </div>

@@ -57,6 +57,7 @@ This fallback is for local development only. Set real values before deploying.
 - `/` — login page
 - `/dashboard` — dashboard workspace
 - `/career-data` — unified career data workspace
+- `/profiles` — profile management workspace with search, filters, sorting, and multiple views
 - `/personal` — redirects to `/career-data`
 - `POST /api/auth/login` — login endpoint
 - `GET, PUT /api/personal` — personal details API
@@ -70,6 +71,8 @@ This fallback is for local development only. Set real values before deploying.
 - `PUT, DELETE /api/education/:id` — single education API
 - `GET, POST /api/skills` — skills collection API
 - `PUT, DELETE /api/skills/:id` — single skill API
+- `GET, POST /api/profiles` — profiles collection API
+- `PUT, DELETE /api/profiles/:id` — single profile API
 
 ## Scripts
 

@@ -3,6 +3,7 @@
 import {
   Briefcase01Icon,
   DashboardSquare01Icon,
+  UserAccountIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Link from "next/link"
@@ -33,6 +34,12 @@ const navigationItems: NavigationItem[] = [
     href: "/career-data",
     icon: Briefcase01Icon,
     activeHref: "/career-data",
+  },
+  {
+    label: "Profiles",
+    href: "/profiles",
+    icon: UserAccountIcon,
+    activeHref: "/profiles",
   },
 ]
 
