@@ -9,6 +9,7 @@ import type { CvTemplateComponentProps } from "@/lib/templates/types"
 export const splitHeaderStyles = `
 .split-header-root {
   width: 100%;
+  background: #ffffff;
 }
 
 .split-header-document {
@@ -20,25 +21,24 @@ export const splitHeaderStyles = `
   background: #ffffff;
   color: #1f1f22;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
 }
 
 .split-header-page {
-  padding: 14mm 14mm 16mm;
+  padding: 11mm 12.5mm 14mm;
 }
 
 .split-header-top-line {
   height: 1px;
   width: 100%;
-  margin-bottom: 22mm;
-  background: #7f7f84;
+  margin-bottom: 16mm;
+  background: #8b8b90;
 }
 
 .split-header-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 18mm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12mm;
 }
 
 .split-header-name-block {
@@ -61,64 +61,67 @@ export const splitHeaderStyles = `
 
 .split-header-name-secondary {
   margin-top: 4px;
-  font-size: 38px;
+  font-size: 39px;
   font-weight: 500;
   color: #111111;
 }
 
 .split-header-contact-block {
   display: flex;
-  min-width: 190px;
+  min-width: 176px;
+  max-width: 235px;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 2px;
   text-align: right;
+  flex-shrink: 0;
 }
 
 .split-header-contact-line {
   margin: 0;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.3;
   color: #202024;
+  white-space: nowrap;
 }
 
 .split-header-summary {
-  margin: 18px 0 0;
-  max-width: 100%;
+  margin: 20px 0 0;
+  max-width: 94%;
   font-size: 11px;
-  line-height: 1.38;
+  line-height: 1.32;
   color: #55565a;
 }
 
 .split-header-divider {
   height: 4px;
   width: 100%;
-  margin: 14px 0 12px;
+  margin: 14px 0 13px;
   background: #c2c2c6;
 }
 
 .split-header-section + .split-header-section {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .split-header-section-title {
-  margin: 0 0 14px;
+  margin: 0 0 15px;
   font-size: 11px;
   line-height: 1.2;
   font-weight: 400;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #5a5a5f;
 }
 
 .split-header-entry + .split-header-entry {
-  margin-top: 14px;
+  margin-top: 18px;
 }
 
 .split-header-entry-title {
   margin: 0;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.2;
   font-weight: 800;
   text-transform: uppercase;
   color: #111111;
@@ -128,28 +131,29 @@ export const splitHeaderStyles = `
 .split-header-entry-date,
 .split-header-entry-description,
 .split-header-entry-details {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.24;
   color: #1f1f22;
 }
 
 .split-header-entry-description,
 .split-header-entry-details {
   color: #55565a;
+  max-width: 95%;
 }
 
 .split-header-bullet-list,
 .split-header-skill-list {
-  margin: 4px 0 0;
-  padding-left: 20px;
+  margin: 2px 0 0;
+  padding-left: 22px;
 }
 
 .split-header-bullet-list li,
 .split-header-skill-list li {
   margin: 0;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.2;
   color: #55565a;
 }
 
@@ -159,9 +163,9 @@ export const splitHeaderStyles = `
 }
 
 .split-header-tech-line {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.24;
   color: #55565a;
 }
 
@@ -169,7 +173,7 @@ export const splitHeaderStyles = `
   color: #9b9ca1;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 680px) {
   .split-header-document {
     min-height: auto;
   }
@@ -183,14 +187,24 @@ export const splitHeaderStyles = `
   }
 
   .split-header-hero {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 14px;
   }
 
   .split-header-contact-block {
     align-items: flex-start;
     min-width: 0;
+    max-width: none;
     text-align: left;
+  }
+
+  .split-header-contact-line {
+    white-space: normal;
+  }
+
+  .split-header-summary {
+    max-width: 100%;
   }
 
   .split-header-skill-list {
@@ -213,7 +227,7 @@ export const splitHeaderStyles = `
   }
 
   .split-header-page {
-    padding: 12mm 12mm 14mm;
+    padding: 11mm 12.5mm 14mm;
   }
 }
 `
@@ -246,6 +260,10 @@ function getSummaryText(model: CvRenderModel, mode: CvTemplateComponentProps["mo
 
 function getNameLines(model: CvRenderModel, mode: CvTemplateComponentProps["mode"]) {
   return getDisplayNameParts(model.personal.full_name || model.meta.cv_name, mode ?? "preview")
+}
+
+function formatHeaderContactValue(value: string) {
+  return value.replace(/^https?:\/\//i, "").replace(/\/+$/g, "")
 }
 
 function renderExperienceEntries(model: CvRenderModel) {
@@ -401,7 +419,7 @@ export function SplitHeaderTemplate({ model, mode = "preview" }: CvTemplateCompo
                 <div className="split-header-contact-block" aria-label="Primary contact details">
                   {model.contacts.map((contact) => (
                     <p key={contact.id} className="split-header-contact-line">
-                      {contact.value}
+                      {formatHeaderContactValue(contact.value)}
                     </p>
                   ))}
                 </div>
@@ -584,7 +602,10 @@ export function buildSplitHeaderHtml(model: CvRenderModel) {
                   showContacts
                     ? `<div class="split-header-contact-block" aria-label="Primary contact details">${model.contacts
                         .map(
-                          (contact) => `<p class="split-header-contact-line">${escapeHtml(contact.value)}</p>`
+                          (contact) =>
+                            `<p class="split-header-contact-line">${escapeHtml(
+                              formatHeaderContactValue(contact.value)
+                            )}</p>`
                         )
                         .join("")}</div>`
                     : ""
