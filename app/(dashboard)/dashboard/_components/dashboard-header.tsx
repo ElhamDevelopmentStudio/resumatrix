@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 export function DashboardHeader() {
   const pathname = usePathname()
   const isCareerDataPage = pathname === "/career-data"
-  const isProfilesPage = pathname === "/profiles"
+  const isProfilesPage = pathname.startsWith("/profiles")
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-outline-variant/60 bg-background/90 px-6 py-6 backdrop-blur-md md:px-8 xl:px-12">
@@ -21,7 +21,7 @@ export function DashboardHeader() {
           {isCareerDataPage
             ? "Work through one section at a time. Everything saves automatically."
             : isProfilesPage
-              ? "Create focused resume variants from the data you already saved."
+              ? "Create and manage focused resume profiles without losing track of your data."
               : "Overview of your resume workspace."}
         </p>
       </div>

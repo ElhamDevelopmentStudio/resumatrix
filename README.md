@@ -58,6 +58,8 @@ This fallback is for local development only. Set real values before deploying.
 - `/dashboard` — dashboard workspace
 - `/career-data` — unified career data workspace
 - `/profiles` — profile management workspace with search, filters, sorting, and multiple views
+- `/profiles/new` — full-page profile creation flow
+- `/profiles/:id` — full-page profile editing flow
 - `/personal` — redirects to `/career-data`
 - `POST /api/auth/login` — login endpoint
 - `GET, PUT /api/personal` — personal details API

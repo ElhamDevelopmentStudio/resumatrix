@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, type KeyboardEvent } from "react"
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
@@ -22,6 +22,7 @@ type ProfileTagEditorProps = {
   placeholder: string
   error?: string
   tone?: "default" | "destructive"
+  emptyHint?: ReactNode
 }
 
 export function ProfileTagEditor({
@@ -34,13 +35,14 @@ export function ProfileTagEditor({
   placeholder,
   error,
   tone = "default",
+  emptyHint,
 }: ProfileTagEditorProps) {
   const [draft, setDraft] = useState("")
 
   const normalizedBlockedTags = useMemo(() => new Set(normalizeTagList(blockedTags)), [blockedTags])
   const availableSuggestions = useMemo(
     () =>
-      suggestions.filter((tag) => !tags.includes(tag) && !normalizedBlockedTags.has(tag)).slice(0, 8),
+      suggestions.filter((tag) => !tags.includes(tag) && !normalizedBlockedTags.has(tag)).slice(0, 10),
     [normalizedBlockedTags, suggestions, tags]
   )
 
@@ -76,7 +78,7 @@ export function ProfileTagEditor({
           error ? "border-destructive/60 ring-1 ring-destructive/20" : "border-outline-variant/70"
         )}
       >
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-h-11 flex-wrap gap-2">
           {tags.map((tag) => (
             <Badge
               key={tag}
@@ -107,20 +109,29 @@ export function ProfileTagEditor({
           />
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {availableSuggestions.map((tag) => (
-            <Button
-              key={tag}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => addTag(tag)}
-              className="h-7 border-outline-variant/60 bg-surface-subtle text-on-surface-variant hover:border-primary/30 hover:bg-primary-soft hover:text-primary"
-            >
-              {tag}
-            </Button>
-          ))}
-        </div>
+        {availableSuggestions.length ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-medium text-on-surface-variant/70">Suggested tags</p>
+            <div className="flex flex-wrap gap-2">
+              {availableSuggestions.map((tag) => (
+                <Button
+                  key={tag}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addTag(tag)}
+                  className="h-7 border-outline-variant/60 bg-surface-subtle text-on-surface-variant hover:border-primary/30 hover:bg-primary-soft hover:text-primary"
+                >
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : emptyHint && suggestions.length === 0 ? (
+          <div className="mt-3 rounded-sm border border-dashed border-outline-variant/60 bg-surface-subtle/50 px-3 py-2 text-xs text-on-surface-variant/75">
+            {emptyHint}
+          </div>
+        ) : null}
       </div>
 
       <FieldError>{error}</FieldError>

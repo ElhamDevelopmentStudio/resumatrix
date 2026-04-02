@@ -56,7 +56,7 @@ export function DashboardSidebar() {
 
       <nav className="flex flex-col gap-1 lg:flex-1" aria-label="Primary">
         {navigationItems.map((item) => {
-          const isActive = item.activeHref ? pathname === item.activeHref : false
+          const isActive = item.activeHref ? pathname.startsWith(item.activeHref) : false
 
           return (
             <Link

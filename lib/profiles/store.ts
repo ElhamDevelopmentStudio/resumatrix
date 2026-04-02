@@ -140,3 +140,8 @@ export async function deleteProfileData(id: string) {
 
   return removedProfile
 }
+
+export async function getProfileData(id: string) {
+  const profiles = await readProfiles()
+  return profiles.find((profile) => profile.id === id) ?? null
+}

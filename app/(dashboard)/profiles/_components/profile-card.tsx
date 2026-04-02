@@ -1,27 +1,37 @@
 import { formatDistanceToNow } from "date-fns"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { profileHasActiveRules } from "@/lib/profiles/engine"
-import type { ProfileData, ProfilePreview, ProfileViewMode } from "@/lib/profiles/types"
+import {
+  buildProfileCoverageSummary,
+  buildProfileRuleSummary,
+  formatProfileCount,
+  getProfileScopeLabel,
+  getProfileStatus,
+} from "@/lib/profiles/presentation"
+import type { ProfileData, ProfilePreview } from "@/lib/profiles/types"
 import { cn } from "@/lib/utils"
+
+import { ProfileActions } from "./profile-actions"
 
 type ProfileCardProps = {
   profile: ProfileData
   preview: ProfilePreview
-  view: ProfileViewMode
+  view: "cards" | "grid"
   isBusy?: boolean
-  onEdit: () => void
   onDuplicate: () => void
   onDelete: () => void
 }
 
-function formatCount(value: number, singular: string, plural = `${singular}s`) {
-  return `${value} ${value === 1 ? singular : plural}`
-}
-
-function TagList({ label, tags, tone = "default" }: { label: string; tags: string[]; tone?: "default" | "destructive" }) {
+function TagList({
+  label,
+  tags,
+  tone = "default",
+}: {
+  label: string
+  tags: string[]
+  tone?: "default" | "destructive"
+}) {
   if (!tags.length) {
     return null
   }
@@ -57,112 +67,18 @@ function MetricTile({ label, value, helper }: { label: string; value: string; he
   )
 }
 
-function ConfigSummary({ profile }: { profile: ProfileData }) {
-  const items = [
-    profile.config.limits.experiences
-      ? `Keep ${formatCount(profile.config.limits.experiences, "experience")}`
-      : null,
-    profile.config.limits.projects
-      ? `Keep ${formatCount(profile.config.limits.projects, "project")}`
-      : null,
-    profile.config.ordering.experiences !== "recent"
-      ? "Experience: oldest first"
-      : null,
-    profile.config.ordering.projects !== "manual" ? "Projects: name A–Z" : null,
-    profile.config.ordering.education !== "recent" ? "Education: oldest first" : null,
-  ].filter((item): item is string => Boolean(item))
-
-  if (!items.length) {
-    return null
-  }
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <Badge key={item} variant="outline" className="border-primary/20 bg-primary-soft text-primary">
-          {item}
-        </Badge>
-      ))}
-    </div>
-  )
-}
-
-function ActionButtons({
-  isBusy = false,
-  onDelete,
-  onDuplicate,
-  onEdit,
-}: Pick<ProfileCardProps, "isBusy" | "onDelete" | "onDuplicate" | "onEdit">) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" size="sm" onClick={onEdit} disabled={isBusy}>
-        Edit
-      </Button>
-      <Button type="button" variant="ghost" size="sm" onClick={onDuplicate} disabled={isBusy}>
-        Duplicate
-      </Button>
-      <Button type="button" variant="destructive" size="sm" onClick={onDelete} disabled={isBusy}>
-        Delete
-      </Button>
-    </div>
-  )
-}
-
-function buildUpdatedLabel(updatedAt: string) {
-  return `Updated ${formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}`
-}
-
-function CompactMetrics({ preview }: { preview: ProfilePreview }) {
-  return (
-    <div className="flex flex-wrap gap-2 text-xs text-on-surface-variant/75">
-      <span>{formatCount(preview.displayedExperiences, "experience")}</span>
-      <span>•</span>
-      <span>{formatCount(preview.displayedProjects, "project")}</span>
-      <span>•</span>
-      <span>{formatCount(preview.skillsCount, "skill")}</span>
-    </div>
-  )
-}
-
 export function ProfileCard({
   profile,
   preview,
   view,
   isBusy = false,
-  onEdit,
   onDuplicate,
   onDelete,
 }: ProfileCardProps) {
-  const isFiltered = profileHasActiveRules(profile)
-  const updatedLabel = buildUpdatedLabel(profile.updated_at)
-  const statusLabel = isFiltered ? "Filtered" : "Keep all"
-
-  if (view === "list") {
-    return (
-      <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-        <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] xl:items-center">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-headline text-lg font-semibold text-on-surface">{profile.name}</h3>
-              <Badge variant={isFiltered ? "default" : "outline"}>{statusLabel}</Badge>
-              {preview.hasEmptyPrimaryResults ? (
-                <Badge variant="destructive">No matches</Badge>
-              ) : null}
-            </div>
-            <p className="text-sm text-on-surface-variant/75">{updatedLabel}</p>
-            <CompactMetrics preview={preview} />
-          </div>
-
-          <div className="space-y-3">
-            <TagList label="Include" tags={profile.include_tags.slice(0, 4)} />
-            <TagList label="Exclude" tags={profile.exclude_tags.slice(0, 4)} tone="destructive" />
-          </div>
-
-          <ActionButtons isBusy={isBusy} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
-        </div>
-      </Card>
-    )
-  }
+  const status = getProfileStatus(preview)
+  const rules = buildProfileRuleSummary(profile)
+  const updatedLabel = `Updated ${formatDistanceToNow(new Date(profile.updated_at), { addSuffix: true })}`
+  const coverageSummary = buildProfileCoverageSummary(preview)
 
   if (view === "grid") {
     return (
@@ -171,9 +87,11 @@ export function ProfileCard({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-headline text-lg font-semibold text-on-surface">{profile.name}</h3>
-              <Badge variant={isFiltered ? "default" : "outline"}>{statusLabel}</Badge>
+              <Badge variant={status.tone === "destructive" ? "destructive" : "default"}>{status.label}</Badge>
+              <Badge variant="outline">{getProfileScopeLabel(profile)}</Badge>
             </div>
-            <p className="text-sm text-on-surface-variant/75">{updatedLabel}</p>
+            <p className="text-sm text-on-surface-variant/75">{coverageSummary}</p>
+            <p className="text-xs text-on-surface-variant/65">{updatedLabel}</p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -181,12 +99,29 @@ export function ProfileCard({
             <MetricTile label="Projects" value={String(preview.displayedProjects)} />
           </div>
 
-          <ConfigSummary profile={profile} />
-          <TagList label="Include tags" tags={profile.include_tags.slice(0, 3)} />
-          <TagList label="Exclude tags" tags={profile.exclude_tags.slice(0, 3)} tone="destructive" />
+          {rules.length ? (
+            <div className="flex flex-wrap gap-2">
+              {rules.slice(0, 3).map((rule) => (
+                <Badge key={rule} variant="outline" className="border-outline-variant/70 bg-surface-subtle text-on-surface-variant">
+                  {rule}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-on-surface-variant/75">No custom rules yet. This profile currently keeps everything.</p>
+          )}
 
-          <div className="mt-auto">
-            <ActionButtons isBusy={isBusy} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
+          <div className="mt-auto flex items-end justify-between gap-3">
+            <div className="space-y-2">
+              <TagList label="Include tags" tags={profile.include_tags.slice(0, 3)} />
+              <TagList label="Exclude tags" tags={profile.exclude_tags.slice(0, 3)} tone="destructive" />
+            </div>
+            <ProfileActions
+              editHref={`/profiles/${profile.id}`}
+              isBusy={isBusy}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
+            />
           </div>
         </div>
       </Card>
@@ -196,37 +131,59 @@ export function ProfileCard({
   return (
     <Card className="rounded-sm border border-outline-variant/60 bg-card p-6 shadow-sm">
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-headline text-xl font-semibold text-on-surface">{profile.name}</h3>
-              <Badge variant={isFiltered ? "default" : "outline"}>{statusLabel}</Badge>
-              {preview.hasEmptyPrimaryResults ? (
-                <Badge variant="destructive">No primary matches</Badge>
-              ) : null}
+              <Badge variant={status.tone === "destructive" ? "destructive" : "default"}>{status.label}</Badge>
+              <Badge variant="outline">{getProfileScopeLabel(profile)}</Badge>
             </div>
-            <p className="text-sm text-on-surface-variant/75">{updatedLabel}</p>
+            <p className="text-sm text-on-surface-variant/75">{status.helper}</p>
+            <p className="text-xs text-on-surface-variant/65">{updatedLabel}</p>
           </div>
 
-          <ActionButtons isBusy={isBusy} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
+          <ProfileActions
+            editHref={`/profiles/${profile.id}`}
+            isBusy={isBusy}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-4">
           <MetricTile
             label="Experience"
             value={String(preview.displayedExperiences)}
-            helper={`${preview.matchedExperiences} matched`}
+            helper={`${preview.matchedExperiences} matched before limits`}
           />
           <MetricTile
             label="Projects"
             value={String(preview.displayedProjects)}
-            helper={`${preview.matchedProjects} matched`}
+            helper={`${preview.matchedProjects} matched before limits`}
           />
           <MetricTile label="Skills" value={String(preview.skillsCount)} />
-          <MetricTile label="Total items" value={String(preview.totalDisplayedItems)} />
+          <MetricTile label="Total visible" value={String(preview.totalDisplayedItems)} />
         </div>
 
-        <ConfigSummary profile={profile} />
+        <div className="rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4">
+          <p className="text-xs font-medium text-on-surface-variant/70">Coverage summary</p>
+          <p className="mt-2 text-sm text-on-surface">{coverageSummary}</p>
+          <p className="mt-1 text-xs text-on-surface-variant/70">
+            Keeps {formatProfileCount(preview.totalDisplayedItems, "item")} across the current profile output.
+          </p>
+        </div>
+
+        {rules.length ? (
+          <div className="flex flex-wrap gap-2">
+            {rules.map((rule) => (
+              <Badge key={rule} variant="outline" className="border-primary/20 bg-primary-soft text-primary">
+                {rule}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-on-surface-variant/75">No include tags, exclude tags, or custom limits yet. This profile is a clean base version.</p>
+        )}
 
         <div className="grid gap-4 lg:grid-cols-2">
           <TagList label="Include tags" tags={profile.include_tags} />

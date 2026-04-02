@@ -17,30 +17,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { buttonVariants, Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
-import { createProfile, deleteProfile, updateProfile } from "@/lib/profiles/api"
-import {
-  buildProfilePreview,
-  getWorkspaceTagSuggestions,
-  profileHasActiveRules,
-} from "@/lib/profiles/engine"
+import { createProfile, deleteProfile } from "@/lib/profiles/api"
+import { buildProfilePreview, getWorkspaceTagSuggestions } from "@/lib/profiles/engine"
 import type {
   ProfileData,
   ProfileListFilter,
   ProfileSortKey,
   ProfileViewMode,
   ProfileWorkspaceProps,
-  ProfilePayload,
 } from "@/lib/profiles/types"
+import { cn } from "@/lib/utils"
 
 import { ProfileCard } from "./profile-card"
-import { ProfileFormDialog } from "./profile-form-dialog"
+import { ProfilesListTable } from "./profiles-list-table"
 import { ProfilesToolbar } from "./profiles-toolbar"
-
-type DialogMode = "create" | "edit"
 
 type MutationState = {
   profileId: string | null
@@ -64,11 +58,7 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
   const [filter, setFilter] = useState<ProfileListFilter>("all")
   const [sort, setSort] = useState<ProfileSortKey>("updated-desc")
   const [view, setView] = useState<ProfileViewMode>("cards")
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [dialogMode, setDialogMode] = useState<DialogMode>("create")
-  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProfileData | null>(null)
-  const [isDialogSubmitting, setIsDialogSubmitting] = useState(false)
   const [mutationState, setMutationState] = useState<MutationState>({
     profileId: null,
     action: null,
@@ -77,26 +67,25 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
 
   const tagSuggestions = useMemo(() => getWorkspaceTagSuggestions(careerData), [careerData])
   const previewMap = useMemo(
-    () =>
-      new Map(profiles.map((profile) => [profile.id, buildProfilePreview(profile, careerData)])),
+    () => new Map(profiles.map((profile) => [profile.id, buildProfilePreview(profile, careerData)])),
     [careerData, profiles]
   )
 
   const filteredProfiles = useMemo(() => {
-    const nextProfiles = profiles.filter((profile) => matchesSearch(profile, query))
+    const searchedProfiles = profiles.filter((profile) => matchesSearch(profile, query))
 
-    const visibleProfiles = nextProfiles.filter((profile) => {
+    const visibleProfiles = searchedProfiles.filter((profile) => {
       const preview = previewMap.get(profile.id)
 
       switch (filter) {
-        case "with-rules":
-          return profileHasActiveRules(profile)
+        case "ready":
+          return preview ? !preview.hasEmptyPrimaryResults : false
+        case "needs-attention":
+          return Boolean(preview?.hasEmptyPrimaryResults)
         case "include-tags":
           return profile.include_tags.length > 0
         case "exclude-tags":
           return profile.exclude_tags.length > 0
-        case "empty-results":
-          return Boolean(preview?.hasEmptyPrimaryResults)
         default:
           return true
       }
@@ -128,46 +117,14 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
     })
   }, [filter, previewMap, profiles, query, sort])
 
-  const profilesWithRules = profiles.filter((profile) => profileHasActiveRules(profile)).length
-  const emptyProfiles = profiles.filter((profile) => previewMap.get(profile.id)?.hasEmptyPrimaryResults).length
-
-  const openCreateDialog = () => {
-    setDialogMode("create")
-    setSelectedProfile(null)
-    setDialogOpen(true)
-    setPageError(null)
-  }
-
-  const openEditDialog = (profile: ProfileData) => {
-    setDialogMode("edit")
-    setSelectedProfile(profile)
-    setDialogOpen(true)
-    setPageError(null)
-  }
-
-  const handleDialogSubmit = async (payload: ProfilePayload) => {
-    setIsDialogSubmitting(true)
-    setPageError(null)
-
-    try {
-      if (dialogMode === "create") {
-        const createdProfile = await createProfile(payload)
-        setProfiles((currentProfiles) => [createdProfile, ...currentProfiles])
-        return
-      }
-
-      if (!selectedProfile) {
-        return
-      }
-
-      const updatedProfile = await updateProfile(selectedProfile.id, payload)
-      setProfiles((currentProfiles) =>
-        currentProfiles.map((profile) => (profile.id === updatedProfile.id ? updatedProfile : profile))
-      )
-      setSelectedProfile(updatedProfile)
-    } finally {
-      setIsDialogSubmitting(false)
-    }
+  const needsAttentionCount = profiles.filter((profile) => previewMap.get(profile.id)?.hasEmptyPrimaryResults).length
+  const readyCount = profiles.length - needsAttentionCount
+  const filterCounts: Record<ProfileListFilter, number> = {
+    all: profiles.length,
+    ready: readyCount,
+    "needs-attention": needsAttentionCount,
+    "include-tags": profiles.filter((profile) => profile.include_tags.length > 0).length,
+    "exclude-tags": profiles.filter((profile) => profile.exclude_tags.length > 0).length,
   }
 
   const handleDuplicate = async (profile: ProfileData) => {
@@ -199,9 +156,7 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
 
     try {
       await deleteProfile(deleteTarget.id)
-      setProfiles((currentProfiles) =>
-        currentProfiles.filter((profile) => profile.id !== deleteTarget.id)
-      )
+      setProfiles((currentProfiles) => currentProfiles.filter((profile) => profile.id !== deleteTarget.id))
       setDeleteTarget(null)
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "We couldn’t delete that profile.")
@@ -212,57 +167,104 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8 xl:px-12">
-      <section className="mb-8 space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-3">
-            <Badge variant="outline" className="border-primary/20 bg-primary-soft text-primary">
-              Profiles
-            </Badge>
-            <div className="space-y-2">
-              <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface md:text-4xl">
-                Build targeted resume profiles from your saved career data
-              </h1>
-              <p className="text-sm text-on-surface-variant/75 md:text-base">
-                Create reusable filters, preview what each profile keeps, and organize them the way you work best.
-              </p>
-            </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="rounded-sm border border-outline-variant/60 bg-card p-6 shadow-sm md:p-8">
+          <Badge variant="outline" className="border-primary/20 bg-primary-soft text-primary">
+            Profiles
+          </Badge>
+
+          <div className="mt-4 space-y-3">
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface md:text-4xl">
+              Build role-specific resume versions without duplicating your data
+            </h1>
+            <p className="max-w-3xl text-sm text-on-surface-variant/75 md:text-base">
+              Create focused profiles for different roles, keep the content that matters, and flag any profile that no longer matches your saved experience or projects.
+            </p>
           </div>
 
-          <Button type="button" onClick={openCreateDialog}>
-            Create profile
-          </Button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/profiles/new" className={cn(buttonVariants({ variant: "default", size: "default" }), "px-4")}>
+              Create profile
+            </Link>
+            <Link href="/career-data" className={cn(buttonVariants({ variant: "outline", size: "default" }), "px-4")}>
+              Open career data
+            </Link>
+          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-            <p className="text-xs font-medium text-on-surface-variant/70">Total profiles</p>
-            <p className="mt-2 text-3xl font-semibold text-on-surface">{profiles.length}</p>
-            <p className="mt-2 text-sm text-on-surface-variant/75">All saved profile variants.</p>
-          </Card>
+        <Card className="rounded-sm border border-outline-variant/60 bg-card p-6 shadow-sm">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="font-headline text-lg font-semibold text-on-surface">How profiles work</h2>
+              <p className="text-sm text-on-surface-variant/75">
+                Profiles never copy your data. They only decide what to keep, remove, or reorder.
+              </p>
+            </div>
 
-          <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-            <p className="text-xs font-medium text-on-surface-variant/70">Profiles with rules</p>
-            <p className="mt-2 text-3xl font-semibold text-on-surface">{profilesWithRules}</p>
-            <p className="mt-2 text-sm text-on-surface-variant/75">Profiles using tags, limits, or custom ordering.</p>
-          </Card>
+            <div className="space-y-3">
+              {[
+                ["1", "Start with a clear role", "Name the profile after the role you’re targeting."],
+                ["2", "Use tags to focus it", "Include the work you want to highlight and exclude what feels off-target."],
+                ["3", "Check the preview", "If a profile needs attention, its rules no longer match your saved content."],
+              ].map(([step, title, description]) => (
+                <div key={step} className="flex gap-3 rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-3">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary-soft text-xs font-semibold text-primary">
+                    {step}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-on-surface">{title}</p>
+                    <p className="text-xs text-on-surface-variant/75">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-            <p className="text-xs font-medium text-on-surface-variant/70">Reusable tags</p>
-            <p className="mt-2 text-3xl font-semibold text-on-surface">{tagSuggestions.length}</p>
-            <p className="mt-2 text-sm text-on-surface-variant/75">Tags available from experience and project entries.</p>
-          </Card>
-        </div>
+            <p className="text-xs text-on-surface-variant/70">
+              Available tag suggestions: {tagSuggestions.length}. Tags come from your experience and project entries.
+            </p>
+          </div>
+        </Card>
+      </section>
+
+      {tagSuggestions.length === 0 ? (
+        <Alert className="mt-6 border-outline-variant/60 bg-surface-subtle/50">
+          <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4 text-primary" />
+          <AlertTitle>No saved tags yet</AlertTitle>
+          <AlertDescription>
+            You can still create a general profile now, but tags become much more useful after you add them to your experience and project entries in Career Data.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
+          <p className="text-xs font-medium text-on-surface-variant/70">Total profiles</p>
+          <p className="mt-2 text-3xl font-semibold text-on-surface">{profiles.length}</p>
+          <p className="mt-2 text-sm text-on-surface-variant/75">All saved profile variants in your workspace.</p>
+        </Card>
+
+        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
+          <p className="text-xs font-medium text-on-surface-variant/70">Ready to use</p>
+          <p className="mt-2 text-3xl font-semibold text-on-surface">{readyCount}</p>
+          <p className="mt-2 text-sm text-on-surface-variant/75">Profiles that currently match at least one experience or project entry.</p>
+        </Card>
+
+        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
+          <p className="text-xs font-medium text-on-surface-variant/70">Needs attention</p>
+          <p className="mt-2 text-3xl font-semibold text-on-surface">{needsAttentionCount}</p>
+          <p className="mt-2 text-sm text-on-surface-variant/75">Profiles whose current rules no longer match your primary content.</p>
+        </Card>
       </section>
 
       {pageError ? (
-        <Alert variant="destructive" className="mb-6 border-destructive/20 bg-destructive/5">
+        <Alert variant="destructive" className="mt-6 border-destructive/20 bg-destructive/5">
           <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4" />
           <AlertTitle>Something went wrong.</AlertTitle>
           <AlertDescription>{pageError}</AlertDescription>
         </Alert>
       ) : null}
 
-      <div className="space-y-6">
+      <div className="mt-6 space-y-6">
         <ProfilesToolbar
           query={query}
           filter={filter}
@@ -270,6 +272,8 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
           view={view}
           totalCount={profiles.length}
           visibleCount={filteredProfiles.length}
+          filterCounts={filterCounts}
+          createHref="/profiles/new"
           onQueryChange={setQuery}
           onFilterChange={setFilter}
           onSortChange={setSort}
@@ -279,39 +283,47 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
             setFilter("all")
             setSort("updated-desc")
           }}
-          onCreate={openCreateDialog}
         />
 
         {filteredProfiles.length ? (
-          <div
-            className={
-              view === "grid"
-                ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-                : view === "cards"
-                  ? "grid gap-4 xl:grid-cols-2"
-                  : "space-y-4"
-            }
-          >
-            {filteredProfiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                preview={previewMap.get(profile.id) ?? buildProfilePreview(profile, careerData)}
-                view={view}
-                isBusy={mutationState.profileId === profile.id}
-                onEdit={() => openEditDialog(profile)}
-                onDuplicate={() => void handleDuplicate(profile)}
-                onDelete={() => setDeleteTarget(profile)}
-              />
-            ))}
-          </div>
+          view === "list" ? (
+            <ProfilesListTable
+              profiles={filteredProfiles}
+              previewMap={previewMap}
+              busyProfileId={mutationState.profileId}
+              onDuplicate={(profile) => void handleDuplicate(profile)}
+              onDelete={setDeleteTarget}
+            />
+          ) : (
+            <div className={view === "grid" ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "grid gap-4 xl:grid-cols-2"}>
+              {filteredProfiles.map((profile) => {
+                const preview = previewMap.get(profile.id)
+
+                if (!preview) {
+                  return null
+                }
+
+                return (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    preview={preview}
+                    view={view === "grid" ? "grid" : "cards"}
+                    isBusy={mutationState.profileId === profile.id}
+                    onDuplicate={() => void handleDuplicate(profile)}
+                    onDelete={() => setDeleteTarget(profile)}
+                  />
+                )
+              })}
+            </div>
+          )
         ) : profiles.length ? (
           <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-14">
             <HugeiconsIcon icon={UserAccountIcon} strokeWidth={2} className="size-8 text-on-surface-variant/40" />
             <EmptyHeader>
               <EmptyTitle>No profiles match your current filters</EmptyTitle>
               <EmptyDescription>
-                Try a different search term, change the filters, or clear them to see everything again.
+                Try a different search term, switch filters, or clear everything to get back to the full list.
               </EmptyDescription>
             </EmptyHeader>
             <div className="flex flex-wrap justify-center gap-2">
@@ -329,44 +341,41 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
             </div>
           </Empty>
         ) : (
-          <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-14">
-            <HugeiconsIcon icon={UserAccountIcon} strokeWidth={2} className="size-8 text-on-surface-variant/40" />
-            <EmptyHeader>
-              <EmptyTitle>No profiles yet</EmptyTitle>
-              <EmptyDescription>
-                Start with a profile for the kind of role you want, then use tags to shape what it keeps.
-              </EmptyDescription>
-            </EmptyHeader>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" onClick={openCreateDialog}>
-                Create your first profile
-              </Button>
-              <Link
-                href="/career-data"
-                className="inline-flex h-9 items-center justify-center rounded-sm border border-outline-variant/70 px-4 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface"
-              >
-                Open career data
-              </Link>
+          <div className="space-y-6 rounded-sm border border-dashed border-outline-variant/70 bg-card p-6 md:p-8">
+            <Empty className="border-0 bg-transparent py-0 shadow-none">
+              <HugeiconsIcon icon={UserAccountIcon} strokeWidth={2} className="size-8 text-on-surface-variant/40" />
+              <EmptyHeader>
+                <EmptyTitle>No profiles yet</EmptyTitle>
+                <EmptyDescription>
+                  Start with one role-focused profile, then reuse it as a clean base for future resume versions.
+                </EmptyDescription>
+              </EmptyHeader>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Link href="/profiles/new" className={cn(buttonVariants({ variant: "default", size: "default" }), "px-4")}>
+                  Create your first profile
+                </Link>
+                <Link href="/career-data" className={cn(buttonVariants({ variant: "outline", size: "default" }), "px-4")}>
+                  Review career data
+                </Link>
+              </div>
+            </Empty>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                ["Pick a target role", "Use a name that matches the job you want this resume to support."],
+                ["Choose the right tags", "Include the work you want to emphasize and exclude anything distracting."],
+                ["Check the live coverage", "Make sure the profile still matches real experience and project entries."],
+              ].map(([title, description], index) => (
+                <Card key={title} className="rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4 shadow-none">
+                  <p className="text-xs font-medium text-primary">Step {index + 1}</p>
+                  <p className="mt-2 text-sm font-medium text-on-surface">{title}</p>
+                  <p className="mt-1 text-sm text-on-surface-variant/75">{description}</p>
+                </Card>
+              ))}
             </div>
-          </Empty>
+          </div>
         )}
       </div>
-
-      <ProfileFormDialog
-        open={dialogOpen}
-        mode={dialogMode}
-        profile={selectedProfile}
-        careerData={careerData}
-        tagSuggestions={tagSuggestions}
-        isSubmitting={isDialogSubmitting}
-        onOpenChange={(nextOpen) => {
-          setDialogOpen(nextOpen)
-          if (!nextOpen) {
-            setSelectedProfile(null)
-          }
-        }}
-        onSubmit={handleDialogSubmit}
-      />
 
       <AlertDialog
         open={Boolean(deleteTarget)}
@@ -398,12 +407,6 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {emptyProfiles > 0 ? (
-        <p className="mt-6 text-sm text-on-surface-variant/70">
-          {emptyProfiles} profile{emptyProfiles === 1 ? " currently has" : "s currently have"} no matching experience or project entries.
-        </p>
-      ) : null}
     </main>
   )
 }

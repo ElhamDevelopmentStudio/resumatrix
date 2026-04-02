@@ -43,10 +43,10 @@ export type ProfilePreview = {
 
 export type ProfileListFilter =
   | "all"
-  | "with-rules"
+  | "ready"
+  | "needs-attention"
   | "include-tags"
   | "exclude-tags"
-  | "empty-results"
 
 export type ProfileSortKey =
   | "updated-desc"
@@ -56,6 +56,7 @@ export type ProfileSortKey =
   | "coverage-desc"
 
 export type ProfileViewMode = "cards" | "grid" | "list"
+export type ProfileBuilderMode = "create" | "edit"
 
 export const defaultProfileConfig: ProfileConfig = {
   ordering: {

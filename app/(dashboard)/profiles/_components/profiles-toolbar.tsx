@@ -1,6 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
+
+import { buttonVariants, Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -14,20 +16,21 @@ type ProfilesToolbarProps = {
   view: ProfileViewMode
   totalCount: number
   visibleCount: number
+  filterCounts: Record<ProfileListFilter, number>
+  createHref: string
   onQueryChange: (value: string) => void
   onFilterChange: (value: ProfileListFilter) => void
   onSortChange: (value: ProfileSortKey) => void
   onViewChange: (value: ProfileViewMode) => void
   onClear: () => void
-  onCreate: () => void
 }
 
 const filterOptions: Array<{ label: string; value: ProfileListFilter }> = [
-  { label: "All", value: "all" },
-  { label: "With rules", value: "with-rules" },
+  { label: "All profiles", value: "all" },
+  { label: "Ready", value: "ready" },
+  { label: "Needs attention", value: "needs-attention" },
   { label: "Include tags", value: "include-tags" },
   { label: "Exclude tags", value: "exclude-tags" },
-  { label: "Empty results", value: "empty-results" },
 ]
 
 const sortOptions: Array<{ label: string; value: ProfileSortKey }> = [
@@ -45,20 +48,21 @@ export function ProfilesToolbar({
   view,
   totalCount,
   visibleCount,
+  filterCounts,
+  createHref,
   onQueryChange,
   onFilterChange,
   onSortChange,
   onViewChange,
   onClear,
-  onCreate,
 }: ProfilesToolbarProps) {
   const hasActiveFilters = query.trim().length > 0 || filter !== "all" || sort !== "updated-desc"
 
   return (
     <div className="space-y-4 rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-1 flex-col gap-4 md:flex-row">
-          <div className="flex-1 space-y-2">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+          <div className="space-y-2">
             <label htmlFor="profile-search" className="text-sm font-medium text-on-surface">
               Search profiles
             </label>
@@ -66,12 +70,12 @@ export function ProfilesToolbar({
               id="profile-search"
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search by name or tag"
+              placeholder="Search by profile name or tag"
               className="h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20 md:text-sm"
             />
           </div>
 
-          <div className="w-full space-y-2 md:max-w-64">
+          <div className="space-y-2">
             <label htmlFor="profile-sort" className="text-sm font-medium text-on-surface">
               Sort by
             </label>
@@ -95,13 +99,13 @@ export function ProfilesToolbar({
               Clear filters
             </Button>
           ) : null}
-          <Button type="button" onClick={onCreate}>
+          <Link href={createHref} className={cn(buttonVariants({ variant: "default", size: "default" }), "px-4")}>
             Create profile
-          </Button>
+          </Link>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 border-t border-outline-variant/60 pt-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {filterOptions.map((option) => (
             <button
@@ -115,7 +119,7 @@ export function ProfilesToolbar({
                   : "border-outline-variant/60 bg-background text-on-surface-variant hover:border-primary/20 hover:bg-surface-subtle hover:text-on-surface"
               )}
             >
-              {option.label}
+              {option.label} <span className="text-current/70">({filterCounts[option.value]})</span>
             </button>
           ))}
         </div>
