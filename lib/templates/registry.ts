@@ -6,6 +6,10 @@ import {
   buildSplitHeaderHtml,
   SplitHeaderTemplate,
 } from "@/components/cv-templates/split-header-template"
+import {
+  buildEditorialSidebarHtml,
+  EditorialSidebarTemplate,
+} from "@/components/cv-templates/editorial-sidebar-template"
 import type { CvTemplateMetadata } from "@/lib/cvs/types"
 import type { CvTemplateDefinition } from "@/lib/templates/types"
 
@@ -35,6 +39,18 @@ const templates: CvTemplateDefinition[] = [
     preview_blurb: "Best when you want a more polished first impression without losing a simple, readable layout.",
     renderer: SplitHeaderTemplate,
     html_builder: buildSplitHeaderHtml,
+  },
+  {
+    id: "editorial-sidebar",
+    slug: "editorial-sidebar",
+    name: "Editorial Sidebar",
+    description: "Two-column layout with a narrow sidebar for education and skills, plus icon-based contact details.",
+    layout_type: "single-column",
+    sections: ["contacts", "experiences", "projects", "education", "skills"],
+    export_formats: ["pdf", "html", "markdown", "json"],
+    preview_blurb: "Best when you want a structured, modern resume with a bold name block and a clean sidebar.",
+    renderer: EditorialSidebarTemplate,
+    html_builder: buildEditorialSidebarHtml,
   },
 ]
 
