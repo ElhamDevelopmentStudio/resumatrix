@@ -1,0 +1,699 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
+import { FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { Spinner } from "@/components/ui/spinner"
+import type { CareerWorkspaceData } from "@/lib/career-data/types"
+import { deleteCv, updateCv } from "@/lib/cvs/api"
+import { buildCvPreview, buildCvRenderModel } from "@/lib/cvs/engine"
+import { getCvSectionLabel } from "@/lib/cvs/presentation"
+import {
+  type CvData,
+  type CvOverrideSection,
+  type CvPayload,
+  type CvTemplateMetadata,
+} from "@/lib/cvs/types"
+import {
+  getFirstCvValidationMessage,
+  hasCvValidationErrors,
+  validateCvPayload,
+} from "@/lib/cvs/validation"
+import { buildProfileDataset } from "@/lib/profiles/engine"
+import type { ProfileData } from "@/lib/profiles/types"
+
+import { CvExportLinks } from "./cv-export-links"
+import { CvPreviewPanel } from "./cv-preview-panel"
+import {
+  CvSectionSelectorDialog,
+  type CvSectionSelectorItem,
+} from "./cv-section-selector-dialog"
+
+const inputClassName =
+  "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20"
+
+const selectClassName =
+  "w-full [&_[data-slot=native-select]]:h-11 [&_[data-slot=native-select]]:rounded-sm [&_[data-slot=native-select]]:border-outline-variant/70 [&_[data-slot=native-select]]:bg-background [&_[data-slot=native-select]]:px-3 [&_[data-slot=native-select]]:pr-8 [&_[data-slot=native-select]]:text-sm [&_[data-slot=native-select]]:text-on-surface [&_[data-slot=native-select]]:focus-visible:border-primary [&_[data-slot=native-select]]:focus-visible:ring-primary/20 [&_[data-slot=native-select-icon]]:right-3 [&_[data-slot=native-select-icon]]:size-4 [&_[data-slot=native-select-icon]]:text-on-surface-variant/60"
+
+type TemplateOption = CvTemplateMetadata & {
+  preview_blurb: string
+}
+
+type CvEditorProps = {
+  cv: CvData
+  profiles: ProfileData[]
+  careerData: CareerWorkspaceData
+  templates: TemplateOption[]
+}
+
+type SelectionSection = {
+  key: CvOverrideSection
+  label: string
+  itemLabel: string
+  description: string
+  helper: string
+  currentCount: number
+  selection: string[] | null
+  items: CvSectionSelectorItem[]
+}
+
+function buildPayload(cv: CvData): CvPayload {
+  return {
+    name: cv.name,
+    profile_id: cv.profile_id,
+    template_id: cv.template_id,
+    overrides: cv.overrides,
+  }
+}
+
+function buildSnapshot(payload: CvPayload) {
+  return JSON.stringify(payload)
+}
+
+function buildSelectionSections(
+  dataset: CareerWorkspaceData,
+  payload: CvPayload,
+  counts: Record<CvOverrideSection, number>
+): SelectionSection[] {
+  return [
+    {
+      key: "contacts",
+      label: "Contacts",
+      itemLabel: "contact method",
+      description: "Turn contact methods on or off for this CV.",
+      helper:
+        payload.overrides.selections.contacts === null
+          ? `All ${dataset.contacts.length} contact methods from this profile are on.`
+          : `${payload.overrides.selections.contacts.length} of ${dataset.contacts.length} contact methods are on.`,
+      currentCount: counts.contacts,
+      selection: payload.overrides.selections.contacts,
+      items: dataset.contacts.map((contact) => ({
+        id: contact.id,
+        title: contact.type || "Contact",
+        description: contact.value,
+        meta: [contact.type || "Contact"],
+      })),
+    },
+    {
+      key: "experiences",
+      label: "Experience",
+      itemLabel: "experience",
+      description: "Turn experience entries on or off for this CV after profile filtering.",
+      helper:
+        payload.overrides.selections.experiences === null
+          ? `All ${dataset.experiences.length} experience entries from this profile are on.`
+          : `${payload.overrides.selections.experiences.length} of ${dataset.experiences.length} experience entries are on.`,
+      currentCount: counts.experiences,
+      selection: payload.overrides.selections.experiences,
+      items: dataset.experiences.map((entry) => ({
+        id: entry.id,
+        title: `${entry.role} · ${entry.company}`,
+        description: entry.location || "No location added",
+        meta: [`${entry.start_date} → ${entry.end_date || "Present"}`, ...entry.tags.map((tag) => `#${tag}`)],
+      })),
+    },
+    {
+      key: "projects",
+      label: "Projects",
+      itemLabel: "project",
+      description: "Turn projects on or off for this CV after profile filtering.",
+      helper:
+        payload.overrides.selections.projects === null
+          ? `All ${dataset.projects.length} projects from this profile are on.`
+          : `${payload.overrides.selections.projects.length} of ${dataset.projects.length} projects are on.`,
+      currentCount: counts.projects,
+      selection: payload.overrides.selections.projects,
+      items: dataset.projects.map((project) => ({
+        id: project.id,
+        title: project.name,
+        description: project.description || "No description added",
+        meta: [...project.tech_stack, ...project.tags.map((tag) => `#${tag}`)],
+      })),
+    },
+    {
+      key: "education",
+      label: "Education",
+      itemLabel: "education item",
+      description: "Turn education entries on or off for this CV.",
+      helper:
+        payload.overrides.selections.education === null
+          ? `All ${dataset.education.length} education entries from this profile are on.`
+          : `${payload.overrides.selections.education.length} of ${dataset.education.length} education entries are on.`,
+      currentCount: counts.education,
+      selection: payload.overrides.selections.education,
+      items: dataset.education.map((entry) => ({
+        id: entry.id,
+        title: `${entry.degree} · ${entry.institution}`,
+        description: entry.details || "No extra details added",
+        meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
+      })),
+    },
+    {
+      key: "skills",
+      label: "Skills",
+      itemLabel: "skill",
+      description: "Turn skills on or off for this CV.",
+      helper:
+        payload.overrides.selections.skills === null
+          ? `All ${dataset.skills.length} skills from this profile are on.`
+          : `${payload.overrides.selections.skills.length} of ${dataset.skills.length} skills are on.`,
+      currentCount: counts.skills,
+      selection: payload.overrides.selections.skills,
+      items: dataset.skills.map((skill) => ({
+        id: skill.id,
+        title: skill.name,
+        description: [skill.category, skill.level].filter(Boolean).join(" · ") || "No category or level added",
+        meta: [skill.category, skill.level].filter(Boolean),
+      })),
+    },
+  ]
+}
+
+export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps) {
+  const router = useRouter()
+  const [state, setState] = useState<CvPayload>(() => buildPayload(cv))
+  const [savedSnapshot, setSavedSnapshot] = useState(() => buildSnapshot(buildPayload(cv)))
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved")
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [activeSelectionSection, setActiveSelectionSection] = useState<CvOverrideSection | null>(null)
+
+  const selectedProfile = profiles.find((profile) => profile.id === state.profile_id)
+  const selectedTemplate = templates.find((template) => template.id === state.template_id)
+  const validationErrors = useMemo(() => validateCvPayload(state), [state])
+  const payloadSnapshot = useMemo(() => buildSnapshot(state), [state])
+  const isDirty = payloadSnapshot !== savedSnapshot
+  const canSave = Boolean(selectedProfile && selectedTemplate) && !hasCvValidationErrors(validationErrors)
+
+  const baseProfileDataset = useMemo(() => {
+    if (!selectedProfile) {
+      return null
+    }
+
+    return buildProfileDataset(selectedProfile, careerData)
+  }, [careerData, selectedProfile])
+
+  const renderModel = useMemo(() => {
+    if (!selectedProfile || !selectedTemplate) {
+      return null
+    }
+
+    return buildCvRenderModel(state, selectedProfile, careerData, selectedTemplate)
+  }, [careerData, selectedProfile, selectedTemplate, state])
+
+  const preview = useMemo(() => (renderModel ? buildCvPreview(renderModel) : null), [renderModel])
+
+  const selectionSections = useMemo(() => {
+    if (!baseProfileDataset || !renderModel) {
+      return []
+    }
+
+    return buildSelectionSections(baseProfileDataset, state, {
+      contacts: renderModel.contacts.length,
+      experiences: renderModel.experiences.length,
+      projects: renderModel.projects.length,
+      education: renderModel.education.length,
+      skills: renderModel.skills.length,
+    })
+  }, [baseProfileDataset, renderModel, state])
+
+  const activeSelectionDefinition = activeSelectionSection
+    ? selectionSections.find((section) => section.key === activeSelectionSection) ?? null
+    : null
+
+  const updateState = (updater: (currentState: CvPayload) => CvPayload) => {
+    setState((currentState) => updater(currentState))
+    setSaveError(null)
+  }
+
+  const persistChanges = useCallback(
+    async (nextPayload: CvPayload) => {
+      setSaveState("saving")
+      setSaveError(null)
+
+      try {
+        const updatedCv = await updateCv(cv.id, nextPayload)
+        setSavedSnapshot(buildSnapshot(buildPayload(updatedCv)))
+        setSaveState("saved")
+      } catch (error) {
+        setSaveState("error")
+        setSaveError(error instanceof Error ? error.message : "We couldn’t save this CV right now.")
+        throw error
+      }
+    },
+    [cv.id]
+  )
+
+  useEffect(() => {
+    if (!isDirty || !canSave) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      void persistChanges(state)
+    }, 700)
+
+    return () => window.clearTimeout(timeout)
+  }, [canSave, isDirty, persistChanges, state])
+
+  const flushSave = useCallback(async () => {
+    if (!isDirty) {
+      return
+    }
+
+    if (!canSave) {
+      throw new Error(getFirstCvValidationMessage(validationErrors))
+    }
+
+    await persistChanges(state)
+  }, [canSave, isDirty, persistChanges, state, validationErrors])
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    setSaveError(null)
+
+    try {
+      await deleteCv(cv.id)
+      router.push("/cvs")
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "We couldn’t delete this CV right now.")
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+    }
+  }
+
+  const saveStatusLabel =
+    saveState === "saving"
+      ? "Saving automatically…"
+      : saveState === "error"
+        ? "Save failed"
+        : isDirty
+          ? "Unsaved changes"
+          : "Saved automatically"
+
+  const moveSection = (section: CvOverrideSection, direction: -1 | 1) => {
+    updateState((currentState) => {
+      const sectionOrder = [...currentState.overrides.section_order]
+      const currentIndex = sectionOrder.indexOf(section)
+      const nextIndex = currentIndex + direction
+
+      if (currentIndex === -1 || nextIndex < 0 || nextIndex >= sectionOrder.length) {
+        return currentState
+      }
+
+      const nextOrder = [...sectionOrder]
+      ;[nextOrder[currentIndex], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[currentIndex]]
+
+      return {
+        ...currentState,
+        overrides: {
+          ...currentState.overrides,
+          section_order: nextOrder,
+        },
+      }
+    })
+  }
+
+  const toggleSectionVisibility = (section: CvOverrideSection) => {
+    updateState((currentState) => {
+      const isHidden = currentState.overrides.hidden_sections.includes(section)
+
+      return {
+        ...currentState,
+        overrides: {
+          ...currentState.overrides,
+          hidden_sections: isHidden
+            ? currentState.overrides.hidden_sections.filter((item) => item !== section)
+            : [...currentState.overrides.hidden_sections, section],
+        },
+      }
+    })
+  }
+
+  const handleSelectionSave = (section: CvOverrideSection, nextSelection: string[] | null) => {
+    updateState((currentState) => ({
+      ...currentState,
+      overrides: {
+        ...currentState.overrides,
+        selections: {
+          ...currentState.overrides.selections,
+          [section]: nextSelection,
+        },
+      },
+    }))
+    setActiveSelectionSection(null)
+  }
+
+  return (
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-8 xl:px-12">
+      <div className="space-y-4">
+        <Link href="/cvs" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+          Back to CVs
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <Badge variant="outline" className="border-primary/20 bg-primary-soft text-primary">
+              CV editor
+            </Badge>
+            <h1 className="text-3xl font-bold tracking-tight text-on-surface md:text-4xl">
+              {state.name || "Untitled CV"}
+            </h1>
+            <p className="text-sm text-on-surface-variant/75 md:text-base">
+              Changes save automatically. Reorder sections, choose exact items, preview instantly, and export when you are ready.
+            </p>
+          </div>
+
+          <div className="rounded-sm border border-outline-variant/60 bg-card px-4 py-3 shadow-sm">
+            <p className="text-xs font-medium text-on-surface-variant/70">Status</p>
+            <p className="mt-1 text-sm font-medium text-on-surface">{saveStatusLabel}</p>
+          </div>
+        </div>
+      </div>
+
+      {saveError ? (
+        <Alert variant="destructive" className="mt-6 border-destructive/20 bg-destructive/5">
+          <AlertTitle>We couldn’t save this CV.</AlertTitle>
+          <AlertDescription>{saveError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {!selectedProfile || !selectedTemplate ? (
+        <Alert variant="destructive" className="mt-6 border-destructive/20 bg-destructive/5">
+          <AlertTitle>This CV needs attention</AlertTitle>
+          <AlertDescription>
+            {getFirstCvValidationMessage(validationErrors)}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="mt-6 overflow-hidden rounded-sm border border-outline-variant/60 bg-card shadow-sm">
+        <ResizablePanelGroup orientation="horizontal" className="min-h-[78vh]">
+          <ResizablePanel defaultSize={34} minSize={28}>
+            <div className="h-full overflow-auto bg-card p-6">
+              <div className="space-y-6">
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-on-surface">Document setup</h2>
+                      <p className="mt-1 text-sm text-on-surface-variant/75">
+                        Control the name, profile, and template this CV uses.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <FieldLabel className="text-sm font-medium text-on-surface">CV name</FieldLabel>
+                      <Input
+                        value={state.name}
+                        onChange={(event) =>
+                          updateState((currentState) => ({
+                            ...currentState,
+                            name: event.target.value,
+                          }))
+                        }
+                        placeholder="Frontend Engineer CV"
+                        className={inputClassName}
+                      />
+                      <FieldError>{validationErrors.name}</FieldError>
+                    </div>
+
+                    <div className="space-y-2">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Profile</FieldLabel>
+                      <FieldDescription>Switch profiles any time to rebuild this CV from a different ruleset.</FieldDescription>
+                      <NativeSelect
+                        value={state.profile_id}
+                        onChange={(event) =>
+                          updateState((currentState) => ({
+                            ...currentState,
+                            profile_id: event.target.value,
+                          }))
+                        }
+                        className={selectClassName}
+                      >
+                        {profiles.map((profile) => (
+                          <NativeSelectOption key={profile.id} value={profile.id}>
+                            {profile.name}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                      <FieldError>{validationErrors.profile_id}</FieldError>
+                    </div>
+
+                    <div className="space-y-2">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Template</FieldLabel>
+                      <FieldDescription>Templates stay separate from your data, so you can switch layouts later without rebuilding anything.</FieldDescription>
+                      <NativeSelect
+                        value={state.template_id}
+                        onChange={(event) =>
+                          updateState((currentState) => ({
+                            ...currentState,
+                            template_id: event.target.value,
+                          }))
+                        }
+                        className={selectClassName}
+                      >
+                        {templates.map((template) => (
+                          <NativeSelectOption key={template.id} value={template.id}>
+                            {template.name}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                      <FieldError>{validationErrors.template_id}</FieldError>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-on-surface">Section order</h2>
+                      <p className="mt-1 text-sm text-on-surface-variant/75">
+                        Move sections up or down, and hide any section you do not want in this version.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {state.overrides.section_order.map((section, index) => {
+                        const isHidden = state.overrides.hidden_sections.includes(section)
+                        const count = selectionSections.find((item) => item.key === section)?.currentCount ?? 0
+
+                        return (
+                          <div key={section} className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-outline-variant/60 bg-surface-subtle/40 px-4 py-3">
+                            <div>
+                              <p className="text-sm font-medium text-on-surface">{getCvSectionLabel(section)}</p>
+                              <p className="text-sm text-on-surface-variant/75">
+                                {isHidden ? "Hidden in this CV" : `${count} item${count === 1 ? "" : "s"} currently visible`}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" variant="outline" onClick={() => moveSection(section, -1)} disabled={index === 0}>
+                                Move up
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => moveSection(section, 1)}
+                                disabled={index === state.overrides.section_order.length - 1}
+                              >
+                                Move down
+                              </Button>
+                              <Button type="button" variant={isHidden ? "outline" : "default"} onClick={() => toggleSectionVisibility(section)}>
+                                {isHidden ? "Show" : "Hide"}
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-on-surface">Choose exact items</h2>
+                      <p className="mt-1 text-sm text-on-surface-variant/75">
+                        Everything from the chosen profile starts on. Only customize a section when you want to hand-pick specific items.
+                      </p>
+                    </div>
+
+                    {selectionSections.length ? (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {selectionSections.map((section) => {
+                          const isCustom = section.selection !== null
+                          const enabledCount = section.selection?.length ?? section.items.length
+
+                          return (
+                            <Card key={section.key} className="rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4 shadow-none">
+                              <div className="space-y-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="text-sm font-medium text-on-surface">{section.label}</h3>
+                                  <Badge variant={isCustom ? "default" : "outline"}>
+                                    {isCustom ? "Choosing by hand" : "Everything on"}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-on-surface-variant/75">{section.helper}</p>
+                                <p className="text-xs text-on-surface-variant/70">
+                                  {enabledCount} of {section.items.length} turned on • {section.currentCount} currently visible
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button type="button" variant="outline" onClick={() => setActiveSelectionSection(section.key)} disabled={!section.items.length}>
+                                    Choose {section.label.toLowerCase()}
+                                  </Button>
+                                  {isCustom ? (
+                                    <Button type="button" variant="ghost" onClick={() => handleSelectionSave(section.key, null)}>
+                                      Use everything again
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-14">
+                        <EmptyHeader>
+                          <EmptyTitle>Choose a profile first</EmptyTitle>
+                          <EmptyDescription>
+                            The item controls will appear here as soon as this CV is linked to a valid profile.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-on-surface">Export</h2>
+                      <p className="mt-1 text-sm text-on-surface-variant/75">
+                        Export uses the same render model and template as the live preview. If you changed something just now, we save first before exporting.
+                      </p>
+                    </div>
+
+                    <CvExportLinks cvId={cv.id} disabled={!canSave} onBeforeExport={flushSave} />
+                  </div>
+                </Card>
+
+                <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-none">
+                  <div className="space-y-3">
+                    <h2 className="text-lg font-semibold text-on-surface">Need to change the source data?</h2>
+                    <p className="text-sm text-on-surface-variant/75">
+                      Edit your master data or profile rules, then come back here. This CV will stay connected to them.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <Link href="/career-data" className="inline-flex rounded-sm border border-outline-variant/60 px-4 py-3 text-sm font-medium text-on-surface">
+                        Open career data
+                      </Link>
+                      <Link href="/profiles" className="inline-flex rounded-sm border border-outline-variant/60 px-4 py-3 text-sm font-medium text-on-surface">
+                        Open profiles
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={66} minSize={38}>
+            <div className="h-full overflow-auto bg-surface-subtle/40 p-6">
+              {renderModel && preview ? (
+                <CvPreviewPanel
+                  title="Live preview"
+                  description="This preview updates immediately as you change the document setup."
+                  templateId={selectedTemplate?.id ?? ""}
+                  model={renderModel}
+                  preview={preview}
+                />
+              ) : (
+                <Empty className="rounded-sm border border-dashed border-outline-variant/70 bg-card py-16">
+                  <EmptyHeader>
+                    <EmptyTitle>Preview unavailable</EmptyTitle>
+                    <EmptyDescription>
+                      Link this CV to a valid profile and template to see the live preview again.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      <Card className="mt-6 rounded-sm border border-destructive/20 bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-on-surface">Delete this CV</h2>
+            <p className="text-sm text-on-surface-variant/75">
+              Delete this document only if you are sure you no longer need it. Your career data and profiles will stay untouched.
+            </p>
+          </div>
+          <Button type="button" variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={isDeleting}>
+            Delete CV
+          </Button>
+        </div>
+      </Card>
+
+      {activeSelectionDefinition ? (
+        <CvSectionSelectorDialog
+          key={`${activeSelectionDefinition.key}-${activeSelectionDefinition.selection === null ? "automatic" : activeSelectionDefinition.selection.join(",")}`}
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveSelectionSection(null)
+            }
+          }}
+          sectionLabel={activeSelectionDefinition.label}
+          itemLabel={activeSelectionDefinition.itemLabel}
+          description={activeSelectionDefinition.description}
+          items={activeSelectionDefinition.items}
+          value={activeSelectionDefinition.selection}
+          onSave={(nextSelection) => handleSelectionSave(activeSelectionDefinition.key, nextSelection)}
+        />
+      ) : null}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete CV?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`This will permanently delete ${state.name || "this CV"}. Your career data and profiles will not be deleted.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDelete()} disabled={isDeleting} className="gap-2">
+              {isDeleting ? <Spinner className="size-4" /> : null}
+              Delete CV
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </main>
+  )
+}

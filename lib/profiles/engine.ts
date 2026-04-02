@@ -12,6 +12,16 @@ import type {
 } from "@/lib/profiles/types"
 import { normalizeTagList } from "@/lib/profiles/validation"
 
+type ProfileCollections = {
+  matchingExperiences: ExperienceData[]
+  visibleExperiences: ExperienceData[]
+  matchingProjects: ProjectData[]
+  visibleProjects: ProjectData[]
+  education: EducationData[]
+  skills: CareerWorkspaceData["skills"]
+  contacts: CareerWorkspaceData["contacts"]
+}
+
 function compareDateValues(left: string, right: string) {
   return right.localeCompare(left)
 }
@@ -92,10 +102,10 @@ function sortEducation(entries: EducationData[], profile: ProfileData | ProfileP
   return nextEntries
 }
 
-export function buildProfilePreview(
+function buildProfileCollections(
   profile: ProfileData | ProfilePayload,
   careerData: CareerWorkspaceData
-): ProfilePreview {
+): ProfileCollections {
   const matchingExperiences = sortExperiences(
     filterEntriesBySelection(
       careerData.experiences.filter((entry) => matchesProfileTagRules(entry.tags, profile)),
@@ -130,23 +140,57 @@ export function buildProfilePreview(
   )
 
   return {
-    matchedExperiences: matchingExperiences.length,
-    displayedExperiences: visibleExperiences.length,
-    matchedProjects: matchingProjects.length,
-    displayedProjects: visibleProjects.length,
-    educationCount: education.length,
-    skillsCount: skills.length,
-    contactsCount: contacts.length,
+    matchingExperiences,
+    visibleExperiences,
+    matchingProjects,
+    visibleProjects,
+    education,
+    skills,
+    contacts,
+  }
+}
+
+export function buildProfileDataset(
+  profile: ProfileData | ProfilePayload,
+  careerData: CareerWorkspaceData
+): CareerWorkspaceData {
+  const collections = buildProfileCollections(profile, careerData)
+
+  return {
+    personal: careerData.personal,
+    contacts: collections.contacts,
+    experiences: collections.visibleExperiences,
+    projects: collections.visibleProjects,
+    education: collections.education,
+    skills: collections.skills,
+  }
+}
+
+export function buildProfilePreview(
+  profile: ProfileData | ProfilePayload,
+  careerData: CareerWorkspaceData
+): ProfilePreview {
+  const collections = buildProfileCollections(profile, careerData)
+
+  return {
+    matchedExperiences: collections.matchingExperiences.length,
+    displayedExperiences: collections.visibleExperiences.length,
+    matchedProjects: collections.matchingProjects.length,
+    displayedProjects: collections.visibleProjects.length,
+    educationCount: collections.education.length,
+    skillsCount: collections.skills.length,
+    contactsCount: collections.contacts.length,
     totalDisplayedItems:
-      visibleExperiences.length +
-      visibleProjects.length +
-      education.length +
-      skills.length +
-      contacts.length,
-    primaryMatchCount: matchingExperiences.length + matchingProjects.length,
+      collections.visibleExperiences.length +
+      collections.visibleProjects.length +
+      collections.education.length +
+      collections.skills.length +
+      collections.contacts.length,
+    primaryMatchCount:
+      collections.matchingExperiences.length + collections.matchingProjects.length,
     hasEmptyPrimaryResults:
       careerData.experiences.length + careerData.projects.length > 0 &&
-      matchingExperiences.length + matchingProjects.length === 0,
+      collections.matchingExperiences.length + collections.matchingProjects.length === 0,
   }
 }
 

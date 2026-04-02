@@ -3,6 +3,7 @@
 import {
   Briefcase01Icon,
   DashboardSquare01Icon,
+  File01Icon,
   UserAccountIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -40,6 +41,12 @@ const navigationItems: NavigationItem[] = [
     href: "/profiles",
     icon: UserAccountIcon,
     activeHref: "/profiles",
+  },
+  {
+    label: "CVs",
+    href: "/cvs",
+    icon: File01Icon,
+    activeHref: "/cvs",
   },
 ]
 

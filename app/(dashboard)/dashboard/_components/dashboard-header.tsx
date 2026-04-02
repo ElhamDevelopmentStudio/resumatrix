@@ -10,19 +10,22 @@ export function DashboardHeader() {
   const pathname = usePathname()
   const isCareerDataPage = pathname === "/career-data"
   const isProfilesPage = pathname.startsWith("/profiles")
+  const isCvsPage = pathname.startsWith("/cvs")
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-outline-variant/60 bg-background/90 px-6 py-6 backdrop-blur-md md:px-8 xl:px-12">
       <div>
         <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-          {isCareerDataPage ? "Career Data" : isProfilesPage ? "Profiles" : "Dashboard"}
+          {isCareerDataPage ? "Career Data" : isProfilesPage ? "Profiles" : isCvsPage ? "CVs" : "Dashboard"}
         </h1>
         <p className="mt-1 text-sm font-medium text-on-surface-variant/70">
           {isCareerDataPage
             ? "Work through one section at a time. Everything saves automatically."
             : isProfilesPage
               ? "Create and manage focused resume profiles without losing track of your data."
-              : "Overview of your resume workspace."}
+              : isCvsPage
+                ? "Create, preview, and export tailored CVs from your saved profiles."
+                : "Overview of your resume workspace."}
         </p>
       </div>
 
