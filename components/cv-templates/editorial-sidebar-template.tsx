@@ -1,3 +1,5 @@
+import { Fragment } from "react"
+
 import type { CvOverrideSection, CvRenderContact, CvRenderModel, CvRenderSkill } from "@/lib/cvs/types"
 import { buildHtmlDocument, escapeHtml, getDisplayNameParts } from "@/lib/cvs/html"
 import type { CvTemplateComponentProps } from "@/lib/templates/types"
@@ -27,7 +29,7 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-page {
-  padding: 9.5mm 10.5mm 12mm;
+  padding: 10.5mm 11mm 12.5mm;
 }
 
 .editorial-sidebar-header {
@@ -37,7 +39,7 @@ export const editorialSidebarStyles = `
     "name contacts"
     "title contacts";
   column-gap: 18px;
-  row-gap: 10px;
+  row-gap: 12px;
   align-items: start;
 }
 
@@ -75,8 +77,8 @@ export const editorialSidebarStyles = `
   grid-area: contacts;
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  margin: 1px 0 0;
+  gap: 10px;
+  margin: 2px 0 0;
 }
 
 .editorial-sidebar-contact-row {
@@ -114,7 +116,7 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-body {
   display: grid;
   grid-template-columns: 27% minmax(0, 1fr);
-  margin-top: 18px;
+  margin-top: 22px;
   border-top: 2px solid #272727;
   align-items: start;
 }
@@ -125,12 +127,12 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-sidebar {
-  padding: 16px 18px 0 0;
+  padding: 18px 20px 0 0;
 }
 
 .editorial-sidebar-main {
   border-left: 2px solid #272727;
-  padding: 16px 0 0 20px;
+  padding: 18px 0 0 22px;
 }
 
 .editorial-sidebar-body--main-only .editorial-sidebar-main {
@@ -143,13 +145,13 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-column-section + .editorial-sidebar-column-section {
-  margin-top: 18px;
+  margin-top: 20px;
   border-top: 2px solid #626262;
-  padding-top: 18px;
+  padding-top: 20px;
 }
 
 .editorial-sidebar-section-title {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-size: 10px;
   line-height: 1.2;
   font-weight: 500;
@@ -161,7 +163,7 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-summary-text {
   margin: 0;
   font-size: 9.9px;
-  line-height: 1.42;
+  line-height: 1.5;
   color: #222222;
 }
 
@@ -172,7 +174,7 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-education-item + .editorial-sidebar-education-item,
 .editorial-sidebar-experience-item + .editorial-sidebar-experience-item,
 .editorial-sidebar-project-item + .editorial-sidebar-project-item {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .editorial-sidebar-education-degree,
@@ -207,7 +209,7 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-bullet-list {
-  margin: 3px 0 0;
+  margin: 5px 0 0;
   padding-left: 18px;
 }
 
@@ -220,11 +222,11 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-skill-group + .editorial-sidebar-skill-group {
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .editorial-sidebar-skill-list {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -252,13 +254,9 @@ export const editorialSidebarStyles = `
       "contacts";
   }
 
-  .editorial-sidebar-contact-list {
-    margin-top: 4px;
-  }
-
   .editorial-sidebar-main {
     border-left: 0;
-    padding: 18px 0 0;
+    padding: 20px 0 0;
   }
 
   .editorial-sidebar-sidebar {
@@ -266,8 +264,8 @@ export const editorialSidebarStyles = `
   }
 
   .editorial-sidebar-column-section + .editorial-sidebar-column-section {
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 18px;
+    padding-top: 18px;
   }
 }
 
@@ -607,7 +605,7 @@ export function EditorialSidebarTemplate({ model, mode = "preview" }: CvTemplate
             {hasSidebar ? (
               <aside className="editorial-sidebar-sidebar">
                 {leftSections.map((section) => (
-                  <div key={section}>{renderLeftSection(section, model)}</div>
+                  <Fragment key={section}>{renderLeftSection(section, model)}</Fragment>
                 ))}
               </aside>
             ) : null}
@@ -616,7 +614,7 @@ export function EditorialSidebarTemplate({ model, mode = "preview" }: CvTemplate
               <div className="editorial-sidebar-main">
                 {renderSummarySection(displaySummary, !model.personal.summary.trim())}
                 {rightSections.map((section) => (
-                  <div key={section}>{renderRightSection(section, model)}</div>
+                  <Fragment key={section}>{renderRightSection(section, model)}</Fragment>
                 ))}
               </div>
             ) : null}
