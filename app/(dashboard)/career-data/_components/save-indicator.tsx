@@ -12,8 +12,8 @@ type SaveIndicatorProps = {
 export function SaveIndicator({ meta }: SaveIndicatorProps) {
   if (meta.status === "saving") {
     return (
-      <div className="flex items-center gap-2 text-sm font-medium text-on-surface-variant">
-        <Spinner className="size-4" />
+      <div className="flex items-center gap-2 text-xs font-medium text-primary">
+        <Spinner className="size-3.5" />
         <span>Saving…</span>
       </div>
     )
@@ -21,8 +21,8 @@ export function SaveIndicator({ meta }: SaveIndicatorProps) {
 
   if (meta.status === "error") {
     return (
-      <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-        <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4" />
+      <div className="flex items-center gap-2 text-xs font-medium text-destructive">
+        <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-3.5" />
         <span>{meta.errorMessage ?? "Couldn’t save changes."}</span>
       </div>
     )
@@ -30,12 +30,12 @@ export function SaveIndicator({ meta }: SaveIndicatorProps) {
 
   if (meta.lastSavedAt) {
     return (
-      <div className="flex items-center gap-2 text-sm font-medium text-on-surface-variant">
-        <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4 text-success" />
+      <div className="flex items-center gap-2 text-xs font-medium text-on-surface-variant/75">
+        <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5 text-success" />
         <span>Saved {formatDistanceToNow(meta.lastSavedAt, { addSuffix: true })}</span>
       </div>
     )
   }
 
-  return <div className="text-sm font-medium text-on-surface-variant">Changes save automatically.</div>
+  return <div className="text-xs font-medium text-on-surface-variant/70">Autosave on</div>
 }

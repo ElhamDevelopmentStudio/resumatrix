@@ -1,23 +1,31 @@
 "use client"
 
 import { useCallback, useEffect, useMemo } from "react"
-import { AlertCircleIcon, CheckmarkBadge01Icon, Layers01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons"
+import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Progress, ProgressLabel } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import type { SectionKey } from "@/lib/career-data/types"
-import { isBlankContact, isBlankEducation, isBlankExperience, isBlankProject, isBlankSkill } from "@/lib/career-data/validation"
+import {
+  isBlankContact,
+  isBlankEducation,
+  isBlankExperience,
+  isBlankProject,
+  isBlankSkill,
+} from "@/lib/career-data/validation"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 
+import { CareerDataSectionNav } from "./career-data-section-nav"
 import { ContactsSection } from "./contacts-section"
 import { EducationSection } from "./education-section"
 import { ExperienceSection } from "./experience-section"
 import { PersonalSection } from "./personal-section"
 import { ProjectsSection } from "./projects-section"
-import { QuickJumpCard } from "./quick-jump-card"
 import { SkillsSection } from "./skills-section"
 import { useCareerDataAutosave } from "./use-career-data-autosave"
 
@@ -30,6 +38,15 @@ const sectionLabels: Record<SectionKey, string> = {
   skills: "Skills",
 }
 
+const sectionSteps: Record<SectionKey, string> = {
+  personal: "01",
+  contacts: "02",
+  experiences: "03",
+  projects: "04",
+  education: "05",
+  skills: "06",
+}
+
 const sectionIds: Record<SectionKey, string> = {
   personal: "career-section-personal",
   contacts: "career-section-contacts",
@@ -39,8 +56,13 @@ const sectionIds: Record<SectionKey, string> = {
   skills: "career-section-skills",
 }
 
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`
+}
+
 export function CareerDataWorkspace() {
   const hydrate = useCareerDataStore((state) => state.hydrate)
+  const openSection = useCareerDataStore((state) => state.openSection)
   const saveAllSections = useCareerDataStore((state) => state.saveAllSections)
   const savePersonal = useCareerDataStore((state) => state.savePersonal)
   const saveContacts = useCareerDataStore((state) => state.saveContacts)
@@ -48,9 +70,6 @@ export function CareerDataWorkspace() {
   const saveProjects = useCareerDataStore((state) => state.saveProjects)
   const saveEducation = useCareerDataStore((state) => state.saveEducation)
   const saveSkills = useCareerDataStore((state) => state.saveSkills)
-  const expandAllSections = useCareerDataStore((state) => state.expandAllSections)
-  const collapseAllSections = useCareerDataStore((state) => state.collapseAllSections)
-  const toggleSection = useCareerDataStore((state) => state.toggleSection)
 
   const isLoading = useCareerDataStore((state) => state.isLoading)
   const loadError = useCareerDataStore((state) => state.loadError)
@@ -88,68 +107,74 @@ export function CareerDataWorkspace() {
   )
 
   const completedSections = Object.values(sectionCounts).filter((count) => count > 0).length
-  const savedSections = Object.values(sectionMeta).filter((meta) => Boolean(meta.lastSavedAt)).length
+  const progressValue = Math.round((completedSections / 6) * 100)
+  const activeSection = expandedSections[0] ?? null
   const hasActiveSave = Object.values(sectionMeta).some((meta) => meta.status === "saving")
+  const hasSaveError = Object.values(sectionMeta).some((meta) => meta.status === "error")
 
-  const jumpItems = useMemo(
+  const navItems = useMemo(
     () => [
       {
         key: "personal" as const,
+        step: sectionSteps.personal,
         label: sectionLabels.personal,
-        helper: "Your name, title, and summary.",
+        helper: "Name, headline, and summary.",
         countLabel: sectionCounts.personal ? "Ready" : "Start here",
         meta: sectionMeta.personal,
-        isOpen: expandedSections.includes("personal"),
+        isActive: activeSection === "personal",
       },
       {
         key: "contacts" as const,
+        step: sectionSteps.contacts,
         label: sectionLabels.contacts,
-        helper: "Email, portfolio, and profile links.",
-        countLabel: `${sectionCounts.contacts} item${sectionCounts.contacts === 1 ? "" : "s"}`,
+        helper: "Email, links, and contact details.",
+        countLabel: pluralize(sectionCounts.contacts, "entry"),
         meta: sectionMeta.contacts,
-        isOpen: expandedSections.includes("contacts"),
+        isActive: activeSection === "contacts",
       },
       {
         key: "experiences" as const,
+        step: sectionSteps.experiences,
         label: sectionLabels.experiences,
-        helper: "Roles, dates, achievements, and tags.",
-        countLabel: `${sectionCounts.experiences} item${sectionCounts.experiences === 1 ? "" : "s"}`,
+        helper: "Roles, impact, and dates.",
+        countLabel: pluralize(sectionCounts.experiences, "entry"),
         meta: sectionMeta.experiences,
-        isOpen: expandedSections.includes("experiences"),
+        isActive: activeSection === "experiences",
       },
       {
         key: "projects" as const,
+        step: sectionSteps.projects,
         label: sectionLabels.projects,
-        helper: "Projects, stack, and highlights.",
-        countLabel: `${sectionCounts.projects} item${sectionCounts.projects === 1 ? "" : "s"}`,
+        helper: "Projects worth reusing later.",
+        countLabel: pluralize(sectionCounts.projects, "entry"),
         meta: sectionMeta.projects,
-        isOpen: expandedSections.includes("projects"),
+        isActive: activeSection === "projects",
       },
       {
         key: "education" as const,
+        step: sectionSteps.education,
         label: sectionLabels.education,
-        helper: "Degrees, certifications, and details.",
-        countLabel: `${sectionCounts.education} item${sectionCounts.education === 1 ? "" : "s"}`,
+        helper: "Degrees, programs, and certifications.",
+        countLabel: pluralize(sectionCounts.education, "entry"),
         meta: sectionMeta.education,
-        isOpen: expandedSections.includes("education"),
+        isActive: activeSection === "education",
       },
       {
         key: "skills" as const,
+        step: sectionSteps.skills,
         label: sectionLabels.skills,
-        helper: "Skills, categories, and levels.",
-        countLabel: `${sectionCounts.skills} item${sectionCounts.skills === 1 ? "" : "s"}`,
+        helper: "Skills you may want to feature.",
+        countLabel: pluralize(sectionCounts.skills, "entry"),
         meta: sectionMeta.skills,
-        isOpen: expandedSections.includes("skills"),
+        isActive: activeSection === "skills",
       },
     ],
-    [expandedSections, sectionCounts, sectionMeta]
+    [activeSection, sectionCounts, sectionMeta]
   )
 
   const handleJump = useCallback(
     (section: SectionKey) => {
-      if (!expandedSections.includes(section)) {
-        toggleSection(section)
-      }
+      openSection(section)
 
       window.setTimeout(() => {
         document.getElementById(sectionIds[section])?.scrollIntoView({
@@ -158,12 +183,12 @@ export function CareerDataWorkspace() {
         })
       }, 80)
     },
-    [expandedSections, toggleSection]
+    [openSection]
   )
 
   if (isLoading) {
     return (
-      <main className="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-7xl items-center justify-center px-6 py-12 md:px-8 xl:px-12">
+      <main className="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-5xl items-center justify-center px-6 py-12 md:px-8 xl:px-12">
         <div className="flex items-center gap-3 text-sm font-medium text-on-surface-variant">
           <Spinner className="size-5" />
           <span>Loading your career data…</span>
@@ -191,103 +216,80 @@ export function CareerDataWorkspace() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10 md:px-8 xl:px-12">
-      <div className="mb-8 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div className="max-w-3xl space-y-3">
-          <span className="inline-flex rounded-sm bg-primary-soft px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-primary uppercase">
-            Unified workspace
-          </span>
-          <div>
-            <h1 className="font-headline text-4xl font-bold tracking-tight text-on-surface">
+    <main className="mx-auto w-full max-w-5xl px-6 py-8 md:px-8 xl:px-12">
+      <Card className="mb-8 rounded-sm border border-outline-variant/60 bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <Badge variant="outline" className="border-primary/20 bg-primary-soft text-primary">
               Career Data
-            </h1>
-            <p className="mt-2 text-base font-medium text-on-surface-variant/75">
-              Add your personal info, experience, projects, education, and skills in one place. Everything here saves automatically and becomes the reusable base for future resume variants.
-            </p>
+            </Badge>
+            <div className="space-y-2">
+              <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface md:text-4xl">
+                A calmer workspace for your resume details
+              </h1>
+              <p className="text-sm text-on-surface-variant/75 md:text-base">
+                Fill out one section at a time, jump around when you need to, and let autosave handle the rest.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-3 lg:items-end">
+            <div className="inline-flex items-center gap-2 rounded-sm border border-outline-variant/60 bg-surface-subtle px-3 py-2 text-sm font-medium text-on-surface-variant">
+              {hasActiveSave ? (
+                <>
+                  <Spinner className="size-4" />
+                  <span>Saving changes</span>
+                </>
+              ) : hasSaveError ? (
+                <>
+                  <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4 text-destructive" />
+                  <span>Some sections need attention</span>
+                </>
+              ) : (
+                <>
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4 text-success" />
+                  <span>Autosave is on</span>
+                </>
+              )}
+            </div>
+
+            <Button type="button" variant="outline" onClick={() => void saveAllSections()}>
+              Save now
+            </Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="outline" onClick={expandAllSections}>
-            Expand all
-          </Button>
-          <Button type="button" variant="outline" onClick={collapseAllSections}>
-            Collapse all
-          </Button>
-          <Button type="button" onClick={() => void saveAllSections()}>
-            Save all now
-          </Button>
+        <Progress value={progressValue} className="mt-6">
+          <div className="flex w-full items-center justify-between gap-3">
+            <ProgressLabel className="text-sm font-medium text-on-surface">Progress</ProgressLabel>
+            <span className="text-sm text-on-surface-variant/75">
+              {completedSections} of 6 sections started
+            </span>
+          </div>
+        </Progress>
+
+        <p className="mt-3 text-sm text-on-surface-variant/70">
+          Start at the top or jump to any section below. Only one section stays open at a time to keep things manageable.
+        </p>
+      </Card>
+
+      <section className="mb-8 space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-on-surface">Sections</h2>
+          <p className="mt-1 text-sm text-on-surface-variant/70">
+            Pick a section to focus on, then move on when you are ready.
+          </p>
         </div>
-      </div>
-
-      <section className="mb-8 grid gap-4 md:grid-cols-3">
-        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant/60 uppercase">
-                Coverage
-              </p>
-              <h2 className="mt-2 font-headline text-3xl font-bold text-on-surface">
-                {completedSections}/6
-              </h2>
-              <p className="mt-2 text-sm font-medium text-on-surface-variant/70">
-                Sections with meaningful content.
-              </p>
-            </div>
-            <HugeiconsIcon icon={Layers01Icon} strokeWidth={2} className="size-8 text-primary" />
-          </div>
-        </Card>
-
-        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant/60 uppercase">
-                Saved sections
-              </p>
-              <h2 className="mt-2 font-headline text-3xl font-bold text-on-surface">
-                {savedSections}
-              </h2>
-              <p className="mt-2 text-sm font-medium text-on-surface-variant/70">
-                Sections with at least one successful save.
-              </p>
-            </div>
-            <HugeiconsIcon icon={CheckmarkBadge01Icon} strokeWidth={2} className="size-8 text-success" />
-          </div>
-        </Card>
-
-        <Card className="rounded-sm border border-outline-variant/60 bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant/60 uppercase">
-                Autosave
-              </p>
-              <h2 className="mt-2 font-headline text-3xl font-bold text-on-surface">
-                {hasActiveSave ? "On" : "Ready"}
-              </h2>
-              <p className="mt-2 text-sm font-medium text-on-surface-variant/70">
-                {hasActiveSave
-                  ? "Changes are being saved right now."
-                  : "Updates save automatically after you pause typing."}
-              </p>
-            </div>
-            <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} className="size-8 text-tertiary" />
-          </div>
-        </Card>
+        <CareerDataSectionNav items={navItems} onSelect={handleJump} />
       </section>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-6">
-          <PersonalSection />
-          <ContactsSection />
-          <ExperienceSection />
-          <ProjectsSection />
-          <EducationSection />
-          <SkillsSection />
-        </div>
-
-        <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-          <QuickJumpCard items={jumpItems} onJump={handleJump} />
-        </aside>
+      <div className="space-y-4">
+        <PersonalSection />
+        <ContactsSection />
+        <ExperienceSection />
+        <ProjectsSection />
+        <EducationSection />
+        <SkillsSection />
       </div>
     </main>
   )

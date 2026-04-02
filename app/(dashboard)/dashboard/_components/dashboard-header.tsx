@@ -18,7 +18,7 @@ export function DashboardHeader() {
         </h1>
         <p className="mt-1 text-sm font-medium text-on-surface-variant/70">
           {isCareerDataPage
-            ? "One workspace for your personal info, experience, projects, education, and skills."
+            ? "Work through one section at a time. Everything saves automatically."
             : "Overview of your resume workspace."}
         </p>
       </div>

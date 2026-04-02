@@ -149,6 +149,7 @@ type CareerDataStore = {
   educationErrors: DraftErrorMap<EducationErrorState>
   skillErrors: DraftErrorMap<SkillErrorState>
   hydrate: () => Promise<void>
+  openSection: (section: SectionKey) => void
   toggleSection: (section: SectionKey) => void
   expandAllSections: () => void
   collapseAllSections: () => void
@@ -186,7 +187,7 @@ const allSections: SectionKey[] = [
   "skills",
 ]
 
-const defaultExpandedSections: SectionKey[] = ["personal", "contacts", "experiences"]
+const defaultExpandedSections: SectionKey[] = ["personal"]
 
 function createSectionMeta(): ListSectionMeta {
   return {
@@ -211,33 +212,31 @@ function createEmptySavedState(): SavedWorkspaceState {
 }
 
 function buildExpandedSections(saved: SavedWorkspaceState): SectionKey[] {
-  const nextExpanded = new Set<SectionKey>(defaultExpandedSections)
-
-  if (saved.personal.full_name || saved.personal.title || saved.personal.summary) {
-    nextExpanded.add("personal")
+  if (!saved.personal.full_name || !saved.personal.title || !saved.personal.summary) {
+    return ["personal"]
   }
 
-  if (saved.contacts.length) {
-    nextExpanded.add("contacts")
+  if (!saved.contacts.length) {
+    return ["contacts"]
   }
 
-  if (saved.experiences.length) {
-    nextExpanded.add("experiences")
+  if (!saved.experiences.length) {
+    return ["experiences"]
   }
 
-  if (saved.projects.length) {
-    nextExpanded.add("projects")
+  if (!saved.projects.length) {
+    return ["projects"]
   }
 
-  if (saved.education.length) {
-    nextExpanded.add("education")
+  if (!saved.education.length) {
+    return ["education"]
   }
 
-  if (saved.skills.length) {
-    nextExpanded.add("skills")
+  if (!saved.skills.length) {
+    return ["skills"]
   }
 
-  return allSections.filter((section) => nextExpanded.has(section))
+  return [...defaultExpandedSections]
 }
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {
@@ -490,11 +489,16 @@ export const useCareerDataStore = create<CareerDataStore>((set, get) => {
       }
     },
 
+    openSection(section) {
+      set({ expandedSections: [section] })
+    },
+
     toggleSection(section) {
       set((state) => ({
-        expandedSections: state.expandedSections.includes(section)
-          ? state.expandedSections.filter((currentSection) => currentSection !== section)
-          : [...state.expandedSections, section],
+        expandedSections:
+          state.expandedSections.length === 1 && state.expandedSections[0] === section
+            ? []
+            : [section],
       }))
     },
 

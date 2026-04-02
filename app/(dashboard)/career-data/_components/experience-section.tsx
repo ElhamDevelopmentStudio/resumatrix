@@ -7,16 +7,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { isBlankExperience } from "@/lib/career-data/validation"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 
+import {
+  emptyStateClassName,
+  fieldLabelClassName,
+  textAreaClassName,
+  textInputClassName,
+} from "./career-form-styles"
 import { CareerSectionCard } from "./career-section-card"
 import { ItemCard } from "./item-card"
 import { SectionAddButton } from "./section-add-button"
-
-const labelClassName =
-  "text-[10px] font-bold tracking-[0.2em] text-on-surface-variant/55 uppercase"
-const inputClassName =
-  "h-12 rounded-sm border-outline-variant/50 bg-surface-subtle px-4 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
-const textareaClassName =
-  "min-h-28 rounded-sm border-outline-variant/50 bg-surface-subtle px-4 py-3 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus-visible:border-primary focus-visible:ring-primary/20"
 
 export function ExperienceSection() {
   const experiences = useCareerDataStore((state) => state.experiences)
@@ -30,14 +29,14 @@ export function ExperienceSection() {
 
   const isOpen = expandedSections.includes("experiences")
   const activeCount = experiences.filter((experience) => !isBlankExperience(experience)).length
-  const summary = activeCount ? `${activeCount} experience entr${activeCount === 1 ? "y" : "ies"}` : "Add your most relevant roles"
+  const summary = activeCount ? `${activeCount} ${activeCount === 1 ? "entry" : "entries"}` : "No entries yet"
 
   return (
     <CareerSectionCard
       id="career-section-experience"
-      step="Step 03"
+      step="03"
       title="Experience"
-      description="Capture each role with the impact, dates, and tags you will reuse later."
+      description="Roles, dates, achievements, and reusable tags."
       summary={summary}
       meta={sectionMeta}
       isOpen={isOpen}
@@ -46,11 +45,11 @@ export function ExperienceSection() {
       <DynamicList
         items={experiences}
         getKey={(experience) => experience.clientId}
-        className="space-y-4"
+        className="space-y-3"
         emptyState={
-          <p className="text-sm font-medium text-on-surface-variant/70">
-            No experience entries yet. Add at least one role to power future resume variants.
-          </p>
+          <div className={emptyStateClassName}>
+            Add at least one role so your later resume versions have real work history to build from.
+          </div>
         }
         renderItem={(experience) => {
           const nextErrors = experienceErrors[experience.clientId] ?? {}
@@ -58,89 +57,89 @@ export function ExperienceSection() {
           return (
             <ItemCard
               title={experience.company || "New experience"}
-              subtitle={experience.role || "Add the company, role, dates, and key achievements."}
+              subtitle={experience.role || "Add the company, role, dates, and impact."}
               onRemove={() => void removeExperience(experience.clientId)}
               removeLabel={`Remove ${experience.company || "experience"}`}
             >
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <FieldLabel className={labelClassName}>Company</FieldLabel>
+                  <FieldLabel className={fieldLabelClassName}>Company</FieldLabel>
                   <Input
                     type="text"
                     value={experience.company}
                     onChange={(event) => updateExperienceField(experience.clientId, "company", event.target.value)}
                     aria-invalid={Boolean(nextErrors.company)}
                     placeholder="e.g. Acme Studio"
-                    className={inputClassName}
+                    className={textInputClassName}
                   />
                   <FieldError>{nextErrors.company}</FieldError>
                 </div>
 
                 <div className="space-y-2">
-                  <FieldLabel className={labelClassName}>Role</FieldLabel>
+                  <FieldLabel className={fieldLabelClassName}>Role</FieldLabel>
                   <Input
                     type="text"
                     value={experience.role}
                     onChange={(event) => updateExperienceField(experience.clientId, "role", event.target.value)}
                     aria-invalid={Boolean(nextErrors.role)}
                     placeholder="e.g. Senior Frontend Engineer"
-                    className={inputClassName}
+                    className={textInputClassName}
                   />
                   <FieldError>{nextErrors.role}</FieldError>
                 </div>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <FieldLabel className={labelClassName}>Start date</FieldLabel>
+                  <FieldLabel className={fieldLabelClassName}>Start date</FieldLabel>
                   <Input
                     type="month"
                     value={experience.start_date}
                     onChange={(event) => updateExperienceField(experience.clientId, "start_date", event.target.value)}
-                    className={inputClassName}
+                    className={textInputClassName}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <FieldLabel className={labelClassName}>End date</FieldLabel>
+                  <FieldLabel className={fieldLabelClassName}>End date</FieldLabel>
                   <Input
                     type="month"
                     value={experience.end_date}
                     onChange={(event) => updateExperienceField(experience.clientId, "end_date", event.target.value)}
-                    className={inputClassName}
+                    className={textInputClassName}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <FieldLabel className={labelClassName}>Location</FieldLabel>
+                  <FieldLabel className={fieldLabelClassName}>Location</FieldLabel>
                   <Input
                     type="text"
                     value={experience.location}
                     onChange={(event) => updateExperienceField(experience.clientId, "location", event.target.value)}
                     placeholder="e.g. Remote"
-                    className={inputClassName}
+                    className={textInputClassName}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <FieldLabel className={labelClassName}>Achievements</FieldLabel>
+                <FieldLabel className={fieldLabelClassName}>Achievements</FieldLabel>
                 <Textarea
                   value={experience.bullets_text}
                   onChange={(event) => updateExperienceField(experience.clientId, "bullets_text", event.target.value)}
                   placeholder={"Write one achievement per line.\nExample: Led the redesign of the customer dashboard."}
-                  className={textareaClassName}
+                  className={textAreaClassName}
                 />
               </div>
 
               <div className="space-y-2">
-                <FieldLabel className={labelClassName}>Tags</FieldLabel>
+                <FieldLabel className={fieldLabelClassName}>Tags</FieldLabel>
                 <Input
                   type="text"
                   value={experience.tags_text}
                   onChange={(event) => updateExperienceField(experience.clientId, "tags_text", event.target.value)}
                   placeholder="e.g. react, performance, leadership"
-                  className={inputClassName}
+                  className={textInputClassName}
                 />
               </div>
             </ItemCard>

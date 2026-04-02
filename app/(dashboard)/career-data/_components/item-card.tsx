@@ -15,28 +15,27 @@ type ItemCardProps = {
 
 export function ItemCard({ title, subtitle, children, onRemove, removeLabel }: ItemCardProps) {
   return (
-    <Card className="gap-0 rounded-sm border border-outline-variant/50 bg-card p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-4 border-b border-outline-variant/40 pb-4">
-        <div>
-          <h3 className="font-headline text-lg font-bold text-on-surface">{title}</h3>
-          {subtitle ? (
-            <p className="mt-1 text-xs font-medium text-on-surface-variant/70">{subtitle}</p>
-          ) : null}
+    <Card className="gap-4 rounded-sm border border-outline-variant/60 bg-surface-subtle/40 p-4 shadow-none">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="font-headline text-base font-semibold text-on-surface md:text-lg">{title}</h3>
+          {subtitle ? <p className="text-sm text-on-surface-variant/70">{subtitle}</p> : null}
         </div>
 
         <Button
           type="button"
-          variant="outline"
-          size="icon"
+          variant="ghost"
+          size="sm"
           onClick={onRemove}
           aria-label={removeLabel}
-          className="size-10 rounded-sm border-outline-variant/60 text-on-surface-variant hover:border-destructive hover:text-destructive"
+          className="h-auto shrink-0 px-0 py-0 text-on-surface-variant hover:bg-transparent hover:text-destructive"
         >
-          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-4" />
+          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3.5" />
+          Remove
         </Button>
       </div>
 
-      <div className="space-y-5">{children}</div>
+      <div className="space-y-4">{children}</div>
     </Card>
   )
 }
