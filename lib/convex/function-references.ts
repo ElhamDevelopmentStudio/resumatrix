@@ -22,69 +22,69 @@ type EmptyArgs = Record<string, never>
 export const convexFunctionReferences = {
   careerData: {
     getWorkspace: makeFunctionReference<"query", EmptyArgs, CareerWorkspaceData>(
-      "career.data:getWorkspace"
+      "career_data:getWorkspace"
     ),
-    getPersonal: makeFunctionReference<"query", EmptyArgs, PersonalData>("career.data:getPersonal"),
-    setPersonal: makeFunctionReference<"mutation", PersonalData, PersonalData>("career.data:setPersonal"),
-    listContacts: makeFunctionReference<"query", EmptyArgs, ContactData[]>("career.data:listContacts"),
-    createContact: makeFunctionReference<"mutation", ContactData, ContactData>("career.data:createContact"),
+    getPersonal: makeFunctionReference<"query", EmptyArgs, PersonalData>("career_data:getPersonal"),
+    setPersonal: makeFunctionReference<"mutation", PersonalData, PersonalData>("career_data:setPersonal"),
+    listContacts: makeFunctionReference<"query", EmptyArgs, ContactData[]>("career_data:listContacts"),
+    createContact: makeFunctionReference<"mutation", ContactData, ContactData>("career_data:createContact"),
     updateContact: makeFunctionReference<
       "mutation",
       { id: string; payload: ContactPayload },
       ContactData | null
-    >("career.data:updateContact"),
+    >("career_data:updateContact"),
     deleteContact: makeFunctionReference<"mutation", { id: string }, ContactData | null>(
-      "career.data:deleteContact"
+      "career_data:deleteContact"
     ),
     listExperiences: makeFunctionReference<"query", EmptyArgs, ExperienceData[]>(
-      "career.data:listExperiences"
+      "career_data:listExperiences"
     ),
     createExperience: makeFunctionReference<"mutation", ExperienceData, ExperienceData>(
-      "career.data:createExperience"
+      "career_data:createExperience"
     ),
     updateExperience: makeFunctionReference<
       "mutation",
       { id: string; payload: ExperiencePayload },
       ExperienceData | null
-    >("career.data:updateExperience"),
+    >("career_data:updateExperience"),
     deleteExperience: makeFunctionReference<"mutation", { id: string }, ExperienceData | null>(
-      "career.data:deleteExperience"
+      "career_data:deleteExperience"
     ),
-    listProjects: makeFunctionReference<"query", EmptyArgs, ProjectData[]>("career.data:listProjects"),
+    listProjects: makeFunctionReference<"query", EmptyArgs, ProjectData[]>("career_data:listProjects"),
     createProject: makeFunctionReference<"mutation", ProjectData, ProjectData>(
-      "career.data:createProject"
+      "career_data:createProject"
     ),
     updateProject: makeFunctionReference<
       "mutation",
       { id: string; payload: ProjectPayload },
       ProjectData | null
-    >("career.data:updateProject"),
+    >("career_data:updateProject"),
     deleteProject: makeFunctionReference<"mutation", { id: string }, ProjectData | null>(
-      "career.data:deleteProject"
+      "career_data:deleteProject"
     ),
     listEducation: makeFunctionReference<"query", EmptyArgs, EducationData[]>(
-      "career.data:listEducation"
+      "career_data:listEducation"
     ),
     createEducation: makeFunctionReference<"mutation", EducationData, EducationData>(
-      "career.data:createEducation"
+      "career_data:createEducation"
     ),
     updateEducation: makeFunctionReference<
       "mutation",
       { id: string; payload: EducationPayload },
       EducationData | null
-    >("career.data:updateEducation"),
+    >("career_data:updateEducation"),
     deleteEducation: makeFunctionReference<"mutation", { id: string }, EducationData | null>(
-      "career.data:deleteEducation"
+      "career_data:deleteEducation"
     ),
-    listSkills: makeFunctionReference<"query", EmptyArgs, SkillData[]>("career.data:listSkills"),
-    createSkill: makeFunctionReference<"mutation", SkillData, SkillData>("career.data:createSkill"),
+    listSkills: makeFunctionReference<"query", EmptyArgs, SkillData[]>("career_data:listSkills"),
+    createSkill: makeFunctionReference<"mutation", SkillData, SkillData>("career_data:createSkill"),
     updateSkill: makeFunctionReference<
       "mutation",
       { id: string; payload: SkillPayload },
       SkillData | null
-    >("career.data:updateSkill"),
+    >("career_data:updateSkill"),
     deleteSkill: makeFunctionReference<"mutation", { id: string }, SkillData | null>(
-      "career.data:deleteSkill"
+      "career_data:deleteSkill"
     ),
   },
   profiles: {

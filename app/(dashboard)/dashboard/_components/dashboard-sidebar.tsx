@@ -56,9 +56,7 @@ export function DashboardSidebar() {
   return (
     <aside className="border-b border-outline-variant/60 bg-surface-muted px-6 py-6 lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-b-0">
       <div className="mb-8 flex flex-col gap-1 lg:mb-10">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <Logo />
-        </Link>
+        <Logo href="/dashboard" />
       </div>
 
       <nav className="flex flex-col gap-1 lg:flex-1" aria-label="Primary">
