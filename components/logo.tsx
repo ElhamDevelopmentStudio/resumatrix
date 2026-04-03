@@ -1,6 +1,6 @@
-import Link from "next/link"
 import { CubeIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 
