@@ -1,3 +1,5 @@
+import { Fragment } from "react"
+
 import type { CvOverrideSection, CvRenderModel } from "@/lib/cvs/types"
 import {
   buildHtmlDocument,
@@ -13,6 +15,19 @@ export const splitHeaderStyles = `
 }
 
 .split-header-document {
+  --split-header-name-primary-size: 18pt;
+  --split-header-name-secondary-size: 24pt;
+  --split-header-contact-size: 9.5pt;
+  --split-header-body-size: 11pt;
+  --split-header-meta-size: 10.5pt;
+  --split-header-section-size: 10pt;
+  --split-header-body-line-height: 1.34;
+  --split-header-summary-line-height: 1.38;
+  --split-header-tight-line-height: 1.16;
+  --split-header-section-gap: 14pt;
+  --split-header-entry-gap: 11pt;
+  --split-header-heading-gap: 6pt;
+  --split-header-detail-gap: 4pt;
   box-sizing: border-box;
   width: 100%;
   max-width: 210mm;
@@ -21,24 +36,26 @@ export const splitHeaderStyles = `
   background: #ffffff;
   color: #1f1f22;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-size: var(--split-header-body-size);
+  line-height: var(--split-header-body-line-height);
 }
 
 .split-header-page {
-  padding: 11mm 12.5mm 14mm;
+  padding: 14mm 15mm 16mm;
 }
 
 .split-header-top-line {
   height: 1px;
   width: 100%;
-  margin-bottom: 16mm;
+  margin-bottom: 12pt;
   background: #8b8b90;
 }
 
 .split-header-hero {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12mm;
+  gap: 9mm;
 }
 
 .split-header-name-block {
@@ -49,19 +66,19 @@ export const splitHeaderStyles = `
 .split-header-name-secondary {
   margin: 0;
   text-transform: uppercase;
-  line-height: 0.95;
-  letter-spacing: 0.08em;
+  line-height: 0.92;
+  letter-spacing: 0.06em;
 }
 
 .split-header-name-primary {
-  font-size: 33px;
+  font-size: var(--split-header-name-primary-size);
   font-weight: 300;
   color: #5f5f63;
 }
 
 .split-header-name-secondary {
-  margin-top: 4px;
-  font-size: 39px;
+  margin-top: 2pt;
+  font-size: var(--split-header-name-secondary-size);
   font-weight: 500;
   color: #111111;
 }
@@ -69,59 +86,59 @@ export const splitHeaderStyles = `
 .split-header-contact-block {
   display: flex;
   min-width: 176px;
-  max-width: 235px;
+  max-width: 240px;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1pt;
   text-align: right;
   flex-shrink: 0;
 }
 
 .split-header-contact-line {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: var(--split-header-contact-size);
+  line-height: 1.32;
   color: #202024;
   white-space: nowrap;
 }
 
 .split-header-summary {
-  margin: 20px 0 0;
-  max-width: 94%;
-  font-size: 11px;
-  line-height: 1.32;
-  color: #55565a;
+  margin: 11pt 0 0;
+  max-width: 74ch;
+  font-size: var(--split-header-body-size);
+  line-height: var(--split-header-summary-line-height);
+  color: #4d4f54;
 }
 
 .split-header-divider {
-  height: 4px;
+  height: 2px;
   width: 100%;
-  margin: 14px 0 13px;
+  margin: 11pt 0 14pt;
   background: #c2c2c6;
 }
 
 .split-header-section + .split-header-section {
-  margin-top: 16px;
+  margin-top: var(--split-header-section-gap);
 }
 
 .split-header-section-title {
-  margin: 0 0 15px;
-  font-size: 11px;
-  line-height: 1.2;
-  font-weight: 400;
-  letter-spacing: 0.06em;
+  margin: 0 0 var(--split-header-heading-gap);
+  font-size: var(--split-header-section-size);
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #5a5a5f;
 }
 
 .split-header-entry + .split-header-entry {
-  margin-top: 18px;
+  margin-top: var(--split-header-entry-gap);
 }
 
 .split-header-entry-title {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: var(--split-header-body-size);
+  line-height: var(--split-header-tight-line-height);
   font-weight: 800;
   text-transform: uppercase;
   color: #111111;
@@ -131,42 +148,48 @@ export const splitHeaderStyles = `
 .split-header-entry-date,
 .split-header-entry-description,
 .split-header-entry-details {
-  margin: 2px 0 0;
-  font-size: 11px;
-  line-height: 1.24;
+  margin: var(--split-header-detail-gap) 0 0;
+  font-size: var(--split-header-meta-size);
+  line-height: var(--split-header-body-line-height);
   color: #1f1f22;
 }
 
 .split-header-entry-description,
 .split-header-entry-details {
-  color: #55565a;
-  max-width: 95%;
+  color: #4d4f54;
+  max-width: 78ch;
 }
 
 .split-header-bullet-list,
 .split-header-skill-list {
-  margin: 2px 0 0;
-  padding-left: 22px;
+  margin: 5pt 0 0;
+  padding-left: 15pt;
 }
 
 .split-header-bullet-list li,
 .split-header-skill-list li {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.2;
-  color: #55565a;
+  font-size: var(--split-header-meta-size);
+  line-height: var(--split-header-body-line-height);
+  color: #4d4f54;
+}
+
+.split-header-bullet-list li + li,
+.split-header-skill-list li + li {
+  margin-top: 2.5pt;
 }
 
 .split-header-skill-list {
   columns: 2;
-  column-gap: 18px;
+  column-gap: 18pt;
 }
 
 .split-header-tech-line {
-  margin: 3px 0 0;
-  font-size: 11px;
-  line-height: 1.24;
-  color: #55565a;
+  margin: var(--split-header-detail-gap) 0 0;
+  font-size: var(--split-header-meta-size);
+  line-height: var(--split-header-body-line-height);
+  color: #4d4f54;
+  max-width: 78ch;
 }
 
 .split-header-placeholder {
@@ -179,11 +202,11 @@ export const splitHeaderStyles = `
   }
 
   .split-header-page {
-    padding: 20px;
+    padding: 24px;
   }
 
   .split-header-top-line {
-    margin-bottom: 28px;
+    margin-bottom: 18px;
   }
 
   .split-header-hero {
@@ -227,7 +250,7 @@ export const splitHeaderStyles = `
   }
 
   .split-header-page {
-    padding: 11mm 12.5mm 14mm;
+    padding: 14mm 15mm 16mm;
   }
 }
 `
@@ -442,7 +465,7 @@ export function SplitHeaderTemplate({ model, mode = "preview" }: CvTemplateCompo
           <div className="split-header-divider" />
 
           {model.section_order.map((section) => (
-            <div key={section}>{renderSection(section, model)}</div>
+            <Fragment key={section}>{renderSection(section, model)}</Fragment>
           ))}
         </div>
       </article>
