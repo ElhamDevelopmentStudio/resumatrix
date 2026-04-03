@@ -20,13 +20,13 @@ export const splitHeaderStyles = `
   --split-header-contact-size: 9.5pt;
   --split-header-body-size: 11pt;
   --split-header-meta-size: 10.5pt;
-  --split-header-section-size: 10pt;
+  --split-header-section-size: 10.75pt;
   --split-header-body-line-height: 1.34;
   --split-header-summary-line-height: 1.38;
   --split-header-tight-line-height: 1.16;
-  --split-header-section-gap: 14pt;
-  --split-header-entry-gap: 11pt;
-  --split-header-heading-gap: 6pt;
+  --split-header-section-gap: 16pt;
+  --split-header-entry-gap: 12pt;
+  --split-header-heading-gap: 8pt;
   --split-header-detail-gap: 4pt;
   box-sizing: border-box;
   width: 100%;
@@ -119,6 +119,8 @@ export const splitHeaderStyles = `
 
 .split-header-section + .split-header-section {
   margin-top: var(--split-header-section-gap);
+  padding-top: 10pt;
+  border-top: 1px solid #d7d8dc;
 }
 
 .split-header-section-title {
@@ -128,7 +130,7 @@ export const splitHeaderStyles = `
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #5a5a5f;
+  color: #41444a;
 }
 
 .split-header-entry + .split-header-entry {
