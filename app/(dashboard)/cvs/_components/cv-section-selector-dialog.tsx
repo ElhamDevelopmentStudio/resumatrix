@@ -22,6 +22,7 @@ export type CvSectionSelectorItem = {
   title: string
   description: string
   meta: string[]
+  available: boolean
 }
 
 type CvSectionSelectorDialogProps = {
@@ -49,7 +50,12 @@ export function CvSectionSelectorDialog({
   const [mode, setMode] = useState<"automatic" | "custom">(
     value === null ? "automatic" : "custom"
   )
-  const [selectedIds, setSelectedIds] = useState<string[]>(() => value ?? items.map((item) => item.id))
+  const automaticIds = useMemo(
+    () => items.filter((item) => item.available).map((item) => item.id),
+    [items]
+  )
+  const automaticIdSet = useMemo(() => new Set(automaticIds), [automaticIds])
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => value ?? automaticIds)
 
   const allIds = useMemo(() => items.map((item) => item.id), [items])
   const visibleItems = useMemo(() => {
@@ -65,15 +71,19 @@ export function CvSectionSelectorDialog({
     })
   }, [items, query])
 
-  const selectedCount = mode === "automatic" ? items.length : selectedIds.length
+  const selectedCount = mode === "automatic" ? automaticIds.length : selectedIds.length
 
   const isSelected = (itemId: string) =>
-    mode === "automatic" ? true : selectedIds.includes(itemId)
+    mode === "automatic" ? automaticIdSet.has(itemId) : selectedIds.includes(itemId)
 
   const toggleItem = (itemId: string) => {
     if (mode === "automatic") {
       setMode("custom")
-      setSelectedIds(allIds.filter((currentId) => currentId !== itemId))
+      setSelectedIds(
+        automaticIdSet.has(itemId)
+          ? automaticIds.filter((currentId) => currentId !== itemId)
+          : [...automaticIds, itemId]
+      )
       return
     }
 
@@ -85,7 +95,11 @@ export function CvSectionSelectorDialog({
   }
 
   const handleSave = () => {
-    if (mode === "automatic" || selectedIds.length === allIds.length) {
+    if (
+      mode === "automatic" ||
+      (selectedIds.length === automaticIds.length &&
+        automaticIds.every((itemId) => selectedIds.includes(itemId)))
+    ) {
       onSave(null)
       onOpenChange(false)
       return
@@ -121,8 +135,15 @@ export function CvSectionSelectorDialog({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={() => setMode("automatic")}>
-                Use everything
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setMode("automatic")
+                  setSelectedIds(automaticIds)
+                }}
+              >
+                Use profile default
               </Button>
               <Button
                 type="button"
@@ -151,7 +172,7 @@ export function CvSectionSelectorDialog({
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-medium text-on-surface">
-                  {mode === "automatic" ? "Everything is on" : "Choosing by hand"}
+                  {mode === "automatic" ? "Profile default" : "Choosing by hand"}
                 </p>
                 <Badge variant="outline">
                   {selectedCount} of {items.length} selected
@@ -159,7 +180,9 @@ export function CvSectionSelectorDialog({
               </div>
               <p className="text-sm text-on-surface-variant/75">
                 {mode === "automatic"
-                  ? `Every ${itemLabel} from this profile stays on by default.`
+                  ? automaticIds.length === items.length
+                    ? `Every ${itemLabel} from this profile stays on by default.`
+                    : `Everything that matches the linked profile stays on by default. Anything filtered out by the profile stays off unless you choose it here.`
                   : `Only the ${itemLabel}${selectedCount === 1 ? "" : "s"} that stay on here will appear in this CV.`}
               </p>
             </div>
@@ -207,7 +230,16 @@ export function CvSectionSelectorDialog({
                             {metaItem}
                           </Badge>
                         ))}
+                        {!item.available ? (
+                          <Badge variant="destructive">Filtered out by profile</Badge>
+                        ) : null}
                       </div>
+
+                      {!item.available ? (
+                        <p className="text-xs text-on-surface-variant/70">
+                          This item is outside the linked profile right now, but you can still add it to this CV.
+                        </p>
+                      ) : null}
                     </div>
                   </Card>
                 )

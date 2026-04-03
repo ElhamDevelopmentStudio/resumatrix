@@ -80,6 +80,7 @@ type SelectionSection = {
   description: string
   helper: string
   currentCount: number
+  automaticCount: number
   selection: string[] | null
   items: CvSectionSelectorItem[]
 }
@@ -100,101 +101,199 @@ function buildSnapshot(payload: CvPayload) {
 }
 
 function buildSelectionSections(
-  dataset: CareerWorkspaceData,
+  allItemsDataset: CareerWorkspaceData,
+  automaticDataset: CareerWorkspaceData,
   payload: CvPayload,
   counts: Record<CvOverrideSection, number>
 ): SelectionSection[] {
+  const formatItemLabel = (singularLabel: string, pluralLabel: string, count: number) =>
+    count === 1 ? singularLabel : pluralLabel
+
+  const buildAutomaticHelper = (
+    singularLabel: string,
+    pluralLabel: string,
+    automaticCount: number,
+    totalCount: number
+  ) => {
+    if (!totalCount) {
+      return `No saved ${formatItemLabel(singularLabel, pluralLabel, totalCount)} yet.`
+    }
+
+    if (!automaticCount) {
+      return `The linked profile currently filters out every saved ${singularLabel}. Choose by hand if you want to add one here.`
+    }
+
+    if (automaticCount === totalCount) {
+      return `All ${totalCount} ${formatItemLabel(singularLabel, pluralLabel, totalCount)} stay on by default.`
+    }
+
+    return `${automaticCount} of ${totalCount} ${formatItemLabel(singularLabel, pluralLabel, totalCount)} stay on by default. The rest are currently filtered out by the profile.`
+  }
+
+  const buildCustomHelper = (
+    pluralLabel: string,
+    selectedCount: number,
+    totalCount: number
+  ) =>
+    `${selectedCount} of ${totalCount} ${pluralLabel} selected for this CV.`
+
+  const automaticContactIds = new Set(automaticDataset.contacts.map((contact) => contact.id))
+  const automaticExperienceIds = new Set(automaticDataset.experiences.map((entry) => entry.id))
+  const automaticProjectIds = new Set(automaticDataset.projects.map((project) => project.id))
+  const automaticEducationIds = new Set(automaticDataset.education.map((entry) => entry.id))
+  const automaticSkillIds = new Set(automaticDataset.skills.map((skill) => skill.id))
+
   return [
     {
       key: "contacts",
       label: "Contacts",
       itemLabel: "contact method",
-      description: "Turn contact lines on or off for this CV.",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add or remove specific contact lines for this CV.",
       helper:
         payload.overrides.selections.contacts === null
-          ? `All ${dataset.contacts.length} contact methods are on.`
-          : `${payload.overrides.selections.contacts.length} of ${dataset.contacts.length} contact methods are on.`,
+          ? buildAutomaticHelper(
+              "contact method",
+              "contact methods",
+              automaticDataset.contacts.length,
+              allItemsDataset.contacts.length
+            )
+          : buildCustomHelper(
+              "contact methods",
+              payload.overrides.selections.contacts.length,
+              allItemsDataset.contacts.length
+            ),
       currentCount: counts.contacts,
+      automaticCount: automaticDataset.contacts.length,
       selection: payload.overrides.selections.contacts,
-      items: dataset.contacts.map((contact) => ({
+      items: allItemsDataset.contacts.map((contact) => ({
         id: contact.id,
         title: contact.type || "Contact",
         description: contact.value,
         meta: [contact.type || "Contact"],
+        available: automaticContactIds.has(contact.id),
       })),
     },
     {
       key: "experiences",
       label: "Experience",
       itemLabel: "experience",
-      description: "Turn experience entries on or off after profile filtering.",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add or remove specific experience entries for this CV.",
       helper:
         payload.overrides.selections.experiences === null
-          ? `All ${dataset.experiences.length} experience entries are on.`
-          : `${payload.overrides.selections.experiences.length} of ${dataset.experiences.length} experience entries are on.`,
+          ? buildAutomaticHelper(
+              "experience entry",
+              "experience entries",
+              automaticDataset.experiences.length,
+              allItemsDataset.experiences.length
+            )
+          : buildCustomHelper(
+              "experience entries",
+              payload.overrides.selections.experiences.length,
+              allItemsDataset.experiences.length
+            ),
       currentCount: counts.experiences,
+      automaticCount: automaticDataset.experiences.length,
       selection: payload.overrides.selections.experiences,
-      items: dataset.experiences.map((entry) => ({
+      items: allItemsDataset.experiences.map((entry) => ({
         id: entry.id,
         title: `${entry.role || "Role"} · ${entry.company || "Company"}`,
         description: entry.location || "No location added",
         meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
+        available: automaticExperienceIds.has(entry.id),
       })),
     },
     {
       key: "projects",
       label: "Projects",
       itemLabel: "project",
-      description: "Turn projects on or off after profile filtering.",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add a project the profile filtered out, or remove one that is already showing.",
       helper:
         payload.overrides.selections.projects === null
-          ? `All ${dataset.projects.length} projects are on.`
-          : `${payload.overrides.selections.projects.length} of ${dataset.projects.length} projects are on.`,
+          ? buildAutomaticHelper(
+              "project",
+              "projects",
+              automaticDataset.projects.length,
+              allItemsDataset.projects.length
+            )
+          : buildCustomHelper(
+              "projects",
+              payload.overrides.selections.projects.length,
+              allItemsDataset.projects.length
+            ),
       currentCount: counts.projects,
+      automaticCount: automaticDataset.projects.length,
       selection: payload.overrides.selections.projects,
-      items: dataset.projects.map((project) => ({
+      items: allItemsDataset.projects.map((project) => ({
         id: project.id,
         title: project.name || "Project",
         description: project.description || "No description added",
         meta: project.tech_stack,
+        available: automaticProjectIds.has(project.id),
       })),
     },
     {
       key: "education",
       label: "Education",
       itemLabel: "education item",
-      description: "Turn education entries on or off for this CV.",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add or remove specific education entries for this CV.",
       helper:
         payload.overrides.selections.education === null
-          ? `All ${dataset.education.length} education entries are on.`
-          : `${payload.overrides.selections.education.length} of ${dataset.education.length} education entries are on.`,
+          ? buildAutomaticHelper(
+              "education entry",
+              "education entries",
+              automaticDataset.education.length,
+              allItemsDataset.education.length
+            )
+          : buildCustomHelper(
+              "education entries",
+              payload.overrides.selections.education.length,
+              allItemsDataset.education.length
+            ),
       currentCount: counts.education,
+      automaticCount: automaticDataset.education.length,
       selection: payload.overrides.selections.education,
-      items: dataset.education.map((entry) => ({
+      items: allItemsDataset.education.map((entry) => ({
         id: entry.id,
         title: `${entry.degree || "Degree"} · ${entry.institution || "Institution"}`,
         description: entry.details || "No extra details added",
         meta: [`${entry.start_date} → ${entry.end_date || "Present"}`],
+        available: automaticEducationIds.has(entry.id),
       })),
     },
     {
       key: "skills",
       label: "Skills",
       itemLabel: "skill",
-      description: "Turn skills on or off for this CV.",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add or remove specific skills for this CV.",
       helper:
         payload.overrides.selections.skills === null
-          ? `All ${dataset.skills.length} skills are on.`
-          : `${payload.overrides.selections.skills.length} of ${dataset.skills.length} skills are on.`,
+          ? buildAutomaticHelper(
+              "skill",
+              "skills",
+              automaticDataset.skills.length,
+              allItemsDataset.skills.length
+            )
+          : buildCustomHelper(
+              "skills",
+              payload.overrides.selections.skills.length,
+              allItemsDataset.skills.length
+            ),
       currentCount: counts.skills,
+      automaticCount: automaticDataset.skills.length,
       selection: payload.overrides.selections.skills,
-      items: dataset.skills.map((skill) => ({
+      items: allItemsDataset.skills.map((skill) => ({
         id: skill.id,
         title: skill.name || "Skill",
         description:
           [skill.category, skill.level].filter(Boolean).join(" · ") ||
           "No category or level added",
         meta: [skill.category, skill.level].filter(Boolean),
+        available: automaticSkillIds.has(skill.id),
       })),
     },
   ]
@@ -220,7 +319,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   const isDirty = payloadSnapshot !== savedSnapshot
   const canSave = Boolean(selectedProfile && selectedTemplate) && !hasCvValidationErrors(validationErrors)
 
-  const baseProfileDataset = useMemo(() => {
+  const automaticSelectionDataset = useMemo(() => {
     if (!selectedProfile) {
       return null
     }
@@ -231,6 +330,11 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
     )
   }, [careerData, selectedProfile, state.overrides.content])
 
+  const allItemsDataset = useMemo(
+    () => applyCvContentOverrides(careerData, state.overrides.content),
+    [careerData, state.overrides.content]
+  )
+
   const renderModel = useMemo(() => {
     if (!selectedProfile || !selectedTemplate) {
       return null
@@ -240,18 +344,18 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   }, [careerData, selectedProfile, selectedTemplate, state])
 
   const selectionSections = useMemo(() => {
-    if (!baseProfileDataset || !renderModel) {
+    if (!automaticSelectionDataset || !renderModel) {
       return []
     }
 
-    return buildSelectionSections(baseProfileDataset, state, {
+    return buildSelectionSections(allItemsDataset, automaticSelectionDataset, state, {
       contacts: renderModel.contacts.length,
       experiences: renderModel.experiences.length,
       projects: renderModel.projects.length,
       education: renderModel.education.length,
       skills: renderModel.skills.length,
     })
-  }, [baseProfileDataset, renderModel, state])
+  }, [allItemsDataset, automaticSelectionDataset, renderModel, state])
 
   const activeSelectionDefinition = activeSelectionSection
     ? selectionSections.find((section) => section.key === activeSelectionSection) ?? null
@@ -598,7 +702,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                       <div>
                         <h2 className="text-lg font-semibold text-on-surface">Choose items</h2>
                         <p className="mt-1 text-sm text-on-surface-variant/75">
-                          Everything from the chosen profile starts on. Only customize a section when you want to hand-pick what shows here.
+                          Everything that matches the linked profile starts on. Switch a section to choosing by hand when you want to add a saved item back in, or trim something out for this CV.
                         </p>
                       </div>
 
@@ -606,7 +710,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                         <div className="grid gap-4 md:grid-cols-2">
                           {selectionSections.map((section) => {
                             const isCustom = section.selection !== null
-                            const enabledCount = section.selection?.length ?? section.items.length
+                            const enabledCount = section.selection?.length ?? section.automaticCount
 
                             return (
                               <Card
@@ -617,7 +721,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                                   <div className="flex flex-wrap items-center gap-2">
                                     <h3 className="text-sm font-medium text-on-surface">{section.label}</h3>
                                     <Badge variant={isCustom ? "default" : "outline"}>
-                                      {isCustom ? "Choosing by hand" : "Everything on"}
+                                      {isCustom ? "Choosing by hand" : "Profile default"}
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-on-surface-variant/75">{section.helper}</p>
@@ -641,7 +745,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                                         size="sm"
                                         onClick={() => handleSelectionSave(section.key, null)}
                                       >
-                                        Use everything again
+                                        Use profile default again
                                       </Button>
                                     ) : null}
                                   </div>

@@ -25,6 +25,18 @@ function filterEntriesBySelection<T extends { id: string }>(
   return entries.filter((entry) => selectedIdSet.has(entry.id))
 }
 
+function resolveCvSectionEntries<T extends { id: string }>(
+  defaultEntries: T[],
+  allEntries: T[],
+  selectedIds: string[] | null
+) {
+  if (selectedIds === null) {
+    return defaultEntries
+  }
+
+  return filterEntriesBySelection(allEntries, selectedIds)
+}
+
 function formatMonthValue(value: string) {
   if (!value) {
     return ""
@@ -95,27 +107,36 @@ export function buildCvDataset(
   careerData: CareerWorkspaceData
 ): CareerWorkspaceData {
   const profileDataset = buildProfileDataset(profile, careerData)
-  const contentAdjustedDataset = applyCvContentOverrides(profileDataset, cv.overrides.content)
+  const contentAdjustedProfileDataset = applyCvContentOverrides(profileDataset, cv.overrides.content)
+  const contentAdjustedCareerData = applyCvContentOverrides(careerData, cv.overrides.content)
 
   return {
-    personal: contentAdjustedDataset.personal,
-    contacts: filterEntriesBySelection(
-      contentAdjustedDataset.contacts,
+    personal: contentAdjustedProfileDataset.personal,
+    contacts: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.contacts,
+      contentAdjustedCareerData.contacts,
       cv.overrides.selections.contacts
     ),
-    experiences: filterEntriesBySelection(
-      contentAdjustedDataset.experiences,
+    experiences: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.experiences,
+      contentAdjustedCareerData.experiences,
       cv.overrides.selections.experiences
     ),
-    projects: filterEntriesBySelection(
-      contentAdjustedDataset.projects,
+    projects: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.projects,
+      contentAdjustedCareerData.projects,
       cv.overrides.selections.projects
     ),
-    education: filterEntriesBySelection(
-      contentAdjustedDataset.education,
+    education: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.education,
+      contentAdjustedCareerData.education,
       cv.overrides.selections.education
     ),
-    skills: filterEntriesBySelection(contentAdjustedDataset.skills, cv.overrides.selections.skills),
+    skills: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.skills,
+      contentAdjustedCareerData.skills,
+      cv.overrides.selections.skills
+    ),
   }
 }
 

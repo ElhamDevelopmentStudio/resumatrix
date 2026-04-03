@@ -532,7 +532,7 @@ export function CvContentEditor({
               </>
             ) : (
               <EmptySectionNotice
-                message="No projects are showing in this CV right now. Turn one on when you want to edit it here."
+                message="No projects are showing in this CV right now. Open Choose items to add one back, even if the linked profile filtered it out."
                 onOpenItems={onOpenItems}
               />
             )}
