@@ -1,3 +1,5 @@
+import { Fragment } from "react"
+
 import type { CvOverrideSection, CvRenderModel } from "@/lib/cvs/types"
 import { buildHtmlDocument, escapeHtml } from "@/lib/cvs/html"
 import type { CvTemplateComponentProps } from "@/lib/templates/types"
@@ -8,6 +10,13 @@ export const atsStandardStyles = `
 }
 
 .cv-document {
+  --cv-name-size: 24pt;
+  --cv-role-size: 11.5pt;
+  --cv-body-size: 10.5pt;
+  --cv-meta-size: 10pt;
+  --cv-section-size: 10.5pt;
+  --cv-body-line-height: 1.42;
+  --cv-summary-line-height: 1.5;
   box-sizing: border-box;
   width: 100%;
   max-width: 210mm;
@@ -16,53 +25,56 @@ export const atsStandardStyles = `
   background: #ffffff;
   color: #0f172a;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: var(--cv-body-size);
+  line-height: var(--cv-body-line-height);
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
 }
 
 .cv-page {
-  padding: 20mm 16mm;
+  padding: 18mm 15mm;
 }
 
 .cv-header {
   border-bottom: 1px solid #dbe3ef;
-  padding-bottom: 16px;
+  padding-bottom: 14pt;
 }
 
 .cv-name {
   margin: 0;
-  font-size: 31px;
+  font-size: var(--cv-name-size);
   line-height: 1.05;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
 
 .cv-role {
-  margin: 8px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 7pt 0 0;
+  font-size: var(--cv-role-size);
+  line-height: 1.35;
   font-weight: 600;
   color: #334155;
 }
 
 .cv-summary {
-  margin: 14px 0 0;
-  font-size: 12px;
-  line-height: 1.65;
+  margin: 10pt 0 0;
+  max-width: 78ch;
+  font-size: var(--cv-body-size);
+  line-height: var(--cv-summary-line-height);
   color: #334155;
 }
 
 .cv-contact-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
-  margin: 12px 0 0;
+  gap: 6pt 12pt;
+  margin: 9pt 0 0;
   padding: 0;
   list-style: none;
 }
 
 .cv-contact-item {
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: var(--cv-meta-size);
+  line-height: 1.35;
   color: #475569;
 }
 
@@ -71,22 +83,27 @@ export const atsStandardStyles = `
 }
 
 .cv-section {
-  padding-top: 18px;
+  padding-top: 14pt;
+}
+
+.cv-section + .cv-section {
+  margin-top: 14pt;
+  border-top: 1px solid #dbe3ef;
 }
 
 .cv-section-title {
-  margin: 0 0 10px;
-  font-size: 11px;
-  line-height: 1.4;
+  margin: 0 0 9pt;
+  font-size: var(--cv-section-size);
+  line-height: 1.2;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #334155;
+  color: #1e293b;
 }
 
 .cv-item + .cv-item {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 12pt;
+  padding-top: 12pt;
   border-top: 1px solid #e5ebf3;
 }
 
@@ -99,8 +116,8 @@ export const atsStandardStyles = `
 
 .cv-item-title {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: var(--cv-body-size);
+  line-height: 1.24;
   font-weight: 700;
   color: #0f172a;
 }
@@ -110,9 +127,9 @@ export const atsStandardStyles = `
 .cv-item-description,
 .cv-item-meta,
 .cv-item-details {
-  margin: 4px 0 0;
-  font-size: 11px;
-  line-height: 1.6;
+  margin: 4pt 0 0;
+  font-size: var(--cv-meta-size);
+  line-height: var(--cv-body-line-height);
   color: #475569;
 }
 
@@ -124,23 +141,28 @@ export const atsStandardStyles = `
 
 .cv-bullet-list,
 .cv-skill-list {
-  margin: 8px 0 0;
-  padding-left: 18px;
+  margin: 6pt 0 0;
+  padding-left: 15pt;
 }
 
 .cv-bullet-list li,
 .cv-skill-list li {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.65;
+  font-size: var(--cv-meta-size);
+  line-height: var(--cv-body-line-height);
   color: #1e293b;
+}
+
+.cv-bullet-list li + li,
+.cv-skill-list li + li {
+  margin-top: 3pt;
 }
 
 .cv-tech-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0 0;
+  gap: 5pt;
+  margin: 6pt 0 0;
 }
 
 .cv-tech-pill {
@@ -149,7 +171,7 @@ export const atsStandardStyles = `
   padding: 2px 6px;
   border-radius: 999px;
   border: 1px solid #dbe3ef;
-  font-size: 10px;
+  font-size: 9.25pt;
   line-height: 1.4;
   color: #334155;
 }
@@ -192,7 +214,7 @@ export const atsStandardStyles = `
   }
 
   .cv-page {
-    padding: 14mm 12mm;
+    padding: 16mm 13mm;
   }
 }
 `
@@ -408,7 +430,7 @@ export function AtsStandardTemplate({ model, mode = "preview" }: CvTemplateCompo
           </header>
 
           {model.section_order.map((section) => (
-            <div key={section}>{renderSection(section, model)}</div>
+            <Fragment key={section}>{renderSection(section, model)}</Fragment>
           ))}
         </div>
       </article>

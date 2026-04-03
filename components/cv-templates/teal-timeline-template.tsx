@@ -13,6 +13,12 @@ export const tealTimelineStyles = `
 }
 
 .teal-timeline-document {
+  --teal-timeline-name-size: 22pt;
+  --teal-timeline-role-size: 12.5pt;
+  --teal-timeline-body-size: 10.5pt;
+  --teal-timeline-meta-size: 10pt;
+  --teal-timeline-section-size: 10.75pt;
+  --teal-timeline-body-line-height: 1.42;
   box-sizing: border-box;
   width: 100%;
   max-width: 210mm;
@@ -21,19 +27,21 @@ export const tealTimelineStyles = `
   background: #ffffff;
   color: #2f2f2f;
   font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--teal-timeline-body-size);
+  line-height: var(--teal-timeline-body-line-height);
 }
 
 .teal-timeline-page {
-  padding: 11mm 10mm 12mm;
+  padding: 14mm 13mm 15mm;
 }
 
 .teal-timeline-header {
-  margin-bottom: 30px;
+  margin-bottom: 18pt;
 }
 
 .teal-timeline-name {
   margin: 0;
-  font-size: 27px;
+  font-size: var(--teal-timeline-name-size);
   line-height: 1.02;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -42,9 +50,9 @@ export const tealTimelineStyles = `
 }
 
 .teal-timeline-role {
-  margin: 4px 0 0;
-  font-size: 16px;
-  line-height: 1.2;
+  margin: 5pt 0 0;
+  font-size: var(--teal-timeline-role-size);
+  line-height: 1.22;
   font-weight: 700;
   text-transform: uppercase;
   color: #333333;
@@ -53,15 +61,15 @@ export const tealTimelineStyles = `
 .teal-timeline-contact-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px 10px;
-  margin-top: 10px;
-  padding-top: 7px;
+  gap: 6pt 9pt;
+  margin-top: 9pt;
+  padding-top: 7pt;
   border-top: 1px solid #d5d8d8;
 }
 
 .teal-timeline-contact-item,
 .teal-timeline-contact-separator {
-  font-size: 10px;
+  font-size: var(--teal-timeline-meta-size);
   line-height: 1.35;
   color: #4f4f4f;
 }
@@ -71,23 +79,26 @@ export const tealTimelineStyles = `
 }
 
 .teal-timeline-section + .teal-timeline-section {
-  margin-top: 24px;
+  margin-top: 16pt;
+  padding-top: 12pt;
+  border-top: 1px solid #d5d8d8;
 }
 
 .teal-timeline-section-title {
-  margin: 0 0 10px;
-  font-size: 13px;
+  margin: 0 0 8pt;
+  font-size: var(--teal-timeline-section-size);
   line-height: 1.2;
   font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #4e9ca2;
 }
 
 .teal-timeline-summary {
   margin: 0;
-  max-width: 96%;
-  font-size: 11px;
-  line-height: 1.45;
+  max-width: 76ch;
+  font-size: var(--teal-timeline-body-size);
+  line-height: 1.46;
   color: #3c3c3c;
 }
 
@@ -105,7 +116,7 @@ export const tealTimelineStyles = `
 }
 
 .teal-timeline-entry + .teal-timeline-entry {
-  margin-top: 18px;
+  margin-top: 12pt;
 }
 
 .teal-timeline-entry::before {
@@ -135,8 +146,8 @@ export const tealTimelineStyles = `
 
 .teal-timeline-entry-title {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: var(--teal-timeline-body-size);
+  line-height: 1.2;
   font-weight: 700;
   text-transform: uppercase;
   color: #333333;
@@ -144,16 +155,16 @@ export const tealTimelineStyles = `
 
 .teal-timeline-entry-accent {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: var(--teal-timeline-body-size);
+  line-height: 1.24;
   color: #4e9ca2;
 }
 
 .teal-timeline-entry-subtitle,
 .teal-timeline-entry-side {
-  margin: 1px 0 0;
-  font-size: 10px;
-  line-height: 1.3;
+  margin: 3pt 0 0;
+  font-size: var(--teal-timeline-meta-size);
+  line-height: 1.34;
   color: #4e4e4e;
 }
 
@@ -167,7 +178,7 @@ export const tealTimelineStyles = `
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 28px;
-  margin-top: 8px;
+  margin-top: 6pt;
 }
 
 .teal-timeline-bullet-grid--one {
@@ -183,13 +194,13 @@ export const tealTimelineStyles = `
 .teal-timeline-bullet-item {
   position: relative;
   padding-left: 12px;
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: var(--teal-timeline-meta-size);
+  line-height: 1.38;
   color: #444444;
 }
 
 .teal-timeline-bullet-item + .teal-timeline-bullet-item {
-  margin-top: 6px;
+  margin-top: 3pt;
 }
 
 .teal-timeline-bullet-item::before {
@@ -228,7 +239,7 @@ export const tealTimelineStyles = `
 
 @media (max-width: 760px) {
   .teal-timeline-page {
-    padding: 20px;
+    padding: 24px;
   }
 
   .teal-timeline-entry-header,

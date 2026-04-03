@@ -18,6 +18,12 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-document {
+  --editorial-sidebar-name-size: 23pt;
+  --editorial-sidebar-title-size: 10.5pt;
+  --editorial-sidebar-body-size: 10pt;
+  --editorial-sidebar-meta-size: 9.6pt;
+  --editorial-sidebar-section-size: 10.5pt;
+  --editorial-sidebar-body-line-height: 1.42;
   box-sizing: border-box;
   width: 100%;
   max-width: 210mm;
@@ -26,10 +32,12 @@ export const editorialSidebarStyles = `
   background: #ffffff;
   color: #161616;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-size: var(--editorial-sidebar-body-size);
+  line-height: var(--editorial-sidebar-body-line-height);
 }
 
 .editorial-sidebar-page {
-  padding: 10.5mm 11mm 12.5mm;
+  padding: 13mm 13mm 14mm;
 }
 
 .editorial-sidebar-header {
@@ -50,8 +58,8 @@ export const editorialSidebarStyles = `
 
 .editorial-sidebar-name-line {
   margin: 0;
-  font-size: 33px;
-  line-height: 0.96;
+  font-size: var(--editorial-sidebar-name-size);
+  line-height: 0.94;
   font-weight: 300;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -59,16 +67,16 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-name-line + .editorial-sidebar-name-line {
-  margin-top: 7px;
+  margin-top: 4pt;
 }
 
 .editorial-sidebar-title {
   grid-area: title;
   margin: 0;
-  font-size: 10px;
+  font-size: var(--editorial-sidebar-title-size);
   line-height: 1.2;
   font-weight: 600;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #202020;
 }
@@ -77,14 +85,14 @@ export const editorialSidebarStyles = `
   grid-area: contacts;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7pt;
   margin: 2px 0 0;
 }
 
 .editorial-sidebar-contact-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
 }
 
@@ -107,8 +115,8 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-contact-value {
   margin: 0;
   min-width: 0;
-  font-size: 9.8px;
-  line-height: 1.25;
+  font-size: var(--editorial-sidebar-meta-size);
+  line-height: 1.32;
   color: #202020;
   word-break: break-word;
 }
@@ -116,7 +124,7 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-body {
   display: grid;
   grid-template-columns: 27% minmax(0, 1fr);
-  margin-top: 22px;
+  margin-top: 16pt;
   border-top: 2px solid #272727;
   align-items: start;
 }
@@ -127,12 +135,12 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-sidebar {
-  padding: 18px 20px 0 0;
+  padding: 14pt 16pt 0 0;
 }
 
 .editorial-sidebar-main {
   border-left: 2px solid #272727;
-  padding: 18px 0 0 22px;
+  padding: 14pt 0 0 18pt;
 }
 
 .editorial-sidebar-body--main-only .editorial-sidebar-main {
@@ -145,25 +153,26 @@ export const editorialSidebarStyles = `
 }
 
 .editorial-sidebar-column-section + .editorial-sidebar-column-section {
-  margin-top: 20px;
-  border-top: 2px solid #626262;
-  padding-top: 20px;
+  margin-top: 16pt;
+  border-top: 1px solid #c8c8cb;
+  padding-top: 12pt;
 }
 
 .editorial-sidebar-section-title {
-  margin: 0 0 18px;
-  font-size: 10px;
+  margin: 0 0 9pt;
+  font-size: var(--editorial-sidebar-section-size);
   line-height: 1.2;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #202020;
+  color: #202226;
 }
 
 .editorial-sidebar-summary-text {
   margin: 0;
-  font-size: 9.9px;
-  line-height: 1.5;
+  max-width: 76ch;
+  font-size: var(--editorial-sidebar-body-size);
+  line-height: 1.46;
   color: #222222;
 }
 
@@ -174,7 +183,7 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-education-item + .editorial-sidebar-education-item,
 .editorial-sidebar-experience-item + .editorial-sidebar-experience-item,
 .editorial-sidebar-project-item + .editorial-sidebar-project-item {
-  margin-top: 18px;
+  margin-top: 12pt;
 }
 
 .editorial-sidebar-education-degree,
@@ -182,8 +191,8 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-project-name,
 .editorial-sidebar-skill-group-title {
   margin: 0;
-  font-size: 10px;
-  line-height: 1.25;
+  font-size: var(--editorial-sidebar-body-size);
+  line-height: 1.22;
   font-weight: 700;
   text-transform: uppercase;
   color: #111111;
@@ -192,9 +201,9 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-education-school,
 .editorial-sidebar-experience-meta,
 .editorial-sidebar-project-meta {
-  margin: 1px 0 0;
-  font-size: 9.4px;
-  line-height: 1.3;
+  margin: 3pt 0 0;
+  font-size: var(--editorial-sidebar-meta-size);
+  line-height: 1.34;
   font-weight: 700;
   color: #1b1b1b;
 }
@@ -202,42 +211,43 @@ export const editorialSidebarStyles = `
 .editorial-sidebar-education-details,
 .editorial-sidebar-education-date,
 .editorial-sidebar-project-description {
-  margin: 1px 0 0;
-  font-size: 9.4px;
-  line-height: 1.3;
+  margin: 3pt 0 0;
+  font-size: var(--editorial-sidebar-meta-size);
+  line-height: 1.38;
   color: #202020;
 }
 
 .editorial-sidebar-bullet-list {
-  margin: 5px 0 0;
-  padding-left: 18px;
+  margin: 5pt 0 0;
+  padding-left: 15pt;
 }
 
 .editorial-sidebar-bullet-list li,
 .editorial-sidebar-skill-list li {
   margin: 0;
-  font-size: 9.6px;
-  line-height: 1.35;
+  font-size: var(--editorial-sidebar-body-size);
+  line-height: 1.38;
   color: #1f1f1f;
 }
 
+.editorial-sidebar-bullet-list li + li,
+.editorial-sidebar-skill-list li + li {
+  margin-top: 3pt;
+}
+
 .editorial-sidebar-skill-group + .editorial-sidebar-skill-group {
-  margin-top: 20px;
+  margin-top: 14pt;
 }
 
 .editorial-sidebar-skill-list {
-  margin: 8px 0 0;
+  margin: 6pt 0 0;
   padding: 0;
   list-style: none;
 }
 
-.editorial-sidebar-skill-list li + li {
-  margin-top: 8px;
-}
-
 @media (max-width: 760px) {
   .editorial-sidebar-page {
-    padding: 20px;
+    padding: 24px;
   }
 
   .editorial-sidebar-header,
@@ -256,7 +266,7 @@ export const editorialSidebarStyles = `
 
   .editorial-sidebar-main {
     border-left: 0;
-    padding: 20px 0 0;
+    padding: 18px 0 0;
   }
 
   .editorial-sidebar-sidebar {
@@ -264,8 +274,8 @@ export const editorialSidebarStyles = `
   }
 
   .editorial-sidebar-column-section + .editorial-sidebar-column-section {
-    margin-top: 18px;
-    padding-top: 18px;
+    margin-top: 16px;
+    padding-top: 14px;
   }
 }
 
