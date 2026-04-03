@@ -10,6 +10,10 @@ import {
   buildEditorialSidebarHtml,
   EditorialSidebarTemplate,
 } from "@/components/cv-templates/editorial-sidebar-template"
+import {
+  buildTealTimelineHtml,
+  TealTimelineTemplate,
+} from "@/components/cv-templates/teal-timeline-template"
 import type { CvTemplateMetadata } from "@/lib/cvs/types"
 import type { CvTemplateDefinition } from "@/lib/templates/types"
 
@@ -51,6 +55,18 @@ const templates: CvTemplateDefinition[] = [
     preview_blurb: "Best when you want a structured, modern resume with a bold name block and a clean sidebar.",
     renderer: EditorialSidebarTemplate,
     html_builder: buildEditorialSidebarHtml,
+  },
+  {
+    id: "teal-timeline",
+    slug: "teal-timeline",
+    name: "Teal Timeline",
+    description: "Teal-accent resume with a strong header, summary block, and timeline-style experience sections.",
+    layout_type: "single-column",
+    sections: ["contacts", "experiences", "projects", "education", "skills"],
+    export_formats: ["pdf", "html", "markdown", "json"],
+    preview_blurb: "Best when you want a classic resume feel with gentle color accents and more visual structure.",
+    renderer: TealTimelineTemplate,
+    html_builder: buildTealTimelineHtml,
   },
 ]
 
