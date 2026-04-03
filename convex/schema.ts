@@ -12,7 +12,7 @@ export const schema = defineSchema({
     id: v.string(),
     type: v.string(),
     value: v.string(),
-  }).index("by_id", ["id"]),
+  }),
   experiences: defineTable({
     id: v.string(),
     company: v.string(),
@@ -22,7 +22,7 @@ export const schema = defineSchema({
     location: v.string(),
     bullets: v.array(v.string()),
     tags: v.array(v.string()),
-  }).index("by_id", ["id"]),
+  }),
   projects: defineTable({
     id: v.string(),
     name: v.string(),
@@ -30,7 +30,7 @@ export const schema = defineSchema({
     tech_stack: v.array(v.string()),
     bullets: v.array(v.string()),
     tags: v.array(v.string()),
-  }).index("by_id", ["id"]),
+  }),
   education: defineTable({
     id: v.string(),
     institution: v.string(),
@@ -38,13 +38,13 @@ export const schema = defineSchema({
     start_date: v.string(),
     end_date: v.string(),
     details: v.string(),
-  }).index("by_id", ["id"]),
+  }),
   skills: defineTable({
     id: v.string(),
     name: v.string(),
     category: v.string(),
     level: v.string(),
-  }).index("by_id", ["id"]),
+  }),
   profiles: defineTable({
     id: v.string(),
     name: v.string(),
@@ -53,7 +53,7 @@ export const schema = defineSchema({
     config: v.any(),
     created_at: v.string(),
     updated_at: v.string(),
-  }).index("by_id", ["id"]),
+  }),
   cvs: defineTable({
     id: v.string(),
     name: v.string(),
@@ -62,7 +62,7 @@ export const schema = defineSchema({
     overrides: v.any(),
     created_at: v.string(),
     updated_at: v.string(),
-  }).index("by_id", ["id"]),
+  }),
 })
 
 export default schema
