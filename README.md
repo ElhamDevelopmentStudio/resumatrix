@@ -25,13 +25,32 @@ This project only supports one authenticated user.
    cp .env.example .env.local
    ```
 
-3. Start the development server:
+   `.env` also works. Use whichever environment file you already use in this project.
+
+3. Start Convex in a separate terminal:
+
+   ```bash
+   npm run convex:dev
+   ```
+
+   Convex writes `NEXT_PUBLIC_CONVEX_URL` to `.env.local` when you configure a local or cloud development deployment.
+   If you keep your settings in `.env`, copy that value there after setup.
+
+4. Start the Next.js development server:
 
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000).
+5. Open [http://localhost:3000](http://localhost:3000).
+
+## Data storage
+
+Resumatrix stores career data, profiles, and CVs in Convex.
+
+- Local development uses the Convex dev deployment you start with `npm run convex:dev`.
+- Production deployments need `NEXT_PUBLIC_CONVEX_URL` set to the target Convex deployment.
+- You can also set `CONVEX_URL` as a server-only override. If you leave it blank, the app uses `NEXT_PUBLIC_CONVEX_URL`.
 
 ## PDF export requirements
 
@@ -49,6 +68,8 @@ Set these environment variables in `.env.local` for a production-style login set
 | `RESUMATRIX_AUTH_USERNAME` | The only username allowed to sign in |
 | `RESUMATRIX_AUTH_PASSWORD` | The password for that user |
 | `RESUMATRIX_SESSION_SECRET` | A long random string used to sign the session cookie |
+| `NEXT_PUBLIC_CONVEX_URL` | The Convex deployment URL used for app data |
+| `CONVEX_URL` | Optional server-side override for the Convex deployment URL |
 
 ### Local development fallback
 
@@ -95,6 +116,8 @@ This fallback is for local development only. Set real values before deploying.
 
 ```bash
 npm run dev
+npm run convex:dev
+npm run convex:deploy
 npm run lint
 npm run build
 npm run start

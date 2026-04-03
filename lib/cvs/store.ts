@@ -1,13 +1,13 @@
-import { randomUUID } from "node:crypto"
-import { mkdir, readFile, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import path from "node:path"
+import "server-only"
 
+import { randomUUID } from "node:crypto"
+
+import { unstable_noStore as noStore } from "next/cache"
+
+import { createConvexClient } from "@/lib/convex/client"
+import { convexFunctionReferences } from "@/lib/convex/function-references"
 import { type CvData, type CvPayload } from "@/lib/cvs/types"
 import { normalizeCvOverrides, normalizeCvPayload } from "@/lib/cvs/validation"
-
-const dataDirectory = process.env.RESUMATRIX_DATA_DIR ?? path.join(tmpdir(), "resumatrix")
-const dataFile = path.join(dataDirectory, "cvs.json")
 
 function readText(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -45,40 +45,28 @@ function sanitizeCv(value: unknown): CvData | null {
   }
 }
 
-async function ensureDataDirectory() {
-  await mkdir(dataDirectory, { recursive: true })
-}
-
-async function readCvs(): Promise<CvData[]> {
-  try {
-    const raw = await readFile(dataFile, "utf8")
-    const parsed = JSON.parse(raw) as unknown
-
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed
-      .map((entry) => sanitizeCv(entry))
-      .filter((entry): entry is CvData => Boolean(entry))
-  } catch {
+function sanitizeCvs(value: unknown): CvData[] {
+  if (!Array.isArray(value)) {
     return []
   }
+
+  return value
+    .map((entry) => sanitizeCv(entry))
+    .filter((entry): entry is CvData => Boolean(entry))
 }
 
-async function writeCvs(cvs: CvData[]) {
-  await ensureDataDirectory()
-  await writeFile(dataFile, JSON.stringify(cvs, null, 2), "utf8")
+function getConvexClient() {
+  return createConvexClient()
 }
 
 export async function listCvsData() {
-  const cvs = await readCvs()
-  return cvs.sort((left, right) => right.updated_at.localeCompare(left.updated_at))
+  noStore()
+  const cvs = await getConvexClient().query(convexFunctionReferences.cvs.list, {})
+  return sanitizeCvs(cvs)
 }
 
 export async function createCvData(payload: CvPayload) {
   const normalizedPayload = normalizeCvPayload(payload)
-  const cvs = await readCvs()
   const timestamp = new Date().toISOString()
 
   const nextCv: CvData = {
@@ -91,52 +79,29 @@ export async function createCvData(payload: CvPayload) {
     updated_at: timestamp,
   }
 
-  await writeCvs([nextCv, ...cvs])
+  const createdCv = await getConvexClient().mutation(convexFunctionReferences.cvs.create, nextCv)
 
-  return nextCv
+  return sanitizeCv(createdCv) ?? nextCv
 }
 
 export async function updateCvData(id: string, payload: CvPayload) {
   const normalizedPayload = normalizeCvPayload(payload)
-  const cvs = await readCvs()
-  const cvIndex = cvs.findIndex((cv) => cv.id === id)
-
-  if (cvIndex === -1) {
-    return null
-  }
-
-  const currentCv = cvs[cvIndex]
-  const updatedCv: CvData = {
-    ...currentCv,
-    name: normalizedPayload.name,
-    profile_id: normalizedPayload.profile_id,
-    template_id: normalizedPayload.template_id,
-    overrides: normalizedPayload.overrides,
+  const updatedCv = await getConvexClient().mutation(convexFunctionReferences.cvs.update, {
+    id,
+    payload: normalizedPayload,
     updated_at: new Date().toISOString(),
-  }
+  })
 
-  const nextCvs = [...cvs]
-  nextCvs[cvIndex] = updatedCv
-
-  await writeCvs(nextCvs)
-
-  return updatedCv
+  return sanitizeCv(updatedCv)
 }
 
 export async function deleteCvData(id: string) {
-  const cvs = await readCvs()
-  const removedCv = cvs.find((cv) => cv.id === id) ?? null
-
-  if (!removedCv) {
-    return null
-  }
-
-  await writeCvs(cvs.filter((cv) => cv.id !== id))
-
-  return removedCv
+  const removedCv = await getConvexClient().mutation(convexFunctionReferences.cvs.remove, { id })
+  return sanitizeCv(removedCv)
 }
 
 export async function getCvData(id: string) {
-  const cvs = await readCvs()
-  return cvs.find((cv) => cv.id === id) ?? null
+  noStore()
+  const cv = await getConvexClient().query(convexFunctionReferences.cvs.get, { id })
+  return sanitizeCv(cv)
 }

@@ -1,7 +1,8 @@
+import "server-only"
+
 import { randomUUID } from "node:crypto"
-import { mkdir, readFile, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import path from "node:path"
+
+import { unstable_noStore as noStore } from "next/cache"
 
 import {
   emptyPersonalData,
@@ -18,14 +19,13 @@ import {
   type SkillData,
   type SkillPayload,
 } from "@/lib/career-data/types"
+import { createConvexClient } from "@/lib/convex/client"
+import { convexFunctionReferences } from "@/lib/convex/function-references"
 
 type CollectionKey = "contacts" | "experiences" | "projects" | "education" | "skills"
 
 type CollectionItem<K extends CollectionKey> = CareerWorkspaceData[K][number]
 type CollectionPayload<K extends CollectionKey> = Omit<CollectionItem<K>, "id">
-
-const dataDirectory = process.env.RESUMATRIX_DATA_DIR ?? path.join(tmpdir(), "resumatrix")
-const dataFile = path.join(dataDirectory, "workspace.json")
 
 function readText(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -54,6 +54,20 @@ function buildDefaultWorkspace(): CareerWorkspaceData {
     projects: [],
     education: [],
     skills: [],
+  }
+}
+
+function sanitizePersonal(value: unknown): PersonalData {
+  if (!value || typeof value !== "object") {
+    return { ...emptyPersonalData }
+  }
+
+  const nextValue = value as Partial<PersonalData>
+
+  return {
+    full_name: readText(nextValue.full_name),
+    title: readText(nextValue.title),
+    summary: readText(nextValue.summary),
   }
 }
 
@@ -160,60 +174,134 @@ function sanitizeSkills(value: unknown): SkillData[] {
     }))
 }
 
-async function ensureDataDirectory() {
-  await mkdir(dataDirectory, { recursive: true })
-}
-
-async function readWorkspace(): Promise<CareerWorkspaceData> {
-  try {
-    const raw = await readFile(dataFile, "utf8")
-    const parsed = JSON.parse(raw) as Partial<CareerWorkspaceData>
-
-    return {
-      personal: {
-        full_name: readText(parsed.personal?.full_name),
-        title: readText(parsed.personal?.title),
-        summary: readText(parsed.personal?.summary),
-      },
-      contacts: sanitizeContacts(parsed.contacts),
-      experiences: sanitizeExperiences(parsed.experiences),
-      projects: sanitizeProjects(parsed.projects),
-      education: sanitizeEducation(parsed.education),
-      skills: sanitizeSkills(parsed.skills),
-    }
-  } catch {
+function sanitizeWorkspace(value: unknown): CareerWorkspaceData {
+  if (!value || typeof value !== "object") {
     return buildDefaultWorkspace()
+  }
+
+  const nextValue = value as Partial<CareerWorkspaceData>
+
+  return {
+    personal: sanitizePersonal(nextValue.personal),
+    contacts: sanitizeContacts(nextValue.contacts),
+    experiences: sanitizeExperiences(nextValue.experiences),
+    projects: sanitizeProjects(nextValue.projects),
+    education: sanitizeEducation(nextValue.education),
+    skills: sanitizeSkills(nextValue.skills),
   }
 }
 
-async function writeWorkspace(workspace: CareerWorkspaceData) {
-  await ensureDataDirectory()
-  await writeFile(dataFile, JSON.stringify(workspace, null, 2), "utf8")
+function getConvexClient() {
+  return createConvexClient()
 }
 
 async function listCollection<K extends CollectionKey>(key: K): Promise<CareerWorkspaceData[K]> {
-  const workspace = await readWorkspace()
-  return workspace[key]
+  noStore()
+  const client = getConvexClient()
+
+  switch (key) {
+    case "contacts":
+      return sanitizeContacts(
+        await client.query(convexFunctionReferences.careerData.listContacts, {})
+      ) as CareerWorkspaceData[K]
+    case "experiences":
+      return sanitizeExperiences(
+        await client.query(convexFunctionReferences.careerData.listExperiences, {})
+      ) as CareerWorkspaceData[K]
+    case "projects":
+      return sanitizeProjects(
+        await client.query(convexFunctionReferences.careerData.listProjects, {})
+      ) as CareerWorkspaceData[K]
+    case "education":
+      return sanitizeEducation(
+        await client.query(convexFunctionReferences.careerData.listEducation, {})
+      ) as CareerWorkspaceData[K]
+    case "skills":
+      return sanitizeSkills(
+        await client.query(convexFunctionReferences.careerData.listSkills, {})
+      ) as CareerWorkspaceData[K]
+    default:
+      return [] as CareerWorkspaceData[K]
+  }
 }
 
 async function createCollectionItem<K extends CollectionKey>(
   key: K,
   payload: CollectionPayload<K>
 ): Promise<CollectionItem<K>> {
-  const workspace = await readWorkspace()
-  const nextItem = {
-    id: randomUUID(),
-    ...payload,
-  } as CollectionItem<K>
+  const client = getConvexClient()
 
-  const nextWorkspace = {
-    ...workspace,
-    [key]: [...workspace[key], nextItem],
-  } as CareerWorkspaceData
+  switch (key) {
+    case "contacts": {
+      const nextItem: ContactData = {
+        id: randomUUID(),
+        type: readText((payload as unknown as ContactPayload).type),
+        value: readText((payload as unknown as ContactPayload).value),
+      }
 
-  await writeWorkspace(nextWorkspace)
+      return sanitizeContacts([
+        await client.mutation(convexFunctionReferences.careerData.createContact, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    case "experiences": {
+      const nextItem: ExperienceData = {
+        id: randomUUID(),
+        company: readText((payload as unknown as ExperiencePayload).company),
+        role: readText((payload as unknown as ExperiencePayload).role),
+        start_date: readText((payload as unknown as ExperiencePayload).start_date),
+        end_date: readText((payload as unknown as ExperiencePayload).end_date),
+        location: readText((payload as unknown as ExperiencePayload).location),
+        bullets: readTextArray((payload as unknown as ExperiencePayload).bullets),
+        tags: readTextArray((payload as unknown as ExperiencePayload).tags),
+      }
 
-  return nextItem
+      return sanitizeExperiences([
+        await client.mutation(convexFunctionReferences.careerData.createExperience, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    case "projects": {
+      const nextItem: ProjectData = {
+        id: randomUUID(),
+        name: readText((payload as unknown as ProjectPayload).name),
+        description: readText((payload as unknown as ProjectPayload).description),
+        tech_stack: readTextArray((payload as unknown as ProjectPayload).tech_stack),
+        bullets: readTextArray((payload as unknown as ProjectPayload).bullets),
+        tags: readTextArray((payload as unknown as ProjectPayload).tags),
+      }
+
+      return sanitizeProjects([
+        await client.mutation(convexFunctionReferences.careerData.createProject, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    case "education": {
+      const nextItem: EducationData = {
+        id: randomUUID(),
+        institution: readText((payload as unknown as EducationPayload).institution),
+        degree: readText((payload as unknown as EducationPayload).degree),
+        start_date: readText((payload as unknown as EducationPayload).start_date),
+        end_date: readText((payload as unknown as EducationPayload).end_date),
+        details: readText((payload as unknown as EducationPayload).details),
+      }
+
+      return sanitizeEducation([
+        await client.mutation(convexFunctionReferences.careerData.createEducation, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    case "skills": {
+      const nextItem: SkillData = {
+        id: randomUUID(),
+        name: readText((payload as unknown as SkillPayload).name),
+        category: readText((payload as unknown as SkillPayload).category),
+        level: readText((payload as unknown as SkillPayload).level),
+      }
+
+      return sanitizeSkills([
+        await client.mutation(convexFunctionReferences.careerData.createSkill, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    default:
+      throw new Error(`Unsupported collection: ${key}`)
+  }
 }
 
 async function updateCollectionItem<K extends CollectionKey>(
@@ -221,71 +309,135 @@ async function updateCollectionItem<K extends CollectionKey>(
   id: string,
   payload: CollectionPayload<K>
 ): Promise<CollectionItem<K> | null> {
-  const workspace = await readWorkspace()
-  const itemIndex = workspace[key].findIndex((item) => item.id === id)
+  const client = getConvexClient()
 
-  if (itemIndex === -1) {
-    return null
+  switch (key) {
+    case "contacts": {
+      const nextPayload: ContactPayload = {
+        type: readText((payload as unknown as ContactPayload).type),
+        value: readText((payload as unknown as ContactPayload).value),
+      }
+      const contact = await client.mutation(convexFunctionReferences.careerData.updateContact, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeContacts(contact ? [contact] : [])[0] as CollectionItem<K> | null
+    }
+    case "experiences": {
+      const nextPayload: ExperiencePayload = {
+        company: readText((payload as unknown as ExperiencePayload).company),
+        role: readText((payload as unknown as ExperiencePayload).role),
+        start_date: readText((payload as unknown as ExperiencePayload).start_date),
+        end_date: readText((payload as unknown as ExperiencePayload).end_date),
+        location: readText((payload as unknown as ExperiencePayload).location),
+        bullets: readTextArray((payload as unknown as ExperiencePayload).bullets),
+        tags: readTextArray((payload as unknown as ExperiencePayload).tags),
+      }
+      const experience = await client.mutation(convexFunctionReferences.careerData.updateExperience, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeExperiences(experience ? [experience] : [])[0] as CollectionItem<K> | null
+    }
+    case "projects": {
+      const nextPayload: ProjectPayload = {
+        name: readText((payload as unknown as ProjectPayload).name),
+        description: readText((payload as unknown as ProjectPayload).description),
+        tech_stack: readTextArray((payload as unknown as ProjectPayload).tech_stack),
+        bullets: readTextArray((payload as unknown as ProjectPayload).bullets),
+        tags: readTextArray((payload as unknown as ProjectPayload).tags),
+      }
+      const project = await client.mutation(convexFunctionReferences.careerData.updateProject, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeProjects(project ? [project] : [])[0] as CollectionItem<K> | null
+    }
+    case "education": {
+      const nextPayload: EducationPayload = {
+        institution: readText((payload as unknown as EducationPayload).institution),
+        degree: readText((payload as unknown as EducationPayload).degree),
+        start_date: readText((payload as unknown as EducationPayload).start_date),
+        end_date: readText((payload as unknown as EducationPayload).end_date),
+        details: readText((payload as unknown as EducationPayload).details),
+      }
+      const education = await client.mutation(convexFunctionReferences.careerData.updateEducation, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeEducation(education ? [education] : [])[0] as CollectionItem<K> | null
+    }
+    case "skills": {
+      const nextPayload: SkillPayload = {
+        name: readText((payload as unknown as SkillPayload).name),
+        category: readText((payload as unknown as SkillPayload).category),
+        level: readText((payload as unknown as SkillPayload).level),
+      }
+      const skill = await client.mutation(convexFunctionReferences.careerData.updateSkill, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeSkills(skill ? [skill] : [])[0] as CollectionItem<K> | null
+    }
+    default:
+      return null
   }
-
-  const updatedItem = {
-    id,
-    ...payload,
-  } as CollectionItem<K>
-
-  const nextItems = [...workspace[key]]
-  nextItems[itemIndex] = updatedItem
-
-  const nextWorkspace = {
-    ...workspace,
-    [key]: nextItems,
-  } as CareerWorkspaceData
-
-  await writeWorkspace(nextWorkspace)
-
-  return updatedItem
 }
 
 async function deleteCollectionItem<K extends CollectionKey>(
   key: K,
   id: string
 ): Promise<CollectionItem<K> | null> {
-  const workspace = await readWorkspace()
-  const removedItem = workspace[key].find((item) => item.id === id) ?? null
+  const client = getConvexClient()
 
-  if (!removedItem) {
-    return null
+  switch (key) {
+    case "contacts": {
+      const contact = await client.mutation(convexFunctionReferences.careerData.deleteContact, { id })
+      return sanitizeContacts(contact ? [contact] : [])[0] as CollectionItem<K> | null
+    }
+    case "experiences": {
+      const experience = await client.mutation(convexFunctionReferences.careerData.deleteExperience, {
+        id,
+      })
+      return sanitizeExperiences(experience ? [experience] : [])[0] as CollectionItem<K> | null
+    }
+    case "projects": {
+      const project = await client.mutation(convexFunctionReferences.careerData.deleteProject, { id })
+      return sanitizeProjects(project ? [project] : [])[0] as CollectionItem<K> | null
+    }
+    case "education": {
+      const education = await client.mutation(convexFunctionReferences.careerData.deleteEducation, { id })
+      return sanitizeEducation(education ? [education] : [])[0] as CollectionItem<K> | null
+    }
+    case "skills": {
+      const skill = await client.mutation(convexFunctionReferences.careerData.deleteSkill, { id })
+      return sanitizeSkills(skill ? [skill] : [])[0] as CollectionItem<K> | null
+    }
+    default:
+      return null
   }
-
-  const nextWorkspace = {
-    ...workspace,
-    [key]: workspace[key].filter((item) => item.id !== id),
-  } as CareerWorkspaceData
-
-  await writeWorkspace(nextWorkspace)
-
-  return removedItem
 }
 
 export async function getCareerWorkspaceData() {
-  return readWorkspace()
+  noStore()
+  const workspace = await getConvexClient().query(convexFunctionReferences.careerData.getWorkspace, {})
+  return sanitizeWorkspace(workspace)
 }
 
 export async function getPersonalData() {
-  const workspace = await readWorkspace()
-  return workspace.personal
+  noStore()
+  const personal = await getConvexClient().query(convexFunctionReferences.careerData.getPersonal, {})
+  return sanitizePersonal(personal)
 }
 
 export async function updatePersonalData(personal: PersonalData) {
-  const workspace = await readWorkspace()
-  const nextWorkspace = {
-    ...workspace,
-    personal,
-  }
+  const nextPersonal = sanitizePersonal(personal)
+  const savedPersonal = await getConvexClient().mutation(
+    convexFunctionReferences.careerData.setPersonal,
+    nextPersonal
+  )
 
-  await writeWorkspace(nextWorkspace)
-
-  return nextWorkspace.personal
+  return sanitizePersonal(savedPersonal)
 }
 
 export function listContacts() {

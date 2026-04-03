@@ -1,8 +1,11 @@
-import { randomUUID } from "node:crypto"
-import { mkdir, readFile, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import path from "node:path"
+import "server-only"
 
+import { randomUUID } from "node:crypto"
+
+import { unstable_noStore as noStore } from "next/cache"
+
+import { createConvexClient } from "@/lib/convex/client"
+import { convexFunctionReferences } from "@/lib/convex/function-references"
 import {
   type ProfileData,
   type ProfilePayload,
@@ -12,9 +15,6 @@ import {
   normalizeProfilePayload,
   normalizeTagList,
 } from "@/lib/profiles/validation"
-
-const dataDirectory = process.env.RESUMATRIX_DATA_DIR ?? path.join(tmpdir(), "resumatrix")
-const dataFile = path.join(dataDirectory, "profiles.json")
 
 function readText(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -50,40 +50,28 @@ function sanitizeProfile(value: unknown): ProfileData | null {
   }
 }
 
-async function ensureDataDirectory() {
-  await mkdir(dataDirectory, { recursive: true })
-}
-
-async function readProfiles(): Promise<ProfileData[]> {
-  try {
-    const raw = await readFile(dataFile, "utf8")
-    const parsed = JSON.parse(raw) as unknown
-
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed
-      .map((entry) => sanitizeProfile(entry))
-      .filter((entry): entry is ProfileData => Boolean(entry))
-  } catch {
+function sanitizeProfiles(value: unknown): ProfileData[] {
+  if (!Array.isArray(value)) {
     return []
   }
+
+  return value
+    .map((entry) => sanitizeProfile(entry))
+    .filter((entry): entry is ProfileData => Boolean(entry))
 }
 
-async function writeProfiles(profiles: ProfileData[]) {
-  await ensureDataDirectory()
-  await writeFile(dataFile, JSON.stringify(profiles, null, 2), "utf8")
+function getConvexClient() {
+  return createConvexClient()
 }
 
 export async function listProfilesData() {
-  const profiles = await readProfiles()
-  return profiles.sort((left, right) => right.updated_at.localeCompare(left.updated_at))
+  noStore()
+  const profiles = await getConvexClient().query(convexFunctionReferences.profiles.list, {})
+  return sanitizeProfiles(profiles)
 }
 
 export async function createProfileData(payload: ProfilePayload) {
   const normalizedPayload = normalizeProfilePayload(payload)
-  const profiles = await readProfiles()
   const timestamp = new Date().toISOString()
 
   const nextProfile: ProfileData = {
@@ -96,52 +84,35 @@ export async function createProfileData(payload: ProfilePayload) {
     updated_at: timestamp,
   }
 
-  await writeProfiles([nextProfile, ...profiles])
+  const createdProfile = await getConvexClient().mutation(
+    convexFunctionReferences.profiles.create,
+    nextProfile
+  )
 
-  return nextProfile
+  return sanitizeProfile(createdProfile) ?? nextProfile
 }
 
 export async function updateProfileData(id: string, payload: ProfilePayload) {
   const normalizedPayload = normalizeProfilePayload(payload)
-  const profiles = await readProfiles()
-  const profileIndex = profiles.findIndex((profile) => profile.id === id)
-
-  if (profileIndex === -1) {
-    return null
-  }
-
-  const currentProfile = profiles[profileIndex]
-  const updatedProfile: ProfileData = {
-    ...currentProfile,
-    name: normalizedPayload.name,
-    include_tags: normalizedPayload.include_tags,
-    exclude_tags: normalizedPayload.exclude_tags,
-    config: normalizedPayload.config,
+  const updatedProfile = await getConvexClient().mutation(convexFunctionReferences.profiles.update, {
+    id,
+    payload: normalizedPayload,
     updated_at: new Date().toISOString(),
-  }
+  })
 
-  const nextProfiles = [...profiles]
-  nextProfiles[profileIndex] = updatedProfile
-
-  await writeProfiles(nextProfiles)
-
-  return updatedProfile
+  return sanitizeProfile(updatedProfile)
 }
 
 export async function deleteProfileData(id: string) {
-  const profiles = await readProfiles()
-  const removedProfile = profiles.find((profile) => profile.id === id) ?? null
+  const removedProfile = await getConvexClient().mutation(convexFunctionReferences.profiles.remove, {
+    id,
+  })
 
-  if (!removedProfile) {
-    return null
-  }
-
-  await writeProfiles(profiles.filter((profile) => profile.id !== id))
-
-  return removedProfile
+  return sanitizeProfile(removedProfile)
 }
 
 export async function getProfileData(id: string) {
-  const profiles = await readProfiles()
-  return profiles.find((profile) => profile.id === id) ?? null
+  noStore()
+  const profile = await getConvexClient().query(convexFunctionReferences.profiles.get, { id })
+  return sanitizeProfile(profile)
 }
