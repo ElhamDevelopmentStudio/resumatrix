@@ -52,6 +52,48 @@ Resumatrix stores career data, profiles, and CVs in Convex.
 - Production deployments need `NEXT_PUBLIC_CONVEX_URL` set to the target Convex deployment.
 - You can also set `CONVEX_URL` as a server-only override. If you leave it blank, the app uses `NEXT_PUBLIC_CONVEX_URL`.
 
+## Import legacy local data into Convex
+
+If you used the older local-file storage, you can copy that data into Convex once.
+
+1. Start Convex:
+
+   ```bash
+   npm run convex:dev
+   ```
+
+2. Run a dry run first to confirm the importer can see your old files:
+
+   ```bash
+   npm run import:legacy-data -- --dry-run
+   ```
+
+3. Import the data:
+
+   ```bash
+   npm run import:legacy-data
+   ```
+
+4. If your Convex deployment already has data and you want to overwrite it:
+
+   ```bash
+   npm run import:legacy-data -- --replace
+   ```
+
+By default, the importer reads from `RESUMATRIX_DATA_DIR`. If that is not set, it falls back to the old default path in your OS temp directory, usually `/tmp/resumatrix`.
+
+You can also point it at a specific folder:
+
+```bash
+npm run import:legacy-data -- --source-dir=/path/to/resumatrix
+```
+
+The importer looks for:
+
+- `workspace.json`
+- `profiles.json`
+- `cvs.json`
+
 ## PDF export requirements
 
 PDF export uses a local Chrome or Chromium installation through Puppeteer.
@@ -70,6 +112,7 @@ Set these environment variables in `.env.local` for a production-style login set
 | `RESUMATRIX_SESSION_SECRET` | A long random string used to sign the session cookie |
 | `NEXT_PUBLIC_CONVEX_URL` | The Convex deployment URL used for app data |
 | `CONVEX_URL` | Optional server-side override for the Convex deployment URL |
+| `RESUMATRIX_DATA_DIR` | Optional path to old local JSON files for the one-time importer |
 
 ### Local development fallback
 
@@ -118,6 +161,7 @@ This fallback is for local development only. Set real values before deploying.
 npm run dev
 npm run convex:dev
 npm run convex:deploy
+npm run import:legacy-data
 npm run lint
 npm run build
 npm run start

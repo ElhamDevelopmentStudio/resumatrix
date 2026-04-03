@@ -6,6 +6,7 @@
     "dev": "next dev",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
+    "import:legacy-data": "node scripts/import-legacy-data.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
