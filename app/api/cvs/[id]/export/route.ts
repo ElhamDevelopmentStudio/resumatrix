@@ -9,10 +9,13 @@ import {
   getCvExportContentType,
 } from "@/lib/cvs/export"
 import { buildCvRenderModel } from "@/lib/cvs/engine"
+import { buildCvPdfExport } from "@/lib/cvs/pdf"
 import { getCvData } from "@/lib/cvs/store"
 import type { CvExportFormat } from "@/lib/cvs/types"
 import { getProfileData } from "@/lib/profiles/store"
 import { getCvTemplate } from "@/lib/templates/registry"
+
+export const runtime = "nodejs"
 
 type CvExportRouteProps = {
   params: Promise<{
@@ -30,11 +33,7 @@ export async function GET(request: Request, { params }: CvExportRouteProps) {
   const url = new URL(request.url)
   const format = (url.searchParams.get("format") ?? "html") as CvExportFormat
 
-  if (format === "pdf") {
-    return NextResponse.redirect(new URL(`/cv-print/${id}`, request.url))
-  }
-
-  if (!["html", "json", "markdown"].includes(format)) {
+  if (!["pdf", "html", "json", "markdown"].includes(format)) {
     return NextResponse.json(
       buildApiError("Choose a valid export format.", "INVALID_EXPORT_FORMAT"),
       { status: 400 }
@@ -72,6 +71,32 @@ export async function GET(request: Request, { params }: CvExportRouteProps) {
 
   const renderModel = buildCvRenderModel(cv, profile, careerData, template)
   const fileName = `${buildFileName(cv.name)}.${format === "markdown" ? "md" : format}`
+  const contentDisposition = `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+
+  if (format === "pdf") {
+    try {
+      const body = await buildCvPdfExport(template, renderModel)
+      const pdfBuffer = Buffer.from(body)
+
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          "Content-Type": getCvExportContentType(format),
+          "Content-Disposition": contentDisposition,
+          "Cache-Control": "no-store",
+        },
+      })
+    } catch (error) {
+      console.error("Failed to export CV PDF.", error)
+
+      return NextResponse.json(
+        buildApiError(
+          "We couldn’t generate the PDF on this server. Install Chrome or set PUPPETEER_EXECUTABLE_PATH.",
+          "PDF_EXPORT_FAILED"
+        ),
+        { status: 500 }
+      )
+    }
+  }
 
   const body =
     format === "html"
@@ -83,7 +108,7 @@ export async function GET(request: Request, { params }: CvExportRouteProps) {
   return new NextResponse(body, {
     headers: {
       "Content-Type": getCvExportContentType(format),
-      "Content-Disposition": `attachment; filename="${fileName}"`,
+      "Content-Disposition": contentDisposition,
     },
   })
 }

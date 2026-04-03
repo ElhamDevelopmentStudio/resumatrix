@@ -15,14 +15,10 @@ type CvExportLinksProps = {
 }
 
 function buildExportHref(cvId: string, format: CvExportFormat) {
-  if (format === "pdf") {
-    return `/cv-print/${cvId}?autoprint=1`
-  }
-
   return `/api/cvs/${cvId}/export?format=${format}`
 }
 
-function getFallbackFileName(format: Exclude<CvExportFormat, "pdf">) {
+function getFallbackFileName(format: CvExportFormat) {
   return format === "markdown" ? "cv.md" : `cv.${format}`
 }
 
@@ -57,11 +53,6 @@ export function CvExportLinks({
       setBusyFormat(format)
       await onBeforeExport?.()
       const href = buildExportHref(cvId, format)
-
-      if (format === "pdf") {
-        window.open(href, "_blank", "noopener,noreferrer")
-        return
-      }
 
       const response = await fetch(href, {
         method: "GET",

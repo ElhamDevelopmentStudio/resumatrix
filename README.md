@@ -33,6 +33,13 @@ This project only supports one authenticated user.
 
 4. Open [http://localhost:3000](http://localhost:3000).
 
+## PDF export requirements
+
+PDF export uses a local Chrome or Chromium installation through Puppeteer.
+
+- If Chrome is installed in a standard location, no extra setup is needed.
+- If it is installed elsewhere, set `PUPPETEER_EXECUTABLE_PATH` in `.env.local`.
+
 ## Auth configuration
 
 Set these environment variables in `.env.local` for a production-style login setup:
@@ -63,7 +70,7 @@ This fallback is for local development only. Set real values before deploying.
 - `/cvs` — CV library with recent exports and editor links
 - `/cvs/new` — create a CV from a saved profile and template
 - `/cvs/:id` — CV editor with live preview, section controls, and exports
-- `/cv-print/:id` — print-friendly CV preview used for PDF export
+- `/cv-print/:id` — print-friendly CV preview for manual inspection
 - `/personal` — redirects to `/career-data`
 - `POST /api/auth/login` — login endpoint
 - `GET, PUT /api/personal` — personal details API
@@ -82,7 +89,7 @@ This fallback is for local development only. Set real values before deploying.
 - `GET /api/templates` — available CV templates
 - `GET, POST /api/cvs` — CV collection API
 - `PUT, DELETE /api/cvs/:id` — single CV API
-- `GET /api/cvs/:id/export?format=pdf|html|markdown|json` — CV export endpoint
+- `GET /api/cvs/:id/export?format=pdf|html|markdown|json` — CV export endpoint with server-generated PDF downloads
 
 ## Scripts
 

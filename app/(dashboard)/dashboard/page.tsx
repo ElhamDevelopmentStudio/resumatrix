@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     time: formatCvUpdatedAt(cv.updated_at),
     type: getCvTemplate(cv.template_id)?.name ?? "Missing template",
     href: `/cvs/${cv.id}`,
-    downloadHref: `/cv-print/${cv.id}?autoprint=1`,
+    downloadHref: `/api/cvs/${cv.id}/export?format=pdf`,
     active: true,
   }))
 

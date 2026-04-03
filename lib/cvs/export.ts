@@ -87,8 +87,10 @@ export function buildCvJsonExport(model: CvRenderModel) {
   return JSON.stringify(model, null, 2)
 }
 
-export function getCvExportContentType(format: Exclude<CvExportFormat, "pdf">) {
+export function getCvExportContentType(format: CvExportFormat) {
   switch (format) {
+    case "pdf":
+      return "application/pdf"
     case "html":
       return "text/html; charset=utf-8"
     case "markdown":

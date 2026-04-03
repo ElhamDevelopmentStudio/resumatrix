@@ -72,15 +72,13 @@ export function ResumeCard({ title, profile, time, type, href, downloadHref, act
           Edit Document
         </Link>
         {downloadHref ? (
-          <Link
+          <a
             href={downloadHref}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Download ${title}`}
+            aria-label={`Download ${title} as a PDF`}
             className="inline-flex size-12 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-lg shadow-primary/15 transition-colors hover:bg-primary/90"
           >
             <HugeiconsIcon icon={CloudDownloadIcon} strokeWidth={2} className="size-5" />
-          </Link>
+          </a>
         ) : null}
       </div>
     </Card>

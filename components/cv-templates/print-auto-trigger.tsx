@@ -22,7 +22,7 @@ export function PrintAutoTrigger({ autoPrint }: PrintAutoTriggerProps) {
   }, [autoPrint])
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3 print:hidden">
       <Button type="button" onClick={() => window.print()}>
         Print or save as PDF
       </Button>
