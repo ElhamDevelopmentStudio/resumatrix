@@ -55,8 +55,8 @@ Options:
   --help          Show this help text.
 
 Defaults:
-  source dir = RESUMATRIX_DATA_DIR or ${path.join(tmpdir(), "resumatrix")}
-  convex url = CONVEX_URL or NEXT_PUBLIC_CONVEX_URL
+  source dir = ${path.join(tmpdir(), "resumatrix")}
+  convex url = NEXT_PUBLIC_CONVEX_URL
 `.trim())
 }
 
@@ -395,12 +395,10 @@ function printSnapshotSummary(snapshot, sourceDir) {
 }
 
 function getConvexUrl() {
-  const url = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL
 
   if (!url) {
-    throw new Error(
-      "Missing Convex URL. Set CONVEX_URL or NEXT_PUBLIC_CONVEX_URL before running the importer."
-    )
+    throw new Error("Missing NEXT_PUBLIC_CONVEX_URL. Set it before running the importer.")
   }
 
   return url
@@ -530,7 +528,7 @@ async function main() {
   }
 
   const sourceDir =
-    options.sourceDir || process.env.RESUMATRIX_DATA_DIR || path.join(tmpdir(), "resumatrix")
+    options.sourceDir || path.join(tmpdir(), "resumatrix")
 
   const snapshot = await loadLegacySnapshot(sourceDir)
   printSnapshotSummary(snapshot, sourceDir)

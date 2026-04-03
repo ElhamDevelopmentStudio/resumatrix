@@ -22,10 +22,10 @@ This project only supports one authenticated user.
 2. Copy the example environment file and update the values you want to use:
 
    ```bash
-   cp .env.example .env.local
+   cp .env.example .env
    ```
 
-   `.env` also works. Use whichever environment file you already use in this project.
+   `.env.local` also works if you prefer it.
 
 3. Start Convex in a separate terminal:
 
@@ -33,7 +33,7 @@ This project only supports one authenticated user.
    npm run convex:dev
    ```
 
-   Convex writes `NEXT_PUBLIC_CONVEX_URL` to `.env.local` when you configure a local or cloud development deployment.
+   Convex usually writes `NEXT_PUBLIC_CONVEX_URL` to `.env.local` when you configure a local or cloud development deployment.
    If you keep your settings in `.env`, copy that value there after setup.
 
 4. Start the Next.js development server:
@@ -49,8 +49,8 @@ This project only supports one authenticated user.
 Resumatrix stores career data, profiles, and CVs in Convex.
 
 - Local development uses the Convex dev deployment you start with `npm run convex:dev`.
-- Production deployments need `NEXT_PUBLIC_CONVEX_URL` set to the target Convex deployment.
-- You can also set `CONVEX_URL` as a server-only override. If you leave it blank, the app uses `NEXT_PUBLIC_CONVEX_URL`.
+- The app needs `NEXT_PUBLIC_CONVEX_URL` set to the target Convex deployment.
+- If Convex also gives you `CONVEX_DEPLOYMENT` or `NEXT_PUBLIC_CONVEX_SITE_URL`, you can keep them, but this app does not require them.
 
 ## Import legacy local data into Convex
 
@@ -80,7 +80,7 @@ If you used the older local-file storage, you can copy that data into Convex onc
    npm run import:legacy-data -- --replace
    ```
 
-By default, the importer reads from `RESUMATRIX_DATA_DIR`. If that is not set, it falls back to the old default path in your OS temp directory, usually `/tmp/resumatrix`.
+By default, the importer reads from the old default temp directory, usually `/tmp/resumatrix`.
 
 You can also point it at a specific folder:
 
@@ -99,11 +99,11 @@ The importer looks for:
 PDF export uses a local Chrome or Chromium installation through Puppeteer.
 
 - If Chrome is installed in a standard location, no extra setup is needed.
-- If it is installed elsewhere, set `PUPPETEER_EXECUTABLE_PATH` in `.env.local`.
+- If it is installed elsewhere, set `PUPPETEER_EXECUTABLE_PATH` in `.env` or `.env.local`.
 
 ## Auth configuration
 
-Set these environment variables in `.env.local` for a production-style login setup:
+Set these environment variables in `.env` or `.env.local`:
 
 | Variable | Description |
 | --- | --- |
@@ -111,8 +111,6 @@ Set these environment variables in `.env.local` for a production-style login set
 | `RESUMATRIX_AUTH_PASSWORD` | The password for that user |
 | `RESUMATRIX_SESSION_SECRET` | A long random string used to sign the session cookie |
 | `NEXT_PUBLIC_CONVEX_URL` | The Convex deployment URL used for app data |
-| `CONVEX_URL` | Optional server-side override for the Convex deployment URL |
-| `RESUMATRIX_DATA_DIR` | Optional path to old local JSON files for the one-time importer |
 
 ### Local development fallback
 
