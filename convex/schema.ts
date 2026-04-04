@@ -1,6 +1,100 @@
 import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
+const nullableStringListValidator = v.union(v.array(v.string()), v.null())
+
+const profileSelectionIdsValidator = v.object({
+  experiences: nullableStringListValidator,
+  projects: nullableStringListValidator,
+  education: nullableStringListValidator,
+  skills: nullableStringListValidator,
+  contacts: nullableStringListValidator,
+})
+
+export const profileConfigValidator = v.object({
+  ordering: v.object({
+    experiences: v.union(v.literal("recent"), v.literal("oldest")),
+    projects: v.union(v.literal("manual"), v.literal("name")),
+    education: v.union(v.literal("recent"), v.literal("oldest")),
+  }),
+  limits: v.object({
+    experiences: v.union(v.number(), v.null()),
+    projects: v.union(v.number(), v.null()),
+  }),
+  selections: profileSelectionIdsValidator,
+})
+
+const cvOverrideSectionValidator = v.union(
+  v.literal("contacts"),
+  v.literal("experiences"),
+  v.literal("projects"),
+  v.literal("education"),
+  v.literal("skills")
+)
+
+const cvSelectionsValidator = v.object({
+  contacts: nullableStringListValidator,
+  experiences: nullableStringListValidator,
+  projects: nullableStringListValidator,
+  education: nullableStringListValidator,
+  skills: nullableStringListValidator,
+})
+
+const cvPersonalContentOverrideValidator = v.object({
+  full_name: v.optional(v.string()),
+  title: v.optional(v.string()),
+  summary: v.optional(v.string()),
+})
+
+const cvContactContentOverrideValidator = v.object({
+  type: v.optional(v.string()),
+  value: v.optional(v.string()),
+})
+
+const cvExperienceContentOverrideValidator = v.object({
+  company: v.optional(v.string()),
+  role: v.optional(v.string()),
+  start_date: v.optional(v.string()),
+  end_date: v.optional(v.string()),
+  location: v.optional(v.string()),
+  bullets: v.optional(v.array(v.string())),
+})
+
+const cvProjectContentOverrideValidator = v.object({
+  name: v.optional(v.string()),
+  description: v.optional(v.string()),
+  tech_stack: v.optional(v.array(v.string())),
+  bullets: v.optional(v.array(v.string())),
+})
+
+const cvEducationContentOverrideValidator = v.object({
+  institution: v.optional(v.string()),
+  degree: v.optional(v.string()),
+  start_date: v.optional(v.string()),
+  end_date: v.optional(v.string()),
+  details: v.optional(v.string()),
+})
+
+const cvSkillContentOverrideValidator = v.object({
+  name: v.optional(v.string()),
+  category: v.optional(v.string()),
+  level: v.optional(v.string()),
+})
+
+export const cvOverridesValidator = v.object({
+  hidden_sections: v.array(cvOverrideSectionValidator),
+  section_order: v.array(cvOverrideSectionValidator),
+  selections: cvSelectionsValidator,
+  content: v.object({
+    personal: cvPersonalContentOverrideValidator,
+    contacts: v.record(v.string(), cvContactContentOverrideValidator),
+    experiences: v.record(v.string(), cvExperienceContentOverrideValidator),
+    projects: v.record(v.string(), cvProjectContentOverrideValidator),
+    education: v.record(v.string(), cvEducationContentOverrideValidator),
+    skills: v.record(v.string(), cvSkillContentOverrideValidator),
+  }),
+})
+
 export const schema = defineSchema({
   personal: defineTable({
     singleton_key: v.string(),
@@ -50,7 +144,7 @@ export const schema = defineSchema({
     name: v.string(),
     include_tags: v.array(v.string()),
     exclude_tags: v.array(v.string()),
-    config: v.any(),
+    config: profileConfigValidator,
     created_at: v.string(),
     updated_at: v.string(),
   })
@@ -61,7 +155,7 @@ export const schema = defineSchema({
     name: v.string(),
     profile_id: v.string(),
     template_id: v.string(),
-    overrides: v.any(),
+    overrides: cvOverridesValidator,
     created_at: v.string(),
     updated_at: v.string(),
   })

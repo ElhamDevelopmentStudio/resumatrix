@@ -10,7 +10,7 @@ import {
 } from "convex/server"
 import { v } from "convex/values"
 
-import { schema } from "./schema"
+import { cvOverridesValidator, schema } from "./schema"
 
 type DataModel = DataModelFromSchemaDefinition<typeof schema>
 type QueryCtx = GenericQueryCtx<DataModel>
@@ -60,7 +60,7 @@ export const create = mutation({
     name: v.string(),
     profile_id: v.string(),
     template_id: v.string(),
-    overrides: v.any(),
+    overrides: cvOverridesValidator,
     created_at: v.string(),
     updated_at: v.string(),
   },
@@ -77,7 +77,7 @@ export const update = mutation({
       name: v.string(),
       profile_id: v.string(),
       template_id: v.string(),
-      overrides: v.any(),
+      overrides: cvOverridesValidator,
     }),
     updated_at: v.string(),
   },
