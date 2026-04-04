@@ -24,8 +24,18 @@ export function useCareerDataAutosave({ enabled, value, save }: UseCareerDataAut
   const isSavingRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
   const flushAfterSaveRef = useRef(false)
-  const previousSnapshotRef = useRef<string | null>(null)
-  const flushPendingSaveRef = useRef<() => void>(() => {})
+  const observedSnapshotRef = useRef<string | null>(null)
+  const latestSnapshotRef = useRef(snapshot)
+  const latestEnabledRef = useRef(enabled)
+  const retryPendingSaveRef = useRef<() => void>(() => {})
+
+  useEffect(() => {
+    latestSnapshotRef.current = snapshot
+  }, [snapshot])
+
+  useEffect(() => {
+    latestEnabledRef.current = enabled
+  }, [enabled])
 
   const clearPendingTimer = useEffectEvent(() => {
     if (timerRef.current === null) {
@@ -50,26 +60,26 @@ export function useCareerDataAutosave({ enabled, value, save }: UseCareerDataAut
 
     isSavingRef.current = true
     flushAfterSaveRef.current = false
-    const snapshotAtSaveStart = snapshot
+    const snapshotAtSaveStart = latestSnapshotRef.current
 
     void save().finally(() => {
       isSavingRef.current = false
 
-      if (previousSnapshotRef.current === snapshotAtSaveStart) {
+      if (latestSnapshotRef.current === snapshotAtSaveStart) {
         hasPendingChangesRef.current = false
       }
 
-      if (!enabled || !flushAfterSaveRef.current) {
+      if (!latestEnabledRef.current || !flushAfterSaveRef.current) {
         return
       }
 
       flushAfterSaveRef.current = false
-      flushPendingSaveRef.current()
+      retryPendingSaveRef.current()
     })
   })
 
   useEffect(() => {
-    flushPendingSaveRef.current = flushPendingSave
+    retryPendingSaveRef.current = flushPendingSave
   }, [])
 
   useEffect(() => {
@@ -78,16 +88,16 @@ export function useCareerDataAutosave({ enabled, value, save }: UseCareerDataAut
       return
     }
 
-    if (previousSnapshotRef.current === null) {
-      previousSnapshotRef.current = snapshot
+    if (observedSnapshotRef.current === null) {
+      observedSnapshotRef.current = snapshot
       return
     }
 
-    if (snapshot === previousSnapshotRef.current) {
+    if (snapshot === observedSnapshotRef.current) {
       return
     }
 
-    previousSnapshotRef.current = snapshot
+    observedSnapshotRef.current = snapshot
     hasPendingChangesRef.current = true
     clearPendingTimer()
     timerRef.current = window.setTimeout(() => {
@@ -123,7 +133,7 @@ export function useCareerDataAutosave({ enabled, value, save }: UseCareerDataAut
 
   useEffect(() => {
     return () => {
-      flushPendingSaveRef.current()
+      retryPendingSaveRef.current()
       clearPendingTimer()
     }
   }, [])
