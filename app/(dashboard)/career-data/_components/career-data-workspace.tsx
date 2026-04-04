@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress, ProgressLabel } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
-import type { SectionKey } from "@/lib/career-data/types"
+import type { CareerWorkspaceData, SectionKey } from "@/lib/career-data/types"
 import {
   isBlankContact,
   isBlankEducation,
@@ -18,7 +18,10 @@ import {
   isBlankProject,
   isBlankSkill,
 } from "@/lib/career-data/validation"
-import { useCareerDataStore } from "@/lib/career-data/workspace-store"
+import {
+  CareerDataStoreProvider,
+  useCareerDataStore,
+} from "@/lib/career-data/workspace-store"
 
 import { CareerDataSectionNav } from "./career-data-section-nav"
 import { ContactsSection } from "./contacts-section"
@@ -60,7 +63,17 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`
 }
 
-export function CareerDataWorkspace() {
+type CareerDataWorkspaceProps = {
+  initialWorkspace?: CareerWorkspaceData
+}
+
+type CareerDataWorkspaceContentProps = {
+  hasInitialWorkspace: boolean
+}
+
+function CareerDataWorkspaceContent({
+  hasInitialWorkspace,
+}: CareerDataWorkspaceContentProps) {
   const hydrate = useCareerDataStore((state) => state.hydrate)
   const openSection = useCareerDataStore((state) => state.openSection)
   const saveAllSections = useCareerDataStore((state) => state.saveAllSections)
@@ -84,8 +97,12 @@ export function CareerDataWorkspace() {
   const skills = useCareerDataStore((state) => state.skills)
 
   useEffect(() => {
+    if (hasInitialWorkspace) {
+      return
+    }
+
     void hydrate()
-  }, [hydrate])
+  }, [hasInitialWorkspace, hydrate])
 
   useCareerDataAutosave({ enabled: !isLoading, value: personal, save: savePersonal })
   useCareerDataAutosave({ enabled: !isLoading, value: contacts, save: saveContacts })
@@ -292,5 +309,15 @@ export function CareerDataWorkspace() {
         <SkillsSection />
       </div>
     </main>
+  )
+}
+
+export function CareerDataWorkspace({
+  initialWorkspace,
+}: CareerDataWorkspaceProps) {
+  return (
+    <CareerDataStoreProvider initialWorkspace={initialWorkspace}>
+      <CareerDataWorkspaceContent hasInitialWorkspace={Boolean(initialWorkspace)} />
+    </CareerDataStoreProvider>
   )
 }

@@ -1,4 +1,8 @@
-import { create } from "zustand"
+"use client"
+
+import { createContext, useContext, useState, type ReactNode } from "react"
+import { useStore } from "zustand"
+import { createStore, type StoreApi } from "zustand/vanilla"
 
 import {
   createContact,
@@ -42,6 +46,7 @@ import {
   type SkillDraft,
 } from "@/lib/career-data/drafts"
 import {
+  type CareerWorkspaceData,
   emptyPersonalData,
   type ContactData,
   type ContactPayload,
@@ -94,6 +99,7 @@ type SavedWorkspaceState = {
 }
 
 type ListSectionMeta = Record<SectionKey, SectionMeta>
+type CareerDataStoreApi = StoreApi<CareerDataStore>
 
 type SyncOperation<Payload> =
   | {
@@ -209,6 +215,69 @@ function createEmptySavedState(): SavedWorkspaceState {
     education: [],
     skills: [],
   }
+}
+
+function createSavedWorkspaceState(workspace: CareerWorkspaceData): SavedWorkspaceState {
+  return {
+    personal: { ...workspace.personal },
+    contacts: [...workspace.contacts],
+    experiences: [...workspace.experiences],
+    projects: [...workspace.projects],
+    education: [...workspace.education],
+    skills: [...workspace.skills],
+  }
+}
+
+function createHydratedWorkspaceState(workspace: CareerWorkspaceData) {
+  const savedState = createSavedWorkspaceState(workspace)
+
+  return {
+    isLoading: false,
+    loadError: null,
+    expandedSections: buildExpandedSections(savedState),
+    personal: { ...savedState.personal },
+    contacts: savedState.contacts.map(toContactDraft),
+    experiences: savedState.experiences.map(toExperienceDraft),
+    projects: savedState.projects.map(toProjectDraft),
+    education: savedState.education.map(toEducationDraft),
+    skills: savedState.skills.map(toSkillDraft),
+    saved: savedState,
+    sectionMeta: createSectionMeta(),
+    personalErrors: {},
+    contactErrors: {},
+    experienceErrors: {},
+    projectErrors: {},
+    educationErrors: {},
+    skillErrors: {},
+  }
+}
+
+function createEmptyWorkspaceState() {
+  return {
+    isLoading: true,
+    loadError: null,
+    expandedSections: [...defaultExpandedSections],
+    personal: { ...emptyPersonalData },
+    contacts: [],
+    experiences: [],
+    projects: [],
+    education: [],
+    skills: [],
+    saved: createEmptySavedState(),
+    sectionMeta: createSectionMeta(),
+    personalErrors: {},
+    contactErrors: {},
+    experienceErrors: {},
+    projectErrors: {},
+    educationErrors: {},
+    skillErrors: {},
+  }
+}
+
+function createInitialWorkspaceState(initialWorkspace?: CareerWorkspaceData) {
+  return initialWorkspace
+    ? createHydratedWorkspaceState(initialWorkspace)
+    : createEmptyWorkspaceState()
 }
 
 function buildExpandedSections(saved: SavedWorkspaceState): SectionKey[] {
@@ -359,7 +428,8 @@ async function syncListSection<
   }
 }
 
-export const useCareerDataStore = create<CareerDataStore>((set, get) => {
+function createCareerDataStore(initialWorkspace?: CareerWorkspaceData) {
+  return createStore<CareerDataStore>((set, get) => {
   const setSectionSaving = (section: SectionKey) => {
     set((state) => ({
       sectionMeta: {
@@ -430,57 +500,14 @@ export const useCareerDataStore = create<CareerDataStore>((set, get) => {
   }
 
   return {
-    isLoading: true,
-    loadError: null,
-    expandedSections: [...defaultExpandedSections],
-    personal: { ...emptyPersonalData },
-    contacts: [],
-    experiences: [],
-    projects: [],
-    education: [],
-    skills: [],
-    saved: createEmptySavedState(),
-    sectionMeta: createSectionMeta(),
-    personalErrors: {},
-    contactErrors: {},
-    experienceErrors: {},
-    projectErrors: {},
-    educationErrors: {},
-    skillErrors: {},
+    ...createInitialWorkspaceState(initialWorkspace),
 
     async hydrate() {
       set({ isLoading: true, loadError: null })
 
       try {
         const workspace = await fetchCareerWorkspace()
-        const savedState: SavedWorkspaceState = {
-          personal: workspace.personal,
-          contacts: workspace.contacts,
-          experiences: workspace.experiences,
-          projects: workspace.projects,
-          education: workspace.education,
-          skills: workspace.skills,
-        }
-
-        set({
-          isLoading: false,
-          loadError: null,
-          personal: workspace.personal,
-          contacts: workspace.contacts.map(toContactDraft),
-          experiences: workspace.experiences.map(toExperienceDraft),
-          projects: workspace.projects.map(toProjectDraft),
-          education: workspace.education.map(toEducationDraft),
-          skills: workspace.skills.map(toSkillDraft),
-          saved: savedState,
-          sectionMeta: createSectionMeta(),
-          personalErrors: {},
-          contactErrors: {},
-          experienceErrors: {},
-          projectErrors: {},
-          educationErrors: {},
-          skillErrors: {},
-          expandedSections: buildExpandedSections(savedState),
-        })
+        set(createHydratedWorkspaceState(workspace))
       } catch (error) {
         set({
           isLoading: false,
@@ -1060,4 +1087,33 @@ export const useCareerDataStore = create<CareerDataStore>((set, get) => {
       await get().saveSkills()
     },
   }
-})
+  })
+}
+
+const CareerDataStoreContext = createContext<CareerDataStoreApi | null>(null)
+
+type CareerDataStoreProviderProps = {
+  children: ReactNode
+  initialWorkspace?: CareerWorkspaceData
+}
+
+export function CareerDataStoreProvider({
+  children,
+  initialWorkspace,
+}: CareerDataStoreProviderProps) {
+  const [store] = useState(() => createCareerDataStore(initialWorkspace))
+
+  return (
+    <CareerDataStoreContext.Provider value={store}>{children}</CareerDataStoreContext.Provider>
+  )
+}
+
+export function useCareerDataStore<T>(selector: (state: CareerDataStore) => T) {
+  const store = useContext(CareerDataStoreContext)
+
+  if (store === null) {
+    throw new Error("useCareerDataStore must be used within CareerDataStoreProvider.")
+  }
+
+  return useStore(store, selector)
+}
