@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError } from "@/lib/career-data/http"
 import { getCareerWorkspaceData } from "@/lib/career-data/store"
 import {
@@ -28,7 +29,7 @@ function buildFileName(value: string) {
   return nextValue || "cv"
 }
 
-export async function GET(request: Request, { params }: CvExportRouteProps) {
+export const GET = withApiSession(async (request: Request, { params }: CvExportRouteProps) => {
   const { id } = await params
   const url = new URL(request.url)
   const format = (url.searchParams.get("format") ?? "html") as CvExportFormat
@@ -111,4 +112,4 @@ export async function GET(request: Request, { params }: CvExportRouteProps) {
       "Content-Disposition": contentDisposition,
     },
   })
-}
+})

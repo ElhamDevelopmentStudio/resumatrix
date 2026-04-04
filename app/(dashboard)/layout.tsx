@@ -1,16 +1,19 @@
 import type { ReactNode } from "react"
 
 import { Footer } from "@/components/layout/footer"
+import { requireRequestSession } from "@/lib/auth/server"
 
 import { DashboardHeader } from "./dashboard/_components/dashboard-header"
 import { DashboardSidebar } from "./dashboard/_components/dashboard-sidebar"
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const session = await requireRequestSession()
+
   return (
     <div className="min-h-screen bg-background text-on-surface lg:flex">
       <DashboardSidebar />
       <div className="flex min-h-screen flex-1 flex-col lg:ml-64">
-        <DashboardHeader />
+        <DashboardHeader username={session.username} />
         {children}
         <Footer
           title="Resumatrix"

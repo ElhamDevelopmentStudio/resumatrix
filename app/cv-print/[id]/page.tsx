@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { PrintAutoTrigger } from "@/components/cv-templates/print-auto-trigger"
 import { TemplateRenderer } from "@/components/cv-templates/template-renderer"
+import { getRequestSession, requireRequestSession } from "@/lib/auth/server"
 import { getCareerWorkspaceData } from "@/lib/career-data/store"
 import { buildCvRenderModel } from "@/lib/cvs/engine"
 import { getCvData } from "@/lib/cvs/store"
@@ -19,6 +20,17 @@ type CvPrintPageProps = {
 }
 
 export async function generateMetadata({ params }: CvPrintPageProps): Promise<Metadata> {
+  const session = await getRequestSession()
+
+  if (!session) {
+    return {
+      title: {
+        absolute: "Print CV",
+      },
+      description: "Print a saved CV.",
+    }
+  }
+
   const { id } = await params
   const cv = await getCvData(id)
 
@@ -31,6 +43,8 @@ export async function generateMetadata({ params }: CvPrintPageProps): Promise<Me
 }
 
 export default async function CvPrintPage({ params, searchParams }: CvPrintPageProps) {
+  await requireRequestSession()
+
   const [{ id }, { autoprint }] = await Promise.all([params, searchParams])
   const cv = await getCvData(id)
 

@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString, readStringArray } from "@/lib/career-data/route-helpers"
 import { deleteProjectData, updateProjectData } from "@/lib/career-data/store"
 import { type ProjectPayload } from "@/lib/career-data/types"
 
-export async function PUT(
+export const PUT = withApiSession(async (
   request: Request,
   context: RouteContext<"/api/projects/[id]">
-) {
+) => {
   const { id } = await context.params
   const body = await parseJsonBody<ProjectPayload>(request)
 
@@ -47,12 +48,12 @@ export async function PUT(
   }
 
   return NextResponse.json(buildApiSuccess(project))
-}
+})
 
-export async function DELETE(
+export const DELETE = withApiSession(async (
   _request: Request,
   context: RouteContext<"/api/projects/[id]">
-) {
+) => {
   const { id } = await context.params
   const project = await deleteProjectData(id)
 
@@ -63,4 +64,4 @@ export async function DELETE(
   }
 
   return NextResponse.json(buildApiSuccess({ id: project.id }))
-}
+})

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody } from "@/lib/career-data/route-helpers"
 import { createProfileData, listProfilesData } from "@/lib/profiles/store"
@@ -11,12 +12,12 @@ import {
   validateProfilePayload,
 } from "@/lib/profiles/validation"
 
-export async function GET() {
+export const GET = withApiSession(async () => {
   const profiles = await listProfilesData()
   return NextResponse.json(buildApiSuccess(profiles))
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withApiSession(async (request: Request) => {
   const body = await parseJsonBody<ProfilePayload>(request)
 
   if (!body) {
@@ -39,4 +40,4 @@ export async function POST(request: Request) {
   const createdProfile = await createProfileData(profile)
 
   return NextResponse.json(buildApiSuccess(createdProfile), { status: 201 })
-}
+})

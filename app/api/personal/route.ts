@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { getPersonalData, updatePersonalData } from "@/lib/career-data/store"
 import { type PersonalData } from "@/lib/career-data/types"
 import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 
-export async function GET() {
+export const GET = withApiSession(async () => {
   const personal = await getPersonalData()
   return NextResponse.json(buildApiSuccess(personal))
-}
+})
 
-export async function PUT(request: Request) {
+export const PUT = withApiSession(async (request: Request) => {
   const body = await parseJsonBody<PersonalData>(request)
 
   if (!body) {
@@ -37,4 +38,4 @@ export async function PUT(request: Request) {
   })
 
   return NextResponse.json(buildApiSuccess(personal))
-}
+})

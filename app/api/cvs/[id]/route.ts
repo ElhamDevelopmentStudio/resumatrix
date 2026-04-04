@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody } from "@/lib/career-data/route-helpers"
 import { deleteCvData, updateCvData } from "@/lib/cvs/store"
@@ -19,7 +20,7 @@ type CvRouteProps = {
   }>
 }
 
-export async function PUT(request: Request, { params }: CvRouteProps) {
+export const PUT = withApiSession(async (request: Request, { params }: CvRouteProps) => {
   const { id } = await params
   const body = await parseJsonBody<CvPayload>(request)
 
@@ -69,9 +70,9 @@ export async function PUT(request: Request, { params }: CvRouteProps) {
   }
 
   return NextResponse.json(buildApiSuccess(updatedCv))
-}
+})
 
-export async function DELETE(_: Request, { params }: CvRouteProps) {
+export const DELETE = withApiSession(async (_: Request, { params }: CvRouteProps) => {
   const { id } = await params
   const deletedCv = await deleteCvData(id)
 
@@ -83,4 +84,4 @@ export async function DELETE(_: Request, { params }: CvRouteProps) {
   }
 
   return NextResponse.json(buildApiSuccess({ id: deletedCv.id }))
-}
+})

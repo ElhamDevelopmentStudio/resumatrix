@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString, readStringArray } from "@/lib/career-data/route-helpers"
 import { createProjectData, listProjects } from "@/lib/career-data/store"
 import { type ProjectPayload } from "@/lib/career-data/types"
 
-export async function GET() {
+export const GET = withApiSession(async () => {
   const projects = await listProjects()
   return NextResponse.json(buildApiSuccess(projects))
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withApiSession(async (request: Request) => {
   const body = await parseJsonBody<ProjectPayload>(request)
 
   if (!body) {
@@ -42,4 +43,4 @@ export async function POST(request: Request) {
   })
 
   return NextResponse.json(buildApiSuccess(project), { status: 201 })
-}
+})

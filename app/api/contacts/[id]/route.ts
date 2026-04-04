@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 import { deleteContactData, updateContactData } from "@/lib/career-data/store"
 import { type ContactPayload } from "@/lib/career-data/types"
 
-export async function PUT(
+export const PUT = withApiSession(async (
   request: Request,
   context: RouteContext<"/api/contacts/[id]">
-) {
+) => {
   const { id } = await context.params
   const body = await parseJsonBody<ContactPayload>(request)
 
@@ -38,12 +39,12 @@ export async function PUT(
   }
 
   return NextResponse.json(buildApiSuccess(contact))
-}
+})
 
-export async function DELETE(
+export const DELETE = withApiSession(async (
   _request: Request,
   context: RouteContext<"/api/contacts/[id]">
-) {
+) => {
   const { id } = await context.params
   const contact = await deleteContactData(id)
 
@@ -54,4 +55,4 @@ export async function DELETE(
   }
 
   return NextResponse.json(buildApiSuccess({ id: contact.id }))
-}
+})

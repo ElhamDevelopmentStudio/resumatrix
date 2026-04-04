@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 import { createContactData, listContacts } from "@/lib/career-data/store"
 import { type ContactPayload } from "@/lib/career-data/types"
 
-export async function GET() {
+export const GET = withApiSession(async () => {
   const contacts = await listContacts()
   return NextResponse.json(buildApiSuccess(contacts))
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withApiSession(async (request: Request) => {
   const body = await parseJsonBody<ContactPayload>(request)
 
   if (!body) {
@@ -33,4 +34,4 @@ export async function POST(request: Request) {
   const contact = await createContactData({ type, value })
 
   return NextResponse.json(buildApiSuccess(contact), { status: 201 })
-}
+})

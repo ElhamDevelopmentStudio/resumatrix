@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 import { deleteSkillData, updateSkillData } from "@/lib/career-data/store"
 import { type SkillPayload } from "@/lib/career-data/types"
 
-export async function PUT(
+export const PUT = withApiSession(async (
   request: Request,
   context: RouteContext<"/api/skills/[id]">
-) {
+) => {
   const { id } = await context.params
   const body = await parseJsonBody<SkillPayload>(request)
 
@@ -39,12 +40,12 @@ export async function PUT(
   }
 
   return NextResponse.json(buildApiSuccess(skill))
-}
+})
 
-export async function DELETE(
+export const DELETE = withApiSession(async (
   _request: Request,
   context: RouteContext<"/api/skills/[id]">
-) {
+) => {
   const { id } = await context.params
   const skill = await deleteSkillData(id)
 
@@ -55,4 +56,4 @@ export async function DELETE(
   }
 
   return NextResponse.json(buildApiSuccess({ id: skill.id }))
-}
+})

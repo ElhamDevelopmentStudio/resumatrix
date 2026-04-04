@@ -18,6 +18,11 @@ type SessionPayload = {
   sub: string
 }
 
+export type AuthSession = {
+  username: string
+  expiresAt: number
+}
+
 export type LoginRequestBody = {
   username: string
   password: string
@@ -108,8 +113,8 @@ export function createSessionToken(username: string) {
   return `${encodedPayload}.${signature}`
 }
 
-export function verifySessionToken(token: string) {
-  const [encodedPayload, signature] = token.split(".")
+export function verifySessionToken(token: string | null | undefined): AuthSession | null {
+  const [encodedPayload, signature] = token?.split(".") ?? []
 
   if (!encodedPayload || !signature) {
     return null

@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString, readStringArray } from "@/lib/career-data/route-helpers"
 import { deleteExperienceData, updateExperienceData } from "@/lib/career-data/store"
 import { type ExperiencePayload } from "@/lib/career-data/types"
 
-export async function PUT(
+export const PUT = withApiSession(async (
   request: Request,
   context: RouteContext<"/api/experiences/[id]">
-) {
+) => {
   const { id } = await context.params
   const body = await parseJsonBody<ExperiencePayload>(request)
 
@@ -51,12 +52,12 @@ export async function PUT(
   }
 
   return NextResponse.json(buildApiSuccess(experience))
-}
+})
 
-export async function DELETE(
+export const DELETE = withApiSession(async (
   _request: Request,
   context: RouteContext<"/api/experiences/[id]">
-) {
+) => {
   const { id } = await context.params
   const experience = await deleteExperienceData(id)
 
@@ -67,4 +68,4 @@ export async function DELETE(
   }
 
   return NextResponse.json(buildApiSuccess({ id: experience.id }))
-}
+})

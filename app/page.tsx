@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
 import { LoginScreen } from "@/app/_components/login-screen"
-import { AUTH_SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session"
+import { getRequestSession } from "@/lib/auth/server"
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -10,8 +10,11 @@ export const metadata: Metadata = {
 }
 
 export default async function Home() {
-  const sessionCookie = (await cookies()).get(AUTH_SESSION_COOKIE)?.value
-  const session = sessionCookie ? verifySessionToken(sessionCookie) : null
+  const session = await getRequestSession()
 
-  return <LoginScreen isAuthenticated={Boolean(session)} />
+  if (session) {
+    redirect("/dashboard")
+  }
+
+  return <LoginScreen isAuthenticated={false} />
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody } from "@/lib/career-data/route-helpers"
 import { deleteProfileData, updateProfileData } from "@/lib/profiles/store"
@@ -11,10 +12,10 @@ import {
   validateProfilePayload,
 } from "@/lib/profiles/validation"
 
-export async function PUT(
+export const PUT = withApiSession(async (
   request: Request,
   context: RouteContext<"/api/profiles/[id]">
-) {
+) => {
   const { id } = await context.params
   const body = await parseJsonBody<ProfilePayload>(request)
 
@@ -44,12 +45,12 @@ export async function PUT(
   }
 
   return NextResponse.json(buildApiSuccess(updatedProfile))
-}
+})
 
-export async function DELETE(
+export const DELETE = withApiSession(async (
   _request: Request,
   context: RouteContext<"/api/profiles/[id]">
-) {
+) => {
   const { id } = await context.params
   const deletedProfile = await deleteProfileData(id)
 
@@ -60,4 +61,4 @@ export async function DELETE(
   }
 
   return NextResponse.json(buildApiSuccess({ id: deletedProfile.id }))
-}
+})

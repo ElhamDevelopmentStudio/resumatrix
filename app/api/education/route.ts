@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
 
+import { withApiSession } from "@/lib/auth/server"
 import { buildApiError, buildApiSuccess } from "@/lib/career-data/http"
 import { parseJsonBody, readString } from "@/lib/career-data/route-helpers"
 import { createEducationData, listEducationEntries } from "@/lib/career-data/store"
 import { type EducationPayload } from "@/lib/career-data/types"
 
-export async function GET() {
+export const GET = withApiSession(async () => {
   const education = await listEducationEntries()
   return NextResponse.json(buildApiSuccess(education))
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withApiSession(async (request: Request) => {
   const body = await parseJsonBody<EducationPayload>(request)
 
   if (!body) {
@@ -42,4 +43,4 @@ export async function POST(request: Request) {
   })
 
   return NextResponse.json(buildApiSuccess(education), { status: 201 })
-}
+})

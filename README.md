@@ -121,6 +121,12 @@ If you do not set auth credentials in development, the login route falls back to
 
 This fallback is for local development only. Set real values before deploying.
 
+## Session behavior
+
+- `/dashboard`, `/career-data`, `/profiles`, `/cvs`, `/cv-print/:id`, and `/personal` require an active session.
+- The data APIs under `/api/personal`, `/api/contacts`, `/api/experiences`, `/api/projects`, `/api/education`, `/api/skills`, `/api/profiles`, `/api/templates`, and `/api/cvs` also require an active session.
+- Visiting `/` with a valid session redirects to `/dashboard`.
+
 ## Main routes
 
 - `/` — login page
@@ -135,6 +141,7 @@ This fallback is for local development only. Set real values before deploying.
 - `/cv-print/:id` — print-friendly CV preview for manual inspection
 - `/personal` — redirects to `/career-data`
 - `POST /api/auth/login` — login endpoint
+- `POST /api/auth/logout` — logout endpoint
 - `GET, PUT /api/personal` — personal details API
 - `GET, POST /api/contacts` — contacts collection API
 - `PUT, DELETE /api/contacts/:id` — single contact API
