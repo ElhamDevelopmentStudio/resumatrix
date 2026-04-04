@@ -26,7 +26,6 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
-import { deleteCv, updateCv } from "@/lib/cvs/api"
 import { applyCvContentOverrides, buildCvRenderModel } from "@/lib/cvs/engine"
 import { getCvSectionLabel } from "@/lib/cvs/presentation"
 import {
@@ -55,6 +54,7 @@ import {
   CvSectionSelectorDialog,
   type CvSectionSelectorItem,
 } from "./cv-section-selector-dialog"
+import { deleteCv, updateCv } from "../actions"
 
 const inputClassName =
   "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20"
@@ -371,15 +371,17 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
       setSaveState("saving")
       setSaveError(null)
 
-      try {
-        const updatedCv = await updateCv(cv.id, nextPayload)
-        setSavedSnapshot(buildSnapshot(buildPayload(updatedCv)))
-        setSaveState("saved")
-      } catch (error) {
+      const updatedCv = await updateCv(cv.id, nextPayload)
+
+      if (!updatedCv.success) {
         setSaveState("error")
-        setSaveError(error instanceof Error ? error.message : "We couldn’t save this CV right now.")
-        throw error
+        setSaveError(updatedCv.error)
+        return false
       }
+
+      setSavedSnapshot(buildSnapshot(buildPayload(updatedCv.data)))
+      setSaveState("saved")
+      return true
     },
     [cv.id]
   )
@@ -405,7 +407,11 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
       throw new Error(getFirstCvValidationMessage(validationErrors))
     }
 
-    await persistChanges(state)
+    const didSave = await persistChanges(state)
+
+    if (!didSave) {
+      throw new Error("We couldn’t save this CV right now.")
+    }
   }, [canSave, isDirty, persistChanges, state, validationErrors])
 
   const handleDelete = async () => {
@@ -413,7 +419,13 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
     setSaveError(null)
 
     try {
-      await deleteCv(cv.id)
+      const deletedCv = await deleteCv(cv.id)
+
+      if (!deletedCv.success) {
+        setSaveError(deletedCv.error)
+        return
+      }
+
       router.push("/cvs")
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "We couldn’t delete this CV right now.")

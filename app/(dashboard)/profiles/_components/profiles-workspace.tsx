@@ -21,7 +21,6 @@ import { buttonVariants, Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
-import { createProfile, deleteProfile } from "@/lib/profiles/api"
 import { buildProfilePreview, getWorkspaceTagSuggestions } from "@/lib/profiles/engine"
 import type {
   ProfileData,
@@ -35,6 +34,7 @@ import { cn } from "@/lib/utils"
 import { ProfileCard } from "./profile-card"
 import { ProfilesListTable } from "./profiles-list-table"
 import { ProfilesToolbar } from "./profiles-toolbar"
+import { createProfile, deleteProfile } from "../actions"
 
 type MutationState = {
   profileId: string | null
@@ -138,7 +138,13 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
         exclude_tags: profile.exclude_tags,
         config: profile.config,
       })
-      setProfiles((currentProfiles) => [duplicatedProfile, ...currentProfiles])
+
+      if (!duplicatedProfile.success) {
+        setPageError(duplicatedProfile.error)
+        return
+      }
+
+      setProfiles((currentProfiles) => [duplicatedProfile.data, ...currentProfiles])
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "We couldn’t duplicate that profile.")
     } finally {
@@ -155,7 +161,13 @@ export function ProfilesWorkspace({ careerData, initialProfiles }: ProfileWorksp
     setPageError(null)
 
     try {
-      await deleteProfile(deleteTarget.id)
+      const deletedProfile = await deleteProfile(deleteTarget.id)
+
+      if (!deletedProfile.success) {
+        setPageError(deletedProfile.error)
+        return
+      }
+
       setProfiles((currentProfiles) => currentProfiles.filter((profile) => profile.id !== deleteTarget.id))
       setDeleteTarget(null)
     } catch (error) {

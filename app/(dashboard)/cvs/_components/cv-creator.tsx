@@ -13,7 +13,6 @@ import { FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
-import { createCv } from "@/lib/cvs/api"
 import { buildCvRenderModel } from "@/lib/cvs/engine"
 import { defaultCvOverrides, type CvTemplateMetadata } from "@/lib/cvs/types"
 import {
@@ -24,6 +23,7 @@ import {
 import type { ProfileData } from "@/lib/profiles/types"
 
 import { CvPreviewPanel } from "./cv-preview-panel"
+import { createCv } from "../actions"
 
 type TemplateOption = CvTemplateMetadata & {
   preview_blurb: string
@@ -96,7 +96,13 @@ export function CvCreator({ profiles, careerData, templates }: CvCreatorProps) {
 
     try {
       const createdCv = await createCv(payload)
-      router.push(`/cvs/${createdCv.id}`)
+
+      if (!createdCv.success) {
+        setErrorMessage(createdCv.error)
+        return
+      }
+
+      router.push(`/cvs/${createdCv.data.id}`)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "We couldn’t create this CV right now.")
     } finally {

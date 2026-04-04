@@ -26,7 +26,6 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner"
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
-import { createProfile, deleteProfile, updateProfile } from "@/lib/profiles/api"
 import {
   buildProfilePreview,
   getWorkspaceTagSuggestions,
@@ -60,6 +59,7 @@ import {
   type ProfileSectionSelectorItem,
 } from "./profile-section-selector-dialog"
 import { ProfileTagEditor } from "./profile-tag-editor"
+import { createProfile, deleteProfile, updateProfile } from "../actions"
 
 const inputClassName =
   "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20 md:text-sm"
@@ -390,7 +390,13 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
 
     try {
       if (currentMode === "create") {
-        await createProfile(payload)
+        const createdProfile = await createProfile(payload)
+
+        if (!createdProfile.success) {
+          setSubmitError(createdProfile.error)
+          return
+        }
+
         router.push("/profiles")
         return
       }
@@ -400,7 +406,13 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
       }
 
       const updatedProfile = await updateProfile(savedProfile.id, payload)
-      setSavedProfile(updatedProfile)
+
+      if (!updatedProfile.success) {
+        setSubmitError(updatedProfile.error)
+        return
+      }
+
+      setSavedProfile(updatedProfile.data)
       setSavedSnapshot(payloadSnapshot)
       setSaveNotice("Profile saved.")
     } catch (error) {
@@ -419,7 +431,13 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
     setSubmitError(null)
 
     try {
-      await deleteProfile(savedProfile.id)
+      const deletedProfile = await deleteProfile(savedProfile.id)
+
+      if (!deletedProfile.success) {
+        setSubmitError(deletedProfile.error)
+        return
+      }
+
       router.push("/profiles")
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "We couldn’t delete this profile right now.")
