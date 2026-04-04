@@ -20,10 +20,6 @@ type ProfileDocument = DocumentByName<DataModel, "profiles">
 const query = queryGeneric as QueryBuilder<DataModel, "public">
 const mutation = mutationGeneric as MutationBuilder<DataModel, "public">
 
-function sortByUpdatedAt<T extends { updated_at: string }>(items: T[]) {
-  return [...items].sort((left, right) => right.updated_at.localeCompare(left.updated_at))
-}
-
 function withoutSystemFields<T extends { _creationTime: number; _id: unknown }>(
   document: T
 ): Omit<T, "_creationTime" | "_id"> {
@@ -34,15 +30,17 @@ function withoutSystemFields<T extends { _creationTime: number; _id: unknown }>(
 }
 
 async function getDocumentById(ctx: QueryCtx | MutationCtx, id: string): Promise<ProfileDocument | null> {
-  const documents = await ctx.db.query("profiles").collect()
-  return documents.find((document) => document.id === id) ?? null
+  return await ctx.db
+    .query("profiles")
+    .withIndex("by_record_id", (q) => q.eq("id", id))
+    .unique()
 }
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const documents = await ctx.db.query("profiles").collect()
-    return sortByUpdatedAt(documents.map((document) => withoutSystemFields(document)))
+    const documents = await ctx.db.query("profiles").withIndex("by_updated_at").order("desc").collect()
+    return documents.map((document) => withoutSystemFields(document))
   },
 })
 

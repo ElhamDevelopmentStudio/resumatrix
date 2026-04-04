@@ -7,7 +7,6 @@ import {
   mutationGeneric,
   type QueryBuilder,
   queryGeneric,
-  type TableNamesInDataModel,
 } from "convex/server"
 import { v } from "convex/values"
 
@@ -16,8 +15,7 @@ import { schema } from "./schema"
 type DataModel = DataModelFromSchemaDefinition<typeof schema>
 type QueryCtx = GenericQueryCtx<DataModel>
 type MutationCtx = GenericMutationCtx<DataModel>
-type TableName = TableNamesInDataModel<DataModel>
-type CollectionTableName = Exclude<TableName, "personal">
+type CollectionTableName = "contacts" | "experiences" | "projects" | "education" | "skills"
 type CollectionDocument<Table extends CollectionTableName> = DocumentByName<DataModel, Table>
 type StoredCollectionDocument<Table extends CollectionTableName> = CollectionDocument<Table> & {
   _creationTime: number
@@ -34,10 +32,6 @@ const mutation = mutationGeneric as MutationBuilder<DataModel, "public">
 
 const workspacePersonalKey = "default"
 
-function sortByCreationTime<T extends { _creationTime: number }>(items: T[]) {
-  return [...items].sort((left, right) => left._creationTime - right._creationTime)
-}
-
 function withoutSystemFields<T extends { _creationTime: number; _id: unknown }>(
   document: T
 ): Omit<T, "_creationTime" | "_id"> {
@@ -48,8 +42,11 @@ function withoutSystemFields<T extends { _creationTime: number; _id: unknown }>(
 }
 
 async function getPersonalDocument(ctx: QueryCtx | MutationCtx): Promise<StoredPersonalDocument | null> {
-  const documents = (await ctx.db.query("personal").collect()) as StoredPersonalDocument[]
-  return documents.find((document) => document.singleton_key === workspacePersonalKey) ?? null
+  const document = await ctx.db
+    .query("personal")
+    .withIndex("by_singleton_key", (q) => q.eq("singleton_key", workspacePersonalKey))
+    .unique()
+  return document as StoredPersonalDocument | null
 }
 
 async function getDocumentById<Table extends CollectionTableName>(
@@ -57,13 +54,38 @@ async function getDocumentById<Table extends CollectionTableName>(
   table: Table,
   id: string
 ): Promise<CollectionDocument<Table> | null> {
-  const documents = (await ctx.db.query(table).collect()) as StoredCollectionDocument<Table>[]
-  return documents.find((document) => document.id === id) ?? null
+  switch (table) {
+    case "contacts":
+      return (await ctx.db
+        .query("contacts")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
+    case "experiences":
+      return (await ctx.db
+        .query("experiences")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
+    case "projects":
+      return (await ctx.db
+        .query("projects")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
+    case "education":
+      return (await ctx.db
+        .query("education")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
+    case "skills":
+      return (await ctx.db
+        .query("skills")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
+  }
 }
 
 async function listDocuments<Table extends CollectionTableName>(ctx: QueryCtx, table: Table) {
   const documents = (await ctx.db.query(table).collect()) as StoredCollectionDocument<Table>[]
-  return sortByCreationTime(documents).map((document) => withoutSystemFields(document))
+  return documents.map((document) => withoutSystemFields(document))
 }
 
 export const getWorkspace = query({
