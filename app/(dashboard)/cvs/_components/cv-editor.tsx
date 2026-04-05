@@ -1,6 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { FunctionReference } from "convex/server"
+import type { LayoutSuggestion } from "@/lib/ai/types"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -326,6 +330,10 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<
     "content" | "layout" | "items" | "document"
   >("content")
+  const [layoutSuggestion, setLayoutSuggestion] = useState<LayoutSuggestion | null>(null)
+  const [layoutAiLoading, setLayoutAiLoading] = useState(false)
+  const [layoutAiError, setLayoutAiError] = useState<string | null>(null)
+  const suggestLayout = useMutation(api.ai_functions.suggest_layout as unknown as FunctionReference<"mutation">)
 
   const selectedProfile = profiles.find((profile) => profile.id === state.profile_id)
   const selectedTemplate = templates.find((template) => template.id === state.template_id)
@@ -496,6 +504,32 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
         },
       }
     })
+  }
+
+  async function handleGetLayoutSuggestions() {
+    setLayoutAiLoading(true)
+    setLayoutAiError(null)
+    const result = await suggestLayout({
+      cvId: cv.id,
+    })
+    setLayoutAiLoading(false)
+    if (result.ok) {
+      setLayoutSuggestion(result.data)
+    } else {
+      setLayoutAiError(result.error)
+    }
+  }
+
+  function applyLayoutSuggestion() {
+    if (!layoutSuggestion) return
+    updateState((currentState) => ({
+      ...currentState,
+      overrides: {
+        ...currentState.overrides,
+        section_order: layoutSuggestion.section_order as CvOverrideSection[],
+      },
+    }))
+    setLayoutSuggestion(null)
   }
 
   const handleSelectionSave = (section: CvOverrideSection, nextSelection: string[] | null) => {
@@ -677,6 +711,56 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                           Move sections up or down, or hide a section when you do not want it in this version.
                         </p>
                       </div>
+
+                      <div className="mb-4 flex items-center gap-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleGetLayoutSuggestions}
+                          disabled={layoutAiLoading}
+                        >
+                          {layoutAiLoading ? "Getting suggestions..." : "Get AI Suggestions"}
+                        </Button>
+                        {layoutSuggestion && (
+                          <Button type="button" size="sm" onClick={applyLayoutSuggestion}>
+                            Accept All
+                          </Button>
+                        )}
+                        {layoutSuggestion && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setLayoutSuggestion(null)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+
+                      {layoutSuggestion && (
+                        <div className="mb-4 space-y-2 rounded-sm border border-primary/20 bg-primary-soft/10 p-3">
+                          <p className="text-sm font-medium text-primary">Suggested Order</p>
+                          {layoutSuggestion.section_order.map((section, index) => (
+                            <div key={section} className="flex items-center justify-between text-sm">
+                              <span>
+                                <span className="font-medium">
+                                  {index + 1}. {getCvSectionLabel(section as CvOverrideSection)}
+                                </span>
+                                {layoutSuggestion.reasoning_per_section[section] && (
+                                  <span className="ml-2 text-xs text-on-surface-variant/70">
+                                    — {layoutSuggestion.reasoning_per_section[section]}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {layoutAiError && (
+                        <p className="text-sm text-destructive">{layoutAiError}</p>
+                      )}
 
                       <div className="space-y-3">
                         {state.overrides.section_order.map((section, index) => {
