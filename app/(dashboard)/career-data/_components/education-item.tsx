@@ -4,7 +4,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SparklesIcon } from "@hugeicons/core-free-icons"
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import type { FunctionReference } from "convex/server"
 import { AiDiffOverlay } from "@/components/ai-diff-overlay"
 import { FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -32,7 +31,7 @@ export function EducationItem({
   removeEducation,
 }: EducationItemProps) {
   const careerData = useCareerDataStore((state) => state)
-  const rewriteField = useMutation(api.ai_functions.rewrite_field as unknown as FunctionReference<"mutation">)
+  const rewriteField = useMutation(api.ai_functions.rewrite_field.rewrite_field)
 
   // AI state for details field
   const [detailsAiState, setDetailsAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")

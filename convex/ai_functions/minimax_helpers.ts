@@ -4,6 +4,7 @@ import type { MutationCtx } from "../_generated/server"
 
 const RATE_LIMIT_CALLS = 10
 const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
+export const AI_RATE_LIMIT_USER_ID = "resumatrix-single-user"
 
 export async function checkRateLimit(
   ctx: MutationCtx,
