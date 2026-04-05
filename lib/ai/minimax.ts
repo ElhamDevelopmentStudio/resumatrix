@@ -1,4 +1,4 @@
-type CallMinimaxParams<T> = {
+type CallMinimaxParams = {
   systemPrompt: string
   userPrompt: string
   outputSchema: object
@@ -7,7 +7,7 @@ type CallMinimaxParams<T> = {
   maxTokens?: number
 }
 
-export async function callMinimax<T>(params: CallMinimaxParams<T>): Promise<import("./types").AIResponse<T>> {
+export async function callMinimax<T>(params: CallMinimaxParams): Promise<import("./types").AIResponse<T>> {
   const {
     systemPrompt,
     userPrompt,
@@ -45,7 +45,30 @@ export async function callMinimax<T>(params: CallMinimaxParams<T>): Promise<impo
       return { ok: false, error: `HTTP error: ${response.status} ${response.statusText}` }
     }
 
-    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }>; error?: { message?: string } }
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>
+      error?: { message?: string }
+      base_resp?: {
+        status_code?: number
+        status_msg?: string
+      }
+    }
+
+    const providerError = data.error?.message?.trim()
+    if (providerError) {
+      return { ok: false, error: providerError }
+    }
+
+    const providerStatusCode = data.base_resp?.status_code
+    const providerStatusMessage = data.base_resp?.status_msg?.trim()
+    if (providerStatusCode && providerStatusCode !== 0) {
+      return {
+        ok: false,
+        error: providerStatusMessage
+          ? `Minimax error ${providerStatusCode}: ${providerStatusMessage}`
+          : `Minimax error ${providerStatusCode}`,
+      }
+    }
 
     const content = data.choices?.[0]?.message?.content
     if (!content) {
