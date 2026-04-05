@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import type { ProjectDraft } from "@/lib/career-data/drafts"
 import type { ProjectErrorState } from "@/lib/career-data/validation"
 import { useState } from "react"
@@ -46,16 +47,24 @@ export function ProjectsItem({
   async function handleDescriptionRewrite() {
     setDescriptionAiState("loading")
     setDescriptionError(null)
-    const result = await rewriteField({
-      fieldType: "description",
-      originalValue: project.description,
-      careerDataSerialized: JSON.stringify(careerData),
-    })
-    if (result.ok) {
-      setDescriptionSuggestion(result.data)
-      setDescriptionAiState("suggestion")
-    } else {
-      setDescriptionError(result.error)
+    setDescriptionSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "description",
+        originalValue: project.description,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setDescriptionSuggestion(result.data)
+        setDescriptionAiState("suggestion")
+      } else {
+        setDescriptionError(result.error)
+        setDescriptionAiState("error")
+      }
+    } catch (error) {
+      setDescriptionError(getAiClientErrorMessage(error))
       setDescriptionAiState("error")
     }
   }
@@ -64,21 +73,30 @@ export function ProjectsItem({
     updateProjectField(project.clientId, "description", newValue)
     setDescriptionAiState("idle")
     setDescriptionSuggestion(null)
+    setDescriptionError(null)
   }
 
   async function handleBulletsRewrite() {
     setBulletsAiState("loading")
     setBulletsError(null)
-    const result = await rewriteField({
-      fieldType: "bullet",
-      originalValue: project.bullets_text,
-      careerDataSerialized: JSON.stringify(careerData),
-    })
-    if (result.ok) {
-      setBulletsSuggestion(result.data)
-      setBulletsAiState("suggestion")
-    } else {
-      setBulletsError(result.error)
+    setBulletsSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "bullet",
+        originalValue: project.bullets_text,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setBulletsSuggestion(result.data)
+        setBulletsAiState("suggestion")
+      } else {
+        setBulletsError(result.error)
+        setBulletsAiState("error")
+      }
+    } catch (error) {
+      setBulletsError(getAiClientErrorMessage(error))
       setBulletsAiState("error")
     }
   }
@@ -87,6 +105,7 @@ export function ProjectsItem({
     updateProjectField(project.clientId, "bullets_text", newValue)
     setBulletsAiState("idle")
     setBulletsSuggestion(null)
+    setBulletsError(null)
   }
 
   return (
@@ -137,6 +156,7 @@ export function ProjectsItem({
           onCancel={() => {
             setDescriptionAiState("idle")
             setDescriptionSuggestion(null)
+            setDescriptionError(null)
           }}
         />
       </div>
@@ -180,6 +200,7 @@ export function ProjectsItem({
           onCancel={() => {
             setBulletsAiState("idle")
             setBulletsSuggestion(null)
+            setBulletsError(null)
           }}
         />
       </div>

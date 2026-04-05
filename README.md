@@ -112,6 +112,47 @@ Set these environment variables in `.env` or `.env.local`:
 | `RESUMATRIX_SESSION_SECRET` | A long random string used to sign the session cookie |
 | `NEXT_PUBLIC_CONVEX_URL` | The Convex deployment URL used for app data |
 
+## AI provider configuration
+
+AI requests now use an env-based provider switch.
+
+### Required AI variables
+
+| Variable | Description |
+| --- | --- |
+| `AI_PROVIDER` | Active provider: `minimax`, `groq`, or `nvidia` |
+| `AI_REQUEST_TIMEOUT_MS` | Optional request timeout in milliseconds |
+
+### MiniMax settings
+
+| Variable | Description |
+| --- | --- |
+| `MINIMAX_API_KEY` | MiniMax API key |
+| `MINIMAX_BASE_URL` | MiniMax chat completion URL |
+| `MINIMAX_MODEL` | MiniMax model ID |
+
+### Groq settings
+
+| Variable | Description |
+| --- | --- |
+| `GROQ_API_KEY` | Groq API key |
+| `GROQ_BASE_URL` | Groq chat completion URL |
+| `GROQ_MODEL` | Groq model ID |
+| `GROQ_RESPONSE_FORMAT` | `json_schema` or `json_object` |
+| `GROQ_JSON_SCHEMA_STRICT` | `true` or `false` for Groq structured outputs |
+
+### NVIDIA settings
+
+| Variable | Description |
+| --- | --- |
+| `NVIDIA_API_KEY` | NVIDIA API key from build.nvidia.com / NIM |
+| `NVIDIA_BASE_URL` | NVIDIA chat completion URL |
+| `NVIDIA_MODEL` | NVIDIA model ID |
+| `NVIDIA_RESPONSE_FORMAT` | `json_schema` or `json_object` |
+| `NVIDIA_JSON_SCHEMA_STRICT` | `true` or `false` for NVIDIA structured outputs |
+
+Only the active provider needs a working API key. The other provider values can stay unused until you switch `AI_PROVIDER`.
+
 ### Local development fallback
 
 If you do not set auth credentials in development, the login route falls back to:

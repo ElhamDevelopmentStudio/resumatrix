@@ -4,7 +4,7 @@ import type { AIResponse } from "./types"
 import { parseStructuredOutput } from "./response-parser"
 import { createAiFailure } from "./response-utils"
 
-type CallMinimaxProviderParams<T> = {
+type CallOpenAiCompatibleProviderParams<T> = {
   config: ActiveProviderConfig
   systemPrompt: string
   userPrompt: string
@@ -14,18 +14,24 @@ type CallMinimaxProviderParams<T> = {
   maxTokens?: number
 }
 
-type MinimaxResponse = {
-  choices?: Array<{ message?: { content?: string } }>
-  error?: { message?: string; code?: string }
-  usage?: { total_tokens?: number }
-  base_resp?: {
-    status_code?: number
-    status_msg?: string
+type OpenAiCompatibleResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string | null
+    }
+  }>
+  error?: {
+    message?: string
+    code?: string
+    type?: string
+  }
+  usage?: {
+    total_tokens?: number
   }
 }
 
-export async function callMinimaxProvider<T>(
-  params: CallMinimaxProviderParams<T>
+export async function callOpenAiCompatibleProvider<T>(
+  params: CallOpenAiCompatibleProviderParams<T>
 ): Promise<AIResponse<T>> {
   const model = params.model ?? params.config.model
   const controller = new AbortController()
@@ -38,19 +44,7 @@ export async function callMinimaxProvider<T>(
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.config.apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: params.systemPrompt },
-          { role: "user", content: params.userPrompt },
-        ],
-        temperature: params.temperature ?? 0.7,
-        max_tokens: params.maxTokens ?? 1024,
-        response_format: {
-          type: "json_schema",
-          json_schema: params.outputSchema.schema,
-        },
-      }),
+      body: JSON.stringify(buildRequestBody(params, model)),
       signal: controller.signal,
     })
 
@@ -64,7 +58,7 @@ export async function callMinimaxProvider<T>(
         baseUrl: params.config.baseUrl,
         model,
         statusCode: response.status,
-        code: responseJson.data?.error?.code,
+        code: responseJson.data?.error?.code ?? responseJson.data?.error?.type,
         retryable: response.status >= 500,
         message:
           responseJson.data?.error?.message?.trim() ||
@@ -79,7 +73,7 @@ export async function callMinimaxProvider<T>(
         providerLabel: params.config.providerLabel,
         baseUrl: params.config.baseUrl,
         model,
-        message: "MiniMax returned an invalid JSON response.",
+        message: "The provider returned an invalid JSON response.",
       })
     }
 
@@ -90,35 +84,20 @@ export async function callMinimaxProvider<T>(
         providerLabel: params.config.providerLabel,
         baseUrl: params.config.baseUrl,
         model,
-        code: responseJson.data.error?.code,
+        code: responseJson.data.error?.code ?? responseJson.data.error?.type,
         message: providerError,
         tokensUsed: responseJson.data.usage?.total_tokens,
       })
     }
 
-    const providerStatusCode = responseJson.data.base_resp?.status_code
-    const providerStatusMessage = responseJson.data.base_resp?.status_msg?.trim()
-    if (providerStatusCode && providerStatusCode !== 0) {
-      return createAiFailure({
-        provider: params.config.provider,
-        providerLabel: params.config.providerLabel,
-        baseUrl: params.config.baseUrl,
-        model,
-        code: String(providerStatusCode),
-        message:
-          providerStatusMessage || `MiniMax reported status code ${providerStatusCode}.`,
-        tokensUsed: responseJson.data.usage?.total_tokens,
-      })
-    }
-
     const content = responseJson.data.choices?.[0]?.message?.content
-    if (!content) {
+    if (!content || typeof content !== "string") {
       return createAiFailure({
         provider: params.config.provider,
         providerLabel: params.config.providerLabel,
         baseUrl: params.config.baseUrl,
         model,
-        message: "MiniMax did not return any message content.",
+        message: "The provider did not return any message content.",
         tokensUsed: responseJson.data.usage?.total_tokens,
       })
     }
@@ -144,13 +123,57 @@ export async function callMinimaxProvider<T>(
   }
 }
 
+function buildRequestBody<T>(
+  params: CallOpenAiCompatibleProviderParams<T>,
+  model: string
+) {
+  const maxTokens = params.maxTokens ?? 1024
+  const requestBody: Record<string, unknown> = {
+    model,
+    messages: buildMessages(params),
+    temperature: params.temperature ?? 0.7,
+    response_format: buildResponseFormat(params),
+  }
+
+  requestBody[params.config.maxTokensField] = maxTokens
+
+  return requestBody
+}
+
+function buildMessages<T>(params: CallOpenAiCompatibleProviderParams<T>) {
+  const systemContent =
+    params.config.responseFormatMode === "json_object"
+      ? `${params.systemPrompt}\n\nReturn only a JSON object that matches this schema. Do not add markdown fences, explanations, or extra text.\nSchema: ${JSON.stringify(params.outputSchema.schema)}`
+      : params.systemPrompt
+
+  return [
+    { role: "system", content: systemContent },
+    { role: "user", content: params.userPrompt },
+  ]
+}
+
+function buildResponseFormat<T>(params: CallOpenAiCompatibleProviderParams<T>) {
+  if (params.config.responseFormatMode === "json_object") {
+    return { type: "json_object" }
+  }
+
+  return {
+    type: "json_schema",
+    json_schema: {
+      name: params.outputSchema.name,
+      strict: params.config.jsonSchemaStrict,
+      schema: params.outputSchema.schema,
+    },
+  }
+}
+
 function tryParseResponseJson(responseText: string):
-  | { ok: true; data: MinimaxResponse }
+  | { ok: true; data: OpenAiCompatibleResponse }
   | { ok: false; data: null } {
   try {
     return {
       ok: true,
-      data: JSON.parse(responseText) as MinimaxResponse,
+      data: JSON.parse(responseText) as OpenAiCompatibleResponse,
     }
   } catch {
     return {
@@ -169,5 +192,5 @@ function getFetchErrorMessage(error: unknown, timeoutMs: number) {
     return error.message
   }
 
-  return "We couldn’t reach MiniMax. Check your network and provider settings, then try again."
+  return "We couldn’t reach the AI provider. Check your network and provider settings, then try again."
 }

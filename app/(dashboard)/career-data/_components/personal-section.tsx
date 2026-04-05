@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import { useState } from "react"
 
 import { fieldLabelClassName, textAreaClassName, textInputClassName } from "./career-form-styles"
@@ -37,16 +38,24 @@ export function PersonalSection() {
   async function handleSummaryRewrite() {
     setSummaryAiState("loading")
     setSummaryError(null)
-    const result = await rewriteField({
-      fieldType: "summary",
-      originalValue: personal.summary,
-      careerDataSerialized: JSON.stringify(careerData),
-    })
-    if (result.ok) {
-      setSummarySuggestion(result.data)
-      setSummaryAiState("suggestion")
-    } else {
-      setSummaryError(result.error)
+    setSummarySuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "summary",
+        originalValue: personal.summary,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setSummarySuggestion(result.data)
+        setSummaryAiState("suggestion")
+      } else {
+        setSummaryError(result.error)
+        setSummaryAiState("error")
+      }
+    } catch (error) {
+      setSummaryError(getAiClientErrorMessage(error))
       setSummaryAiState("error")
     }
   }
@@ -55,6 +64,7 @@ export function PersonalSection() {
     updatePersonalField("summary", newValue)
     setSummaryAiState("idle")
     setSummarySuggestion(null)
+    setSummaryError(null)
   }
 
   return (
@@ -122,7 +132,11 @@ export function PersonalSection() {
           error={summaryError}
           onApply={handleSummaryApply}
           onRegenerate={handleSummaryRewrite}
-          onCancel={() => { setSummaryAiState("idle"); setSummarySuggestion(null); }}
+          onCancel={() => {
+            setSummaryAiState("idle")
+            setSummarySuggestion(null)
+            setSummaryError(null)
+          }}
         />
       </div>
     </CareerSectionCard>

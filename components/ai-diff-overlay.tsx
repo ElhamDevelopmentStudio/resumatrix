@@ -29,17 +29,20 @@ export function AiDiffOverlay({
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-on-surface-variant">
           <Spinner className="size-4" />
-          <span>Generating suggestion…</span>
+          <span>Getting an AI suggestion…</span>
         </div>
       ) : error ? (
-        <div className="space-y-2">
-          <p className="text-sm text-destructive">AI error: {error}</p>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-destructive">We couldn’t get an AI suggestion.</p>
+            <p className="text-sm text-on-surface-variant">{error}</p>
+          </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={onRegenerate}>
               Try again
             </Button>
             <Button size="sm" variant="ghost" onClick={onCancel}>
-              Cancel
+              Dismiss
             </Button>
           </div>
         </div>
@@ -58,11 +61,11 @@ export function AiDiffOverlay({
                 {suggestion.suggested}
               </p>
             </div>
-            {suggestion.reasoning && (
+            {suggestion.reasoning ? (
               <div>
                 <p className="text-xs italic text-on-surface-variant/60">{suggestion.reasoning}</p>
               </div>
-            )}
+            ) : null}
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={() => onApply(suggestion.suggested)}>
@@ -72,7 +75,7 @@ export function AiDiffOverlay({
               Regenerate
             </Button>
             <Button size="sm" variant="ghost" onClick={onCancel}>
-              Cancel
+              Dismiss
             </Button>
           </div>
         </div>

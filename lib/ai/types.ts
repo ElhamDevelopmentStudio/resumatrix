@@ -1,3 +1,5 @@
+export type AIProvider = "minimax" | "groq" | "nvidia"
+
 export interface RewriteSuggestion {
   original: string
   suggested: string
@@ -24,6 +26,20 @@ export interface ProfileSuggestion {
   }
 }
 
+export interface AIResponseMeta {
+  provider: AIProvider
+  providerLabel: string
+  model: string
+  baseUrl: string
+  tokensUsed?: number
+}
+
+export interface AIErrorDetails extends AIResponseMeta {
+  statusCode?: number
+  code?: string
+  retryable?: boolean
+}
+
 export type AIResponse<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string }
+  | { ok: true; data: T; meta: AIResponseMeta }
+  | { ok: false; error: string; details: AIErrorDetails }

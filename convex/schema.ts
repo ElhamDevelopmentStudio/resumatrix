@@ -166,18 +166,21 @@ export const schema = defineSchema({
     user_id: v.string(),
     function_name: v.string(),
     call_count: v.number(),
-    window_start: v.number(), // Unix timestamp in milliseconds
+    window_start: v.number(),
   })
     .index("by_user_function", ["user_id", "function_name"])
+    .index("by_user_function_window", ["user_id", "function_name", "window_start"])
     .index("by_window", ["window_start"]),
   ai_call_logs: defineTable({
     user_id: v.string(),
     function_name: v.string(),
+    provider: v.optional(v.string()),
+    model: v.optional(v.string()),
     region: v.optional(v.string()),
     tokens_used: v.optional(v.number()),
     success: v.boolean(),
     error_message: v.optional(v.string()),
-    created_at: v.string(), // ISO timestamp
+    created_at: v.string(),
   })
     .index("by_user", ["user_id"])
     .index("by_created_at", ["created_at"]),

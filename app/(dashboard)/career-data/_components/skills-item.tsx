@@ -11,6 +11,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { skillCategoryOptions, skillLevelOptions } from "@/lib/career-data/types"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import type { SkillDraft } from "@/lib/career-data/drafts"
 import type { SkillErrorState } from "@/lib/career-data/validation"
 import { useState } from "react"
@@ -42,16 +43,24 @@ export function SkillsItem({
   async function handleNameRewrite() {
     setNameAiState("loading")
     setNameError(null)
-    const result = await rewriteField({
-      fieldType: "role",
-      originalValue: skill.name,
-      careerDataSerialized: JSON.stringify(careerData),
-    })
-    if (result.ok) {
-      setNameSuggestion(result.data)
-      setNameAiState("suggestion")
-    } else {
-      setNameError(result.error)
+    setNameSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "role",
+        originalValue: skill.name,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setNameSuggestion(result.data)
+        setNameAiState("suggestion")
+      } else {
+        setNameError(result.error)
+        setNameAiState("error")
+      }
+    } catch (error) {
+      setNameError(getAiClientErrorMessage(error))
       setNameAiState("error")
     }
   }
@@ -60,6 +69,7 @@ export function SkillsItem({
     updateSkillField(skill.clientId, "name", newValue)
     setNameAiState("idle")
     setNameSuggestion(null)
+    setNameError(null)
   }
 
   return (
@@ -101,6 +111,7 @@ export function SkillsItem({
             onCancel={() => {
               setNameAiState("idle")
               setNameSuggestion(null)
+              setNameError(null)
             }}
           />
         </div>

@@ -58,6 +58,7 @@ import {
   validateProfilePayload,
 } from "@/lib/profiles/validation"
 import { cn } from "@/lib/utils"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 
 import {
   ProfileSectionSelectorDialog,
@@ -471,16 +472,24 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
   const handleGenerateProfile = async () => {
     setAiGenLoading(true)
     setAiGenError(null)
-    const result = await generateProfileMutation({
-      userPrompt: aiPrompt,
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId: aiRegionId,
-    })
-    setAiGenLoading(false)
-    if (result.ok) {
-      setAiSuggestion(result.data)
-    } else {
-      setAiGenError(result.error)
+    setAiSuggestion(null)
+
+    try {
+      const result = await generateProfileMutation({
+        userPrompt: aiPrompt,
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId: aiRegionId,
+      })
+
+      if (result.ok) {
+        setAiSuggestion(result.data)
+      } else {
+        setAiGenError(result.error)
+      }
+    } catch (error) {
+      setAiGenError(getAiClientErrorMessage(error))
+    } finally {
+      setAiGenLoading(false)
     }
   }
 
@@ -701,7 +710,7 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
                 <div className="space-y-2">
                   <FieldLabel>What kind of CV do you want?</FieldLabel>
                   <FieldDescription>
-                    e.g. "Senior frontend engineer for US tech companies, 5 years experience"
+                    Example: Senior frontend engineer for US tech companies, 5 years of experience.
                   </FieldDescription>
                   <Textarea
                     value={aiPrompt}
@@ -732,7 +741,11 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
                     <span>Generating profile…</span>
                   </div>
                 ) : aiGenError ? (
-                  <p className="text-sm text-destructive">{aiGenError}</p>
+                  <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+                    <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4" />
+                    <AlertTitle>We couldn’t generate a profile.</AlertTitle>
+                    <AlertDescription>{aiGenError}</AlertDescription>
+                  </Alert>
                 ) : null}
 
                 <div className="flex gap-3">

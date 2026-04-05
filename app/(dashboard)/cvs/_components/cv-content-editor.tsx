@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SparklesIcon } from "@hugeicons/core-free-icons"
 import { useAction } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { AiDiffOverlay } from "@/components/ai-diff-overlay"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
 import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import type {
   CvContactContentOverride,
   CvEducationContentOverride,
@@ -189,26 +190,52 @@ export function CvContentEditor({
   const [educationDetailsSuggestion, setEducationDetailsSuggestion] = useState<RewriteSuggestion | null>(null)
   const [educationDetailsError, setEducationDetailsError] = useState<string | null>(null)
 
-  // Reset AI state when selected experience changes
-  const selectedExperienceId = selectedItemIds.experiences
-  const selectedProjectId = selectedItemIds.projects
-  const selectedEducationId = selectedItemIds.education
+  function resetExperienceAiState() {
+    setExperienceRoleAiState("idle")
+    setExperienceRoleSuggestion(null)
+    setExperienceRoleError(null)
+    setExperienceBulletsAiState("idle")
+    setExperienceBulletsSuggestion(null)
+    setExperienceBulletsError(null)
+  }
+
+  function resetProjectAiState() {
+    setProjectDescriptionAiState("idle")
+    setProjectDescriptionSuggestion(null)
+    setProjectDescriptionError(null)
+    setProjectBulletsAiState("idle")
+    setProjectBulletsSuggestion(null)
+    setProjectBulletsError(null)
+  }
+
+  function resetEducationAiState() {
+    setEducationDetailsAiState("idle")
+    setEducationDetailsSuggestion(null)
+    setEducationDetailsError(null)
+  }
 
   // Summary AI handlers
   async function handleSummaryRewrite() {
     setSummaryAiState("loading")
     setSummaryError(null)
-    const result = await rewriteField({
-      fieldType: "summary",
-      originalValue: model?.personal.summary ?? "",
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setSummarySuggestion(result.data)
-      setSummaryAiState("suggestion")
-    } else {
-      setSummaryError(result.error)
+    setSummarySuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "summary",
+        originalValue: model?.personal.summary ?? "",
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setSummarySuggestion(result.data)
+        setSummaryAiState("suggestion")
+      } else {
+        setSummaryError(result.error)
+        setSummaryAiState("error")
+      }
+    } catch (error) {
+      setSummaryError(getAiClientErrorMessage(error))
       setSummaryAiState("error")
     }
   }
@@ -217,6 +244,7 @@ export function CvContentEditor({
     onPersonalChange("summary", newValue)
     setSummaryAiState("idle")
     setSummarySuggestion(null)
+    setSummaryError(null)
   }
 
   // Experience role AI handlers
@@ -224,17 +252,24 @@ export function CvContentEditor({
     if (!selectedExperience) return
     setExperienceRoleAiState("loading")
     setExperienceRoleError(null)
-    const result = await rewriteField({
-      fieldType: "role",
-      originalValue: selectedExperience.role,
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setExperienceRoleSuggestion(result.data)
-      setExperienceRoleAiState("suggestion")
-    } else {
-      setExperienceRoleError(result.error)
+    setExperienceRoleSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "role",
+        originalValue: selectedExperience.role,
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setExperienceRoleSuggestion(result.data)
+        setExperienceRoleAiState("suggestion")
+      } else {
+        setExperienceRoleError(result.error)
+        setExperienceRoleAiState("error")
+      }
+    } catch (error) {
+      setExperienceRoleError(getAiClientErrorMessage(error))
       setExperienceRoleAiState("error")
     }
   }
@@ -244,6 +279,7 @@ export function CvContentEditor({
     onExperienceChange(selectedExperience.id, { role: newValue })
     setExperienceRoleAiState("idle")
     setExperienceRoleSuggestion(null)
+    setExperienceRoleError(null)
   }
 
   // Experience bullets AI handlers
@@ -251,17 +287,24 @@ export function CvContentEditor({
     if (!selectedExperience) return
     setExperienceBulletsAiState("loading")
     setExperienceBulletsError(null)
-    const result = await rewriteField({
-      fieldType: "bullet",
-      originalValue: listToEditorValue(selectedExperience.bullets),
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setExperienceBulletsSuggestion(result.data)
-      setExperienceBulletsAiState("suggestion")
-    } else {
-      setExperienceBulletsError(result.error)
+    setExperienceBulletsSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "bullet",
+        originalValue: listToEditorValue(selectedExperience.bullets),
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setExperienceBulletsSuggestion(result.data)
+        setExperienceBulletsAiState("suggestion")
+      } else {
+        setExperienceBulletsError(result.error)
+        setExperienceBulletsAiState("error")
+      }
+    } catch (error) {
+      setExperienceBulletsError(getAiClientErrorMessage(error))
       setExperienceBulletsAiState("error")
     }
   }
@@ -271,6 +314,7 @@ export function CvContentEditor({
     onExperienceChange(selectedExperience.id, { bullets: editorValueToList(newValue) })
     setExperienceBulletsAiState("idle")
     setExperienceBulletsSuggestion(null)
+    setExperienceBulletsError(null)
   }
 
   // Project description AI handlers
@@ -278,17 +322,24 @@ export function CvContentEditor({
     if (!selectedProject) return
     setProjectDescriptionAiState("loading")
     setProjectDescriptionError(null)
-    const result = await rewriteField({
-      fieldType: "description",
-      originalValue: selectedProject.description,
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setProjectDescriptionSuggestion(result.data)
-      setProjectDescriptionAiState("suggestion")
-    } else {
-      setProjectDescriptionError(result.error)
+    setProjectDescriptionSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "description",
+        originalValue: selectedProject.description,
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setProjectDescriptionSuggestion(result.data)
+        setProjectDescriptionAiState("suggestion")
+      } else {
+        setProjectDescriptionError(result.error)
+        setProjectDescriptionAiState("error")
+      }
+    } catch (error) {
+      setProjectDescriptionError(getAiClientErrorMessage(error))
       setProjectDescriptionAiState("error")
     }
   }
@@ -298,6 +349,7 @@ export function CvContentEditor({
     onProjectChange(selectedProject.id, { description: newValue })
     setProjectDescriptionAiState("idle")
     setProjectDescriptionSuggestion(null)
+    setProjectDescriptionError(null)
   }
 
   // Project bullets AI handlers
@@ -305,17 +357,24 @@ export function CvContentEditor({
     if (!selectedProject) return
     setProjectBulletsAiState("loading")
     setProjectBulletsError(null)
-    const result = await rewriteField({
-      fieldType: "bullet",
-      originalValue: listToEditorValue(selectedProject.bullets),
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setProjectBulletsSuggestion(result.data)
-      setProjectBulletsAiState("suggestion")
-    } else {
-      setProjectBulletsError(result.error)
+    setProjectBulletsSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "bullet",
+        originalValue: listToEditorValue(selectedProject.bullets),
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setProjectBulletsSuggestion(result.data)
+        setProjectBulletsAiState("suggestion")
+      } else {
+        setProjectBulletsError(result.error)
+        setProjectBulletsAiState("error")
+      }
+    } catch (error) {
+      setProjectBulletsError(getAiClientErrorMessage(error))
       setProjectBulletsAiState("error")
     }
   }
@@ -325,6 +384,7 @@ export function CvContentEditor({
     onProjectChange(selectedProject.id, { bullets: editorValueToList(newValue) })
     setProjectBulletsAiState("idle")
     setProjectBulletsSuggestion(null)
+    setProjectBulletsError(null)
   }
 
   // Education details AI handlers
@@ -332,17 +392,24 @@ export function CvContentEditor({
     if (!selectedEducation) return
     setEducationDetailsAiState("loading")
     setEducationDetailsError(null)
-    const result = await rewriteField({
-      fieldType: "details",
-      originalValue: selectedEducation.details,
-      careerDataSerialized: JSON.stringify(careerData),
-      regionId,
-    })
-    if (result.ok) {
-      setEducationDetailsSuggestion(result.data)
-      setEducationDetailsAiState("suggestion")
-    } else {
-      setEducationDetailsError(result.error)
+    setEducationDetailsSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "details",
+        originalValue: selectedEducation.details,
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId,
+      })
+      if (result.ok) {
+        setEducationDetailsSuggestion(result.data)
+        setEducationDetailsAiState("suggestion")
+      } else {
+        setEducationDetailsError(result.error)
+        setEducationDetailsAiState("error")
+      }
+    } catch (error) {
+      setEducationDetailsError(getAiClientErrorMessage(error))
       setEducationDetailsAiState("error")
     }
   }
@@ -352,34 +419,8 @@ export function CvContentEditor({
     onEducationChange(selectedEducation.id, { details: newValue })
     setEducationDetailsAiState("idle")
     setEducationDetailsSuggestion(null)
-  }
-
-  // Reset experience AI state when selected experience changes
-  useEffect(() => {
-    setExperienceRoleAiState("idle")
-    setExperienceRoleSuggestion(null)
-    setExperienceRoleError(null)
-    setExperienceBulletsAiState("idle")
-    setExperienceBulletsSuggestion(null)
-    setExperienceBulletsError(null)
-  }, [selectedExperienceId])
-
-  // Reset project AI state when selected project changes
-  useEffect(() => {
-    setProjectDescriptionAiState("idle")
-    setProjectDescriptionSuggestion(null)
-    setProjectDescriptionError(null)
-    setProjectBulletsAiState("idle")
-    setProjectBulletsSuggestion(null)
-    setProjectBulletsError(null)
-  }, [selectedProjectId])
-
-  // Reset education AI state when selected education changes
-  useEffect(() => {
-    setEducationDetailsAiState("idle")
-    setEducationDetailsSuggestion(null)
     setEducationDetailsError(null)
-  }, [selectedEducationId])
+  }
 
   if (!model) {
     return (
@@ -499,6 +540,7 @@ export function CvContentEditor({
                   onCancel={() => {
                     setSummaryAiState("idle")
                     setSummarySuggestion(null)
+                    setSummaryError(null)
                   }}
                 />
               </div>
@@ -592,12 +634,13 @@ export function CvContentEditor({
                   <FieldLabel className="text-sm font-medium text-on-surface">Editing</FieldLabel>
                   <NativeSelect
                     value={selectedExperience.id}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      resetExperienceAiState()
                       setSelectedItemIds((current) => ({
                         ...current,
                         experiences: event.target.value,
                       }))
-                    }
+                    }}
                     className={selectClassName}
                   >
                     {model.experiences.map((experience) => (
@@ -640,6 +683,7 @@ export function CvContentEditor({
                         onCancel={() => {
                           setExperienceRoleAiState("idle")
                           setExperienceRoleSuggestion(null)
+                          setExperienceRoleError(null)
                         }}
                       />
                     </div>
@@ -724,6 +768,7 @@ export function CvContentEditor({
                       onCancel={() => {
                         setExperienceBulletsAiState("idle")
                         setExperienceBulletsSuggestion(null)
+                        setExperienceBulletsError(null)
                       }}
                     />
                   </div>
@@ -755,12 +800,13 @@ export function CvContentEditor({
                   <FieldLabel className="text-sm font-medium text-on-surface">Editing</FieldLabel>
                   <NativeSelect
                     value={selectedProject.id}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      resetProjectAiState()
                       setSelectedItemIds((current) => ({
                         ...current,
                         projects: event.target.value,
                       }))
-                    }
+                    }}
                     className={selectClassName}
                   >
                     {model.projects.map((project) => (
@@ -815,6 +861,7 @@ export function CvContentEditor({
                         onCancel={() => {
                           setProjectDescriptionAiState("idle")
                           setProjectDescriptionSuggestion(null)
+                          setProjectDescriptionError(null)
                         }}
                       />
                     </div>
@@ -867,6 +914,7 @@ export function CvContentEditor({
                           onCancel={() => {
                             setProjectBulletsAiState("idle")
                             setProjectBulletsSuggestion(null)
+                            setProjectBulletsError(null)
                           }}
                         />
                       </div>
@@ -900,12 +948,13 @@ export function CvContentEditor({
                   <FieldLabel className="text-sm font-medium text-on-surface">Editing</FieldLabel>
                   <NativeSelect
                     value={selectedEducation.id}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      resetEducationAiState()
                       setSelectedItemIds((current) => ({
                         ...current,
                         education: event.target.value,
                       }))
-                    }
+                    }}
                     className={selectClassName}
                   >
                     {model.education.map((entry) => (
@@ -996,6 +1045,7 @@ export function CvContentEditor({
                       onCancel={() => {
                         setEducationDetailsAiState("idle")
                         setEducationDetailsSuggestion(null)
+                        setEducationDetailsError(null)
                       }}
                     />
                   </div>

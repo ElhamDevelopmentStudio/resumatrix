@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
 import { applyCvContentOverrides, buildCvRenderModel } from "@/lib/cvs/engine"
 import { getCvSectionLabel } from "@/lib/cvs/presentation"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import {
   type CvContactContentOverride,
   type CvData,
@@ -508,16 +509,23 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   async function handleGetLayoutSuggestions() {
     setLayoutAiLoading(true)
     setLayoutAiError(null)
-    const result = await suggestLayout({
-      careerDataSerialized: JSON.stringify(careerData),
-      currentSectionOrder: state.overrides.section_order,
-      regionId: cv.region_id,
-    })
-    setLayoutAiLoading(false)
-    if (result.ok) {
-      setLayoutSuggestion(result.data)
-    } else {
-      setLayoutAiError(result.error)
+    setLayoutSuggestion(null)
+
+    try {
+      const result = await suggestLayout({
+        careerDataSerialized: JSON.stringify(careerData),
+        currentSectionOrder: state.overrides.section_order,
+        regionId: cv.region_id,
+      })
+      if (result.ok) {
+        setLayoutSuggestion(result.data)
+      } else {
+        setLayoutAiError(result.error)
+      }
+    } catch (error) {
+      setLayoutAiError(getAiClientErrorMessage(error))
+    } finally {
+      setLayoutAiLoading(false)
     }
   }
 
@@ -759,9 +767,12 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                         </div>
                       )}
 
-                      {layoutAiError && (
-                        <p className="text-sm text-destructive">{layoutAiError}</p>
-                      )}
+                      {layoutAiError ? (
+                        <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+                          <AlertTitle>We couldn’t get layout suggestions.</AlertTitle>
+                          <AlertDescription>{layoutAiError}</AlertDescription>
+                        </Alert>
+                      ) : null}
 
                       <div className="space-y-3">
                         {state.overrides.section_order.map((section, index) => {

@@ -1,5 +1,5 @@
 "use server"
-import { internalQuery, internalMutation } from "../_generated/server"
+import { internalMutation, internalQuery } from "../_generated/server"
 import { v } from "convex/values"
 
 export const getRateLimitEntry = internalQuery({
@@ -11,10 +11,13 @@ export const getRateLimitEntry = internalQuery({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("rate_limits")
-      .withIndex("by_user_function", (q) =>
-        q.eq("user_id", args.userId).eq("function_name", args.functionName)
+      .withIndex("by_user_function_window", (query) =>
+        query
+          .eq("user_id", args.userId)
+          .eq("function_name", args.functionName)
+          .gte("window_start", args.windowStart)
       )
-      .filter((q) => q.gte(q.field("window_start"), args.windowStart))
+      .order("desc")
       .first()
   },
 })
@@ -50,6 +53,8 @@ export const insertAiCallLog = internalMutation({
   args: {
     userId: v.string(),
     functionName: v.string(),
+    provider: v.optional(v.string()),
+    model: v.optional(v.string()),
     region: v.optional(v.string()),
     tokensUsed: v.optional(v.number()),
     success: v.boolean(),
@@ -59,6 +64,8 @@ export const insertAiCallLog = internalMutation({
     await ctx.db.insert("ai_call_logs", {
       user_id: args.userId,
       function_name: args.functionName,
+      provider: args.provider,
+      model: args.model,
       region: args.region,
       tokens_used: args.tokensUsed,
       success: args.success,

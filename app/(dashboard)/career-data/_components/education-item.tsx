@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import type { EducationDraft } from "@/lib/career-data/drafts"
 import type { EducationErrorState } from "@/lib/career-data/validation"
 import { useState } from "react"
@@ -41,16 +42,24 @@ export function EducationItem({
   async function handleDetailsRewrite() {
     setDetailsAiState("loading")
     setDetailsError(null)
-    const result = await rewriteField({
-      fieldType: "details",
-      originalValue: entry.details,
-      careerDataSerialized: JSON.stringify(careerData),
-    })
-    if (result.ok) {
-      setDetailsSuggestion(result.data)
-      setDetailsAiState("suggestion")
-    } else {
-      setDetailsError(result.error)
+    setDetailsSuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "details",
+        originalValue: entry.details,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setDetailsSuggestion(result.data)
+        setDetailsAiState("suggestion")
+      } else {
+        setDetailsError(result.error)
+        setDetailsAiState("error")
+      }
+    } catch (error) {
+      setDetailsError(getAiClientErrorMessage(error))
       setDetailsAiState("error")
     }
   }
@@ -59,6 +68,7 @@ export function EducationItem({
     updateEducationField(entry.clientId, "details", newValue)
     setDetailsAiState("idle")
     setDetailsSuggestion(null)
+    setDetailsError(null)
   }
 
   return (
@@ -146,6 +156,7 @@ export function EducationItem({
           onCancel={() => {
             setDetailsAiState("idle")
             setDetailsSuggestion(null)
+            setDetailsError(null)
           }}
         />
       </div>
