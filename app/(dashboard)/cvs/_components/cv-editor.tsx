@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import type { FunctionReference } from "convex/server"
 import type { LayoutSuggestion } from "@/lib/ai/types"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -333,7 +332,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   const [layoutSuggestion, setLayoutSuggestion] = useState<LayoutSuggestion | null>(null)
   const [layoutAiLoading, setLayoutAiLoading] = useState(false)
   const [layoutAiError, setLayoutAiError] = useState<string | null>(null)
-  const suggestLayout = useMutation(api.ai_functions.suggest_layout as unknown as FunctionReference<"mutation">)
+  const suggestLayout = useMutation(api.ai_functions.suggest_layout.suggest_layout)
 
   const selectedProfile = profiles.find((profile) => profile.id === state.profile_id)
   const selectedTemplate = templates.find((template) => template.id === state.template_id)
@@ -510,7 +509,9 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
     setLayoutAiLoading(true)
     setLayoutAiError(null)
     const result = await suggestLayout({
-      cvId: cv.id,
+      careerDataSerialized: JSON.stringify(careerData),
+      currentSectionOrder: state.overrides.section_order,
+      regionId: cv.region_id,
     })
     setLayoutAiLoading(false)
     if (result.ok) {

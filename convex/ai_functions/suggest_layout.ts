@@ -4,7 +4,14 @@ import { v } from "convex/values"
 import { buildSuggestLayoutSystemPrompt, buildSuggestLayoutUserPrompt } from "../../lib/ai/prompts/suggest-layout"
 import { getRegionStandard } from "../../lib/region-instructions"
 import { callMinimax } from "../../lib/ai/minimax"
-import { checkRateLimit, ensureRateLimitEntry, incrementRateLimitCount, logAiCall } from "./minimax_helpers"
+import {
+  AI_RATE_LIMIT_USER_ID,
+  checkRateLimit,
+  ensureRateLimitEntry,
+  incrementRateLimitCount,
+  logAiCall,
+} from "./minimax_helpers"
+import { serializeStoreToWorkspaceData } from "../../lib/ai/serialize-store"
 import type { LayoutSuggestion } from "../../lib/ai/types"
 
 export const suggest_layout = mutation({
@@ -14,24 +21,22 @@ export const suggest_layout = mutation({
     regionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    const userId = identity?.tokenIdentifier
-    if (!userId) {
-      return { ok: false, error: "Not authenticated" }
-    }
+    const userId = AI_RATE_LIMIT_USER_ID
 
     const canProceed = await checkRateLimit(ctx, userId, "suggest_layout")
     if (!canProceed) {
-      return { ok: false, error: "Rate limit exceeded. Please wait a moment before trying again." }
+      return { ok: false as const, error: "Rate limit exceeded. Please wait a moment before trying again." }
     }
 
     const region = getRegionStandard(args.regionId ?? "international")
-    let careerData
+    let parsedStore: Record<string, unknown>
     try {
-      careerData = JSON.parse(args.careerDataSerialized)
+      parsedStore = JSON.parse(args.careerDataSerialized)
     } catch {
-      return { ok: false, error: "Invalid career data" }
+      return { ok: false as const, error: "Invalid career data" }
     }
+
+    const careerData = serializeStoreToWorkspaceData(parsedStore)
 
     const systemPrompt = buildSuggestLayoutSystemPrompt(region)
     const userPrompt = buildSuggestLayoutUserPrompt({

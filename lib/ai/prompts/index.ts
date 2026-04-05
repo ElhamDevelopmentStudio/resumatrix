@@ -34,12 +34,14 @@ export function buildCareerDataContext(careerData: CareerWorkspaceData): string 
 
   // Experiences
   lines.push("", "### Experiences")
-  if (careerData.experiences.length > 0) {
+  if (careerData.experiences && careerData.experiences.length > 0) {
     careerData.experiences.forEach((exp) => {
-      lines.push(`- ${exp.role} at ${exp.company} (${exp.start_date} - ${exp.end_date})`)
+      const bullets = Array.isArray(exp.bullets) ? exp.bullets : []
+      const tags = Array.isArray(exp.tags) ? exp.tags : []
+      lines.push(`- ${exp.role || "(role)"} at ${exp.company || "(company)"} (${exp.start_date || ""} - ${exp.end_date || "Present"})`)
       if (exp.location) lines.push(`  Location: ${exp.location}`)
-      if (exp.bullets.length > 0) lines.push(`  Bullets: ${exp.bullets.join(" | ")}`)
-      if (exp.tags.length > 0) lines.push(`  Tags: ${exp.tags.join(", ")}`)
+      if (bullets.length > 0) lines.push(`  Bullets: ${bullets.join(" | ")}`)
+      if (tags.length > 0) lines.push(`  Tags: ${tags.join(", ")}`)
     })
   } else {
     lines.push("(none)")
@@ -47,13 +49,16 @@ export function buildCareerDataContext(careerData: CareerWorkspaceData): string 
 
   // Projects
   lines.push("", "### Projects")
-  if (careerData.projects.length > 0) {
+  if (careerData.projects && careerData.projects.length > 0) {
     careerData.projects.forEach((proj) => {
-      lines.push(`- ${proj.name}`)
+      const tech_stack = Array.isArray(proj.tech_stack) ? proj.tech_stack : []
+      const bullets = Array.isArray(proj.bullets) ? proj.bullets : []
+      const tags = Array.isArray(proj.tags) ? proj.tags : []
+      lines.push(`- ${proj.name || "(project)"}`)
       if (proj.description) lines.push(`  Description: ${proj.description}`)
-      if (proj.tech_stack.length > 0) lines.push(`  Tech stack: ${proj.tech_stack.join(", ")}`)
-      if (proj.bullets.length > 0) lines.push(`  Bullets: ${proj.bullets.join(" | ")}`)
-      if (proj.tags.length > 0) lines.push(`  Tags: ${proj.tags.join(", ")}`)
+      if (tech_stack.length > 0) lines.push(`  Tech stack: ${tech_stack.join(", ")}`)
+      if (bullets.length > 0) lines.push(`  Bullets: ${bullets.join(" | ")}`)
+      if (tags.length > 0) lines.push(`  Tags: ${tags.join(", ")}`)
     })
   } else {
     lines.push("(none)")

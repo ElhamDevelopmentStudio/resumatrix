@@ -4,7 +4,14 @@ import { v } from "convex/values"
 import { buildRewriteFieldSystemPrompt, buildRewriteFieldUserPrompt } from "../../lib/ai/prompts/rewrite-field"
 import { getRegionStandard } from "../../lib/region-instructions"
 import { callMinimax } from "../../lib/ai/minimax"
-import { checkRateLimit, ensureRateLimitEntry, incrementRateLimitCount, logAiCall } from "./minimax_helpers"
+import {
+  AI_RATE_LIMIT_USER_ID,
+  checkRateLimit,
+  ensureRateLimitEntry,
+  incrementRateLimitCount,
+  logAiCall,
+} from "./minimax_helpers"
+import { serializeStoreToWorkspaceData } from "../../lib/ai/serialize-store"
 import type { RewriteSuggestion } from "../../lib/ai/types"
 
 export const rewrite_field = mutation({
@@ -22,24 +29,22 @@ export const rewrite_field = mutation({
     entryContext: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    const userId = identity?.tokenIdentifier
-    if (!userId) {
-      return { ok: false, error: "Not authenticated" }
-    }
+    const userId = AI_RATE_LIMIT_USER_ID
 
     const canProceed = await checkRateLimit(ctx, userId, "rewrite_field")
     if (!canProceed) {
-      return { ok: false, error: "Rate limit exceeded. Please wait a moment before trying again." }
+      return { ok: false as const, error: "Rate limit exceeded. Please wait a moment before trying again." }
     }
 
     const region = getRegionStandard(args.regionId ?? "international")
-    let careerData
+    let parsedStore: Record<string, unknown>
     try {
-      careerData = JSON.parse(args.careerDataSerialized)
+      parsedStore = JSON.parse(args.careerDataSerialized)
     } catch {
-      return { ok: false, error: "Invalid career data" }
+      return { ok: false as const, error: "Invalid career data" }
     }
+
+    const careerData = serializeStoreToWorkspaceData(parsedStore)
 
     const systemPrompt = buildRewriteFieldSystemPrompt(region)
     const userPrompt = buildRewriteFieldUserPrompt({
@@ -56,7 +61,6 @@ export const rewrite_field = mutation({
       outputSchema: { original: "", suggested: "", reasoning: "" },
     })
 
-    // Ensure rate limit entry exists and increment
     await ensureRateLimitEntry(ctx, userId, "rewrite_field")
     await incrementRateLimitCount(ctx, userId, "rewrite_field")
     await logAiCall(ctx, {
