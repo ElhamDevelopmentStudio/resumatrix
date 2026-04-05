@@ -161,6 +161,25 @@ export const schema = defineSchema({
   })
     .index("by_record_id", ["id"])
     .index("by_updated_at", ["updated_at"]),
+  rate_limits: defineTable({
+    user_id: v.string(),
+    function_name: v.string(),
+    call_count: v.number(),
+    window_start: v.number(), // Unix timestamp in milliseconds
+  })
+    .index("by_user_function", ["user_id", "function_name"])
+    .index("by_window", ["window_start"]),
+  ai_call_logs: defineTable({
+    user_id: v.string(),
+    function_name: v.string(),
+    region: v.optional(v.string()),
+    tokens_used: v.optional(v.number()),
+    success: v.boolean(),
+    error_message: v.optional(v.string()),
+    created_at: v.string(), // ISO timestamp
+  })
+    .index("by_user", ["user_id"])
+    .index("by_created_at", ["created_at"]),
 })
 
 export default schema
