@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useMutation } from "convex/react"
+import { useAction } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { ProfileSuggestion } from "@/lib/ai/types"
 import { getAllRegionIds, getRegionStandard } from "@/lib/region-instructions"
@@ -224,7 +224,7 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
   const [aiGenError, setAiGenError] = useState<string | null>(null)
   const [aiSuggestion, setAiSuggestion] = useState<ProfileSuggestion | null>(null)
 
-  const generateProfileMutation = useMutation(api.ai_functions.generate_profile.generate_profile)
+  const generateProfileMutation = useAction(api.ai_functions.generate_profile.generate_profile)
 
   const payload = useMemo(() => buildPayload(state), [state])
   const payloadSnapshot = useMemo(() => buildSnapshot(payload), [payload])

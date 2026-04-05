@@ -1,5 +1,5 @@
 "use server"
-import { mutation } from "../_generated/server"
+import { action } from "../_generated/server"
 import { v } from "convex/values"
 import { buildGenerateProfileSystemPrompt, buildGenerateProfileUserPrompt } from "../../lib/ai/prompts/generate-profile"
 import { getRegionStandard } from "../../lib/region-instructions"
@@ -14,7 +14,7 @@ import {
 import { serializeStoreToWorkspaceData } from "../../lib/ai/serialize-store"
 import type { ProfileSuggestion } from "../../lib/ai/types"
 
-export const generate_profile = mutation({
+export const generate_profile = action({
   args: {
     userPrompt: v.string(),
     careerDataSerialized: v.string(),

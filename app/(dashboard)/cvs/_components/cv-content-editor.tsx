@@ -2,7 +2,7 @@
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SparklesIcon } from "@hugeicons/core-free-icons"
-import { useMutation } from "convex/react"
+import { useAction } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useEffect, useState } from "react"
 
@@ -157,7 +157,7 @@ export function CvContentEditor({
   const [activeSection, setActiveSection] = useState<ContentSectionKey>("header")
   const [selectedItemIds, setSelectedItemIds] = useState<Partial<Record<SelectableSectionKey, string>>>({})
 
-  const rewriteField = useMutation(api.ai_functions.rewrite_field.rewrite_field)
+  const rewriteField = useAction(api.ai_functions.rewrite_field.rewrite_field)
 
   // AI state for summary field
   const [summaryAiState, setSummaryAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")

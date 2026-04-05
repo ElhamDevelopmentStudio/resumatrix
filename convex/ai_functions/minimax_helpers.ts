@@ -1,13 +1,13 @@
 "use server"
 import { internal } from "../_generated/api"
-import type { MutationCtx } from "../_generated/server"
+import type { ActionCtx, MutationCtx } from "../_generated/server"
 
 const RATE_LIMIT_CALLS = 10
 const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
 export const AI_RATE_LIMIT_USER_ID = "resumatrix-single-user"
 
 export async function checkRateLimit(
-  ctx: MutationCtx,
+  ctx: MutationCtx | ActionCtx,
   userId: string,
   functionName: string
 ): Promise<boolean> {
@@ -23,7 +23,7 @@ export async function checkRateLimit(
 }
 
 export async function ensureRateLimitEntry(
-  ctx: MutationCtx,
+  ctx: MutationCtx | ActionCtx,
   userId: string,
   functionName: string
 ): Promise<void> {
@@ -49,7 +49,7 @@ export async function ensureRateLimitEntry(
 }
 
 export async function incrementRateLimitCount(
-  ctx: MutationCtx,
+  ctx: MutationCtx | ActionCtx,
   userId: string,
   functionName: string
 ): Promise<void> {
@@ -73,7 +73,7 @@ export async function incrementRateLimitCount(
 }
 
 export async function logAiCall(
-  ctx: MutationCtx,
+  ctx: MutationCtx | ActionCtx,
   params: {
     userId: string
     functionName: string
@@ -83,13 +83,12 @@ export async function logAiCall(
     errorMessage?: string
   }
 ): Promise<void> {
-  await ctx.db.insert("ai_call_logs", {
-    user_id: params.userId,
-    function_name: params.functionName,
+  await ctx.runMutation(internal.ai_functions.minimax_helpers_internal.insertAiCallLog, {
+    userId: params.userId,
+    functionName: params.functionName,
     region: params.region,
-    tokens_used: params.tokensUsed,
+    tokensUsed: params.tokensUsed,
     success: params.success,
-    error_message: params.errorMessage,
-    created_at: new Date().toISOString(),
+    errorMessage: params.errorMessage,
   })
 }

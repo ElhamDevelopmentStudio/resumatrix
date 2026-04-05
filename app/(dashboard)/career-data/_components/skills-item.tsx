@@ -2,7 +2,7 @@
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SparklesIcon } from "@hugeicons/core-free-icons"
-import { useMutation } from "convex/react"
+import { useAction } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { AiDiffOverlay } from "@/components/ai-diff-overlay"
 import { FieldError, FieldLabel } from "@/components/ui/field"
@@ -32,7 +32,7 @@ export function SkillsItem({
   removeSkill,
 }: SkillsItemProps) {
   const careerData = useCareerDataStore((state) => state)
-  const rewriteField = useMutation(api.ai_functions.rewrite_field.rewrite_field)
+  const rewriteField = useAction(api.ai_functions.rewrite_field.rewrite_field)
 
   // AI state for name field
   const [nameAiState, setNameAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")

@@ -1,5 +1,5 @@
 "use server"
-import { mutation } from "../_generated/server"
+import { action } from "../_generated/server"
 import { v } from "convex/values"
 import { buildRewriteFieldSystemPrompt, buildRewriteFieldUserPrompt } from "../../lib/ai/prompts/rewrite-field"
 import { getRegionStandard } from "../../lib/region-instructions"
@@ -14,7 +14,7 @@ import {
 import { serializeStoreToWorkspaceData } from "../../lib/ai/serialize-store"
 import type { RewriteSuggestion } from "../../lib/ai/types"
 
-export const rewrite_field = mutation({
+export const rewrite_field = action({
   args: {
     fieldType: v.union(
       v.literal("bullet"),

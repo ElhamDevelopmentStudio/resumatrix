@@ -1,5 +1,5 @@
 "use server"
-import { mutation } from "../_generated/server"
+import { action } from "../_generated/server"
 import { v } from "convex/values"
 import { buildSuggestLayoutSystemPrompt, buildSuggestLayoutUserPrompt } from "../../lib/ai/prompts/suggest-layout"
 import { getRegionStandard } from "../../lib/region-instructions"
@@ -14,7 +14,7 @@ import {
 import { serializeStoreToWorkspaceData } from "../../lib/ai/serialize-store"
 import type { LayoutSuggestion } from "../../lib/ai/types"
 
-export const suggest_layout = mutation({
+export const suggest_layout = action({
   args: {
     careerDataSerialized: v.string(),
     currentSectionOrder: v.array(v.string()),

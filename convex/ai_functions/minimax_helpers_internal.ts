@@ -45,3 +45,25 @@ export const incrementRateLimit = internalMutation({
     await ctx.db.patch(args.id, { call_count: args.callCount })
   },
 })
+
+export const insertAiCallLog = internalMutation({
+  args: {
+    userId: v.string(),
+    functionName: v.string(),
+    region: v.optional(v.string()),
+    tokensUsed: v.optional(v.number()),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("ai_call_logs", {
+      user_id: args.userId,
+      function_name: args.functionName,
+      region: args.region,
+      tokens_used: args.tokensUsed,
+      success: args.success,
+      error_message: args.errorMessage,
+      created_at: new Date().toISOString(),
+    })
+  },
+})

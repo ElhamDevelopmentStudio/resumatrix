@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useMutation } from "convex/react"
+import { useAction } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { LayoutSuggestion } from "@/lib/ai/types"
 import Link from "next/link"
@@ -332,7 +332,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   const [layoutSuggestion, setLayoutSuggestion] = useState<LayoutSuggestion | null>(null)
   const [layoutAiLoading, setLayoutAiLoading] = useState(false)
   const [layoutAiError, setLayoutAiError] = useState<string | null>(null)
-  const suggestLayout = useMutation(api.ai_functions.suggest_layout.suggest_layout)
+  const suggestLayout = useAction(api.ai_functions.suggest_layout.suggest_layout)
 
   const selectedProfile = profiles.find((profile) => profile.id === state.profile_id)
   const selectedTemplate = templates.find((template) => template.id === state.template_id)
