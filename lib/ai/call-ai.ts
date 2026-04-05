@@ -1,9 +1,9 @@
-import type { StructuredOutputSchema } from "./output-schemas"
-import { getActiveProviderConfig } from "./provider-config"
-import type { AIResponse } from "./types"
-import { createAiFailure } from "./response-utils"
 import { callMinimaxProvider } from "./minimax"
 import { callOpenAiCompatibleProvider } from "./openai-compatible-provider"
+import type { StructuredOutputSchema } from "./output-schemas"
+import { getActiveProviderConfig } from "./provider-config"
+import { createAiFailure } from "./response-utils"
+import type { AIResponse } from "./types"
 
 type CallAiParams<T> = {
   systemPrompt: string
@@ -30,13 +30,13 @@ export async function callAi<T>(params: CallAiParams<T>): Promise<AIResponse<T>>
         ? process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-20b"
         : providerValue === "nvidia"
           ? process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-8b-instruct"
-          : process.env.MINIMAX_MODEL?.trim() || "Minimax-2.7-flash"
+          : process.env.MINIMAX_MODEL?.trim() || "MiniMax-M2.7"
     const baseUrl =
       providerValue === "groq"
         ? process.env.GROQ_BASE_URL?.trim() || "https://api.groq.com/openai/v1/chat/completions"
         : providerValue === "nvidia"
           ? process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1/chat/completions"
-          : process.env.MINIMAX_BASE_URL?.trim() || "https://api.minimax.chat/v1/text/chatcompletion_v2"
+          : process.env.MINIMAX_BASE_URL?.trim() || "https://api.minimax.io/v1/text/chatcompletion_v2"
 
     return createAiFailure({
       provider:

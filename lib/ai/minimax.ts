@@ -3,6 +3,7 @@ import type { ActiveProviderConfig } from "./provider-config"
 import type { AIResponse } from "./types"
 import { parseStructuredOutput } from "./response-parser"
 import { createAiFailure } from "./response-utils"
+import { buildJsonOnlySystemPrompt } from "./structured-output-prompt"
 
 type CallMinimaxProviderParams<T> = {
   config: ActiveProviderConfig
@@ -38,19 +39,7 @@ export async function callMinimaxProvider<T>(
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.config.apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: params.systemPrompt },
-          { role: "user", content: params.userPrompt },
-        ],
-        temperature: params.temperature ?? 0.7,
-        max_tokens: params.maxTokens ?? 1024,
-        response_format: {
-          type: "json_schema",
-          json_schema: params.outputSchema.schema,
-        },
-      }),
+      body: JSON.stringify(buildRequestBody(params, model)),
       signal: controller.signal,
     })
 
@@ -141,6 +130,26 @@ export async function callMinimaxProvider<T>(
     })
   } finally {
     clearTimeout(timeout)
+  }
+}
+
+function buildRequestBody<T>(params: CallMinimaxProviderParams<T>, model: string) {
+  return {
+    model,
+    messages: [
+      {
+        role: "system",
+        name: "MiniMax AI",
+        content: buildJsonOnlySystemPrompt(params.systemPrompt, params.outputSchema.schema),
+      },
+      {
+        role: "user",
+        name: "user",
+        content: params.userPrompt,
+      },
+    ],
+    temperature: params.temperature ?? 0.7,
+    max_completion_tokens: params.maxTokens ?? 1024,
   }
 }
 

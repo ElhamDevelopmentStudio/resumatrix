@@ -3,6 +3,7 @@ import type { ActiveProviderConfig } from "./provider-config"
 import type { AIResponse } from "./types"
 import { parseStructuredOutput } from "./response-parser"
 import { createAiFailure } from "./response-utils"
+import { buildJsonOnlySystemPrompt } from "./structured-output-prompt"
 
 type CallOpenAiCompatibleProviderParams<T> = {
   config: ActiveProviderConfig
@@ -143,7 +144,7 @@ function buildRequestBody<T>(
 function buildMessages<T>(params: CallOpenAiCompatibleProviderParams<T>) {
   const systemContent =
     params.config.responseFormatMode === "json_object"
-      ? `${params.systemPrompt}\n\nReturn only a JSON object that matches this schema. Do not add markdown fences, explanations, or extra text.\nSchema: ${JSON.stringify(params.outputSchema.schema)}`
+      ? buildJsonOnlySystemPrompt(params.systemPrompt, params.outputSchema.schema)
       : params.systemPrompt
 
   return [

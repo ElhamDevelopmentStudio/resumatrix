@@ -44,11 +44,11 @@ const providerDefaults: Record<AIProvider, ProviderDefaults> = {
     baseUrlEnvName: "MINIMAX_BASE_URL",
     modelEnvName: "MINIMAX_MODEL",
     kind: "minimax",
-    baseUrl: "https://api.minimax.chat/v1/text/chatcompletion_v2",
-    model: "Minimax-2.7-flash",
+    baseUrl: "https://api.minimax.io/v1/text/chatcompletion_v2",
+    model: "MiniMax-M2.7",
     responseFormatMode: "json_schema",
     jsonSchemaStrict: false,
-    maxTokensField: "max_tokens",
+    maxTokensField: "max_completion_tokens",
   },
   groq: {
     provider: "groq",
@@ -108,6 +108,9 @@ export function getActiveProviderConfig():
     }
   }
 
+  const baseUrl = readStringEnv(defaults.baseUrlEnvName, defaults.baseUrl)
+  const model = readStringEnv(defaults.modelEnvName, defaults.model)
+
   return {
     ok: true,
     config: {
@@ -115,8 +118,8 @@ export function getActiveProviderConfig():
       providerLabel: defaults.providerLabel,
       apiKey,
       apiKeyEnvName: defaults.apiKeyEnvName,
-      baseUrl: readStringEnv(defaults.baseUrlEnvName, defaults.baseUrl),
-      model: readStringEnv(defaults.modelEnvName, defaults.model),
+      baseUrl: provider === "minimax" ? normalizeMinimaxBaseUrl(baseUrl) : baseUrl,
+      model: provider === "minimax" ? normalizeMinimaxModel(model) : model,
       kind: defaults.kind,
       responseFormatMode: readStructuredOutputMode(
         defaults.responseFormatEnvName,
@@ -181,4 +184,25 @@ function readStructuredOutputMode(
   }
 
   return fallback
+}
+
+function normalizeMinimaxBaseUrl(baseUrl: string) {
+  return baseUrl.replace(
+    "https://api.minimax.chat/v1/text/chatcompletion_v2",
+    "https://api.minimax.io/v1/text/chatcompletion_v2"
+  )
+}
+
+function normalizeMinimaxModel(model: string) {
+  const normalizedModel = model.trim().toLowerCase()
+
+  if (normalizedModel === "minimax-2.7-flash" || normalizedModel === "minimax-2.7") {
+    return "MiniMax-M2.7"
+  }
+
+  if (normalizedModel === "minimax-2.7-highspeed") {
+    return "MiniMax-M2.7-highspeed"
+  }
+
+  return model
 }

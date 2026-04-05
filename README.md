@@ -128,8 +128,10 @@ AI requests now use an env-based provider switch.
 | Variable | Description |
 | --- | --- |
 | `MINIMAX_API_KEY` | MiniMax API key |
-| `MINIMAX_BASE_URL` | MiniMax chat completion URL |
-| `MINIMAX_MODEL` | MiniMax model ID |
+| `MINIMAX_BASE_URL` | MiniMax chat completion URL for your account/region |
+| `MINIMAX_MODEL` | MiniMax model ID, for example `MiniMax-M2.7` |
+
+This app asks MiniMax to return raw JSON and validates it locally. That keeps `MiniMax-M2.7` compatible with the current AI flows even though MiniMax’s `response_format` JSON Schema support is limited in the current API docs.
 
 ### Groq settings
 
