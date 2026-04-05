@@ -1,7 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { SparklesIcon } from "@hugeicons/core-free-icons"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { FunctionReference } from "convex/server"
+import { useEffect, useState } from "react"
 
+import { AiDiffOverlay } from "@/components/ai-diff-overlay"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -11,7 +17,8 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import type { PersonalData } from "@/lib/career-data/types"
+import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
+import type { RewriteSuggestion } from "@/lib/ai/types"
 import type {
   CvContactContentOverride,
   CvEducationContentOverride,
@@ -33,6 +40,8 @@ type SelectableSectionKey = Exclude<ContentSectionKey, "header">
 
 type CvContentEditorProps = {
   model: CvRenderModel | null
+  careerData: CareerWorkspaceData
+  regionId?: string
   onPersonalChange: (field: keyof PersonalData, value: string) => void
   onContactChange: (id: string, patch: CvContactContentOverride) => void
   onExperienceChange: (id: string, patch: CvExperienceContentOverride) => void
@@ -135,6 +144,8 @@ function EmptySectionNotice({
 
 export function CvContentEditor({
   model,
+  careerData,
+  regionId = "international",
   onPersonalChange,
   onContactChange,
   onExperienceChange,
@@ -146,6 +157,230 @@ export function CvContentEditor({
 }: CvContentEditorProps) {
   const [activeSection, setActiveSection] = useState<ContentSectionKey>("header")
   const [selectedItemIds, setSelectedItemIds] = useState<Partial<Record<SelectableSectionKey, string>>>({})
+
+  const rewriteField = useMutation(api.ai_functions.rewrite_field as unknown as FunctionReference<"mutation">)
+
+  // AI state for summary field
+  const [summaryAiState, setSummaryAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [summarySuggestion, setSummarySuggestion] = useState<RewriteSuggestion | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  // AI state for experience role field
+  const [experienceRoleAiState, setExperienceRoleAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [experienceRoleSuggestion, setExperienceRoleSuggestion] = useState<RewriteSuggestion | null>(null)
+  const [experienceRoleError, setExperienceRoleError] = useState<string | null>(null)
+
+  // AI state for experience bullets field
+  const [experienceBulletsAiState, setExperienceBulletsAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [experienceBulletsSuggestion, setExperienceBulletsSuggestion] = useState<RewriteSuggestion | null>(null)
+  const [experienceBulletsError, setExperienceBulletsError] = useState<string | null>(null)
+
+  // AI state for project description field
+  const [projectDescriptionAiState, setProjectDescriptionAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [projectDescriptionSuggestion, setProjectDescriptionSuggestion] = useState<RewriteSuggestion | null>(null)
+  const [projectDescriptionError, setProjectDescriptionError] = useState<string | null>(null)
+
+  // AI state for project bullets field
+  const [projectBulletsAiState, setProjectBulletsAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [projectBulletsSuggestion, setProjectBulletsSuggestion] = useState<RewriteSuggestion | null>(null)
+  const [projectBulletsError, setProjectBulletsError] = useState<string | null>(null)
+
+  // AI state for education details field
+  const [educationDetailsAiState, setEducationDetailsAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [educationDetailsSuggestion, setEducationDetailsSuggestion] = useState<RewriteSuggestion | null>(null)
+  const [educationDetailsError, setEducationDetailsError] = useState<string | null>(null)
+
+  // Reset AI state when selected experience changes
+  const selectedExperienceId = selectedItemIds.experiences
+  const selectedProjectId = selectedItemIds.projects
+  const selectedEducationId = selectedItemIds.education
+
+  // Summary AI handlers
+  async function handleSummaryRewrite() {
+    setSummaryAiState("loading")
+    setSummaryError(null)
+    const result = await rewriteField({
+      fieldType: "summary",
+      originalValue: model?.personal.summary ?? "",
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setSummarySuggestion(result.data)
+      setSummaryAiState("suggestion")
+    } else {
+      setSummaryError(result.error)
+      setSummaryAiState("error")
+    }
+  }
+
+  function handleSummaryApply(newValue: string) {
+    onPersonalChange("summary", newValue)
+    setSummaryAiState("idle")
+    setSummarySuggestion(null)
+  }
+
+  // Experience role AI handlers
+  async function handleExperienceRoleRewrite() {
+    if (!selectedExperience) return
+    setExperienceRoleAiState("loading")
+    setExperienceRoleError(null)
+    const result = await rewriteField({
+      fieldType: "role",
+      originalValue: selectedExperience.role,
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setExperienceRoleSuggestion(result.data)
+      setExperienceRoleAiState("suggestion")
+    } else {
+      setExperienceRoleError(result.error)
+      setExperienceRoleAiState("error")
+    }
+  }
+
+  function handleExperienceRoleApply(newValue: string) {
+    if (!selectedExperience) return
+    onExperienceChange(selectedExperience.id, { role: newValue })
+    setExperienceRoleAiState("idle")
+    setExperienceRoleSuggestion(null)
+  }
+
+  // Experience bullets AI handlers
+  async function handleExperienceBulletsRewrite() {
+    if (!selectedExperience) return
+    setExperienceBulletsAiState("loading")
+    setExperienceBulletsError(null)
+    const result = await rewriteField({
+      fieldType: "bullet",
+      originalValue: listToEditorValue(selectedExperience.bullets),
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setExperienceBulletsSuggestion(result.data)
+      setExperienceBulletsAiState("suggestion")
+    } else {
+      setExperienceBulletsError(result.error)
+      setExperienceBulletsAiState("error")
+    }
+  }
+
+  function handleExperienceBulletsApply(newValue: string) {
+    if (!selectedExperience) return
+    onExperienceChange(selectedExperience.id, { bullets: editorValueToList(newValue) })
+    setExperienceBulletsAiState("idle")
+    setExperienceBulletsSuggestion(null)
+  }
+
+  // Project description AI handlers
+  async function handleProjectDescriptionRewrite() {
+    if (!selectedProject) return
+    setProjectDescriptionAiState("loading")
+    setProjectDescriptionError(null)
+    const result = await rewriteField({
+      fieldType: "description",
+      originalValue: selectedProject.description,
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setProjectDescriptionSuggestion(result.data)
+      setProjectDescriptionAiState("suggestion")
+    } else {
+      setProjectDescriptionError(result.error)
+      setProjectDescriptionAiState("error")
+    }
+  }
+
+  function handleProjectDescriptionApply(newValue: string) {
+    if (!selectedProject) return
+    onProjectChange(selectedProject.id, { description: newValue })
+    setProjectDescriptionAiState("idle")
+    setProjectDescriptionSuggestion(null)
+  }
+
+  // Project bullets AI handlers
+  async function handleProjectBulletsRewrite() {
+    if (!selectedProject) return
+    setProjectBulletsAiState("loading")
+    setProjectBulletsError(null)
+    const result = await rewriteField({
+      fieldType: "bullet",
+      originalValue: listToEditorValue(selectedProject.bullets),
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setProjectBulletsSuggestion(result.data)
+      setProjectBulletsAiState("suggestion")
+    } else {
+      setProjectBulletsError(result.error)
+      setProjectBulletsAiState("error")
+    }
+  }
+
+  function handleProjectBulletsApply(newValue: string) {
+    if (!selectedProject) return
+    onProjectChange(selectedProject.id, { bullets: editorValueToList(newValue) })
+    setProjectBulletsAiState("idle")
+    setProjectBulletsSuggestion(null)
+  }
+
+  // Education details AI handlers
+  async function handleEducationDetailsRewrite() {
+    if (!selectedEducation) return
+    setEducationDetailsAiState("loading")
+    setEducationDetailsError(null)
+    const result = await rewriteField({
+      fieldType: "details",
+      originalValue: selectedEducation.details,
+      careerDataSerialized: JSON.stringify(careerData),
+      regionId,
+    })
+    if (result.ok) {
+      setEducationDetailsSuggestion(result.data)
+      setEducationDetailsAiState("suggestion")
+    } else {
+      setEducationDetailsError(result.error)
+      setEducationDetailsAiState("error")
+    }
+  }
+
+  function handleEducationDetailsApply(newValue: string) {
+    if (!selectedEducation) return
+    onEducationChange(selectedEducation.id, { details: newValue })
+    setEducationDetailsAiState("idle")
+    setEducationDetailsSuggestion(null)
+  }
+
+  // Reset experience AI state when selected experience changes
+  useEffect(() => {
+    setExperienceRoleAiState("idle")
+    setExperienceRoleSuggestion(null)
+    setExperienceRoleError(null)
+    setExperienceBulletsAiState("idle")
+    setExperienceBulletsSuggestion(null)
+    setExperienceBulletsError(null)
+  }, [selectedExperienceId])
+
+  // Reset project AI state when selected project changes
+  useEffect(() => {
+    setProjectDescriptionAiState("idle")
+    setProjectDescriptionSuggestion(null)
+    setProjectDescriptionError(null)
+    setProjectBulletsAiState("idle")
+    setProjectBulletsSuggestion(null)
+    setProjectBulletsError(null)
+  }, [selectedProjectId])
+
+  // Reset education AI state when selected education changes
+  useEffect(() => {
+    setEducationDetailsAiState("idle")
+    setEducationDetailsSuggestion(null)
+    setEducationDetailsError(null)
+  }, [selectedEducationId])
 
   if (!model) {
     return (
@@ -238,12 +473,34 @@ export function CvContentEditor({
               </div>
 
               <div className="mt-4 space-y-2">
-                <FieldLabel className="text-sm font-medium text-on-surface">Summary</FieldLabel>
+                <div className="flex items-center justify-between">
+                  <FieldLabel className="text-sm font-medium text-on-surface">Summary</FieldLabel>
+                  <button
+                    type="button"
+                    onClick={handleSummaryRewrite}
+                    disabled={summaryAiState === "loading"}
+                    className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                    aria-label="Rewrite summary with AI"
+                  >
+                    <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                  </button>
+                </div>
                 <Textarea
                   value={model.personal.summary}
                   onChange={(event) => onPersonalChange("summary", event.target.value)}
                   placeholder="A short introduction for this CV"
                   className={textareaClassName}
+                />
+                <AiDiffOverlay
+                  suggestion={summarySuggestion}
+                  isLoading={summaryAiState === "loading"}
+                  error={summaryError}
+                  onApply={handleSummaryApply}
+                  onRegenerate={handleSummaryRewrite}
+                  onCancel={() => {
+                    setSummaryAiState("idle")
+                    setSummarySuggestion(null)
+                  }}
                 />
               </div>
             </Card>
@@ -355,7 +612,18 @@ export function CvContentEditor({
                 <Card className={panelClassName}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <FieldLabel className="text-sm font-medium text-on-surface">Role</FieldLabel>
+                      <div className="flex items-center justify-between">
+                        <FieldLabel className="text-sm font-medium text-on-surface">Role</FieldLabel>
+                        <button
+                          type="button"
+                          onClick={handleExperienceRoleRewrite}
+                          disabled={experienceRoleAiState === "loading"}
+                          className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                          aria-label="Rewrite role with AI"
+                        >
+                          <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                        </button>
+                      </div>
                       <Input
                         value={selectedExperience.role}
                         onChange={(event) =>
@@ -363,6 +631,17 @@ export function CvContentEditor({
                         }
                         placeholder="Senior Frontend Engineer"
                         className={inputClassName}
+                      />
+                      <AiDiffOverlay
+                        suggestion={experienceRoleSuggestion}
+                        isLoading={experienceRoleAiState === "loading"}
+                        error={experienceRoleError}
+                        onApply={handleExperienceRoleApply}
+                        onRegenerate={handleExperienceRoleRewrite}
+                        onCancel={() => {
+                          setExperienceRoleAiState("idle")
+                          setExperienceRoleSuggestion(null)
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
@@ -414,7 +693,18 @@ export function CvContentEditor({
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    <FieldLabel className="text-sm font-medium text-on-surface">Bullet points</FieldLabel>
+                    <div className="flex items-center justify-between">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Bullet points</FieldLabel>
+                      <button
+                        type="button"
+                        onClick={handleExperienceBulletsRewrite}
+                        disabled={experienceBulletsAiState === "loading"}
+                        className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                        aria-label="Rewrite bullet points with AI"
+                      >
+                        <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                      </button>
+                    </div>
                     <FieldDescription>Use one line per bullet.</FieldDescription>
                     <Textarea
                       value={listToEditorValue(selectedExperience.bullets)}
@@ -425,6 +715,17 @@ export function CvContentEditor({
                       }
                       placeholder="Built reusable UI systems"
                       className={textareaClassName}
+                    />
+                    <AiDiffOverlay
+                      suggestion={experienceBulletsSuggestion}
+                      isLoading={experienceBulletsAiState === "loading"}
+                      error={experienceBulletsError}
+                      onApply={handleExperienceBulletsApply}
+                      onRegenerate={handleExperienceBulletsRewrite}
+                      onCancel={() => {
+                        setExperienceBulletsAiState("idle")
+                        setExperienceBulletsSuggestion(null)
+                      }}
                     />
                   </div>
                 </Card>
@@ -486,7 +787,18 @@ export function CvContentEditor({
                     </div>
 
                     <div className="space-y-2">
-                      <FieldLabel className="text-sm font-medium text-on-surface">Description</FieldLabel>
+                      <div className="flex items-center justify-between">
+                        <FieldLabel className="text-sm font-medium text-on-surface">Description</FieldLabel>
+                        <button
+                          type="button"
+                          onClick={handleProjectDescriptionRewrite}
+                          disabled={projectDescriptionAiState === "loading"}
+                          className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                          aria-label="Rewrite description with AI"
+                        >
+                          <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                        </button>
+                      </div>
                       <Textarea
                         value={selectedProject.description}
                         onChange={(event) =>
@@ -494,6 +806,17 @@ export function CvContentEditor({
                         }
                         placeholder="A short description for this project"
                         className={textareaClassName}
+                      />
+                      <AiDiffOverlay
+                        suggestion={projectDescriptionSuggestion}
+                        isLoading={projectDescriptionAiState === "loading"}
+                        error={projectDescriptionError}
+                        onApply={handleProjectDescriptionApply}
+                        onRegenerate={handleProjectDescriptionRewrite}
+                        onCancel={() => {
+                          setProjectDescriptionAiState("idle")
+                          setProjectDescriptionSuggestion(null)
+                        }}
                       />
                     </div>
 
@@ -513,7 +836,18 @@ export function CvContentEditor({
                         />
                       </div>
                       <div className="space-y-2">
-                        <FieldLabel className="text-sm font-medium text-on-surface">Bullet points</FieldLabel>
+                        <div className="flex items-center justify-between">
+                          <FieldLabel className="text-sm font-medium text-on-surface">Bullet points</FieldLabel>
+                          <button
+                            type="button"
+                            onClick={handleProjectBulletsRewrite}
+                            disabled={projectBulletsAiState === "loading"}
+                            className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                            aria-label="Rewrite bullet points with AI"
+                          >
+                            <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                          </button>
+                        </div>
                         <FieldDescription>Use one line per bullet.</FieldDescription>
                         <Textarea
                           value={listToEditorValue(selectedProject.bullets)}
@@ -524,6 +858,17 @@ export function CvContentEditor({
                           }
                           placeholder="Improved form completion by 24%"
                           className={textareaClassName}
+                        />
+                        <AiDiffOverlay
+                          suggestion={projectBulletsSuggestion}
+                          isLoading={projectBulletsAiState === "loading"}
+                          error={projectBulletsError}
+                          onApply={handleProjectBulletsApply}
+                          onRegenerate={handleProjectBulletsRewrite}
+                          onCancel={() => {
+                            setProjectBulletsAiState("idle")
+                            setProjectBulletsSuggestion(null)
+                          }}
                         />
                       </div>
                     </div>
@@ -623,7 +968,18 @@ export function CvContentEditor({
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    <FieldLabel className="text-sm font-medium text-on-surface">Details</FieldLabel>
+                    <div className="flex items-center justify-between">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Details</FieldLabel>
+                      <button
+                        type="button"
+                        onClick={handleEducationDetailsRewrite}
+                        disabled={educationDetailsAiState === "loading"}
+                        className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                        aria-label="Rewrite details with AI"
+                      >
+                        <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+                      </button>
+                    </div>
                     <Textarea
                       value={selectedEducation.details}
                       onChange={(event) =>
@@ -631,6 +987,17 @@ export function CvContentEditor({
                       }
                       placeholder="Honors, awards, or relevant notes"
                       className={textareaClassName}
+                    />
+                    <AiDiffOverlay
+                      suggestion={educationDetailsSuggestion}
+                      isLoading={educationDetailsAiState === "loading"}
+                      error={educationDetailsError}
+                      onApply={handleEducationDetailsApply}
+                      onRegenerate={handleEducationDetailsRewrite}
+                      onCancel={() => {
+                        setEducationDetailsAiState("idle")
+                        setEducationDetailsSuggestion(null)
+                      }}
                     />
                   </div>
                 </Card>

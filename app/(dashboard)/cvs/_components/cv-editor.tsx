@@ -645,6 +645,8 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                 <TabsContent value="content" className="mt-0 outline-none">
                   <CvContentEditor
                     model={renderModel}
+                    careerData={careerData}
+                    regionId={cv.region_id}
                     onPersonalChange={updatePersonalContent}
                     onContactChange={(id, patch: CvContactContentOverride) =>
                       updateContentItem("contacts", id, patch)
