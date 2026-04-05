@@ -38,11 +38,12 @@ export const rewriteSuggestionSchema: StructuredOutputSchema<RewriteSuggestion> 
     properties: {
       original: {
         type: "string",
-        description: "The original text that was rewritten.",
+        description: "The original text that was rewritten. This may contain newline-separated bullet points.",
       },
       suggested: {
         type: "string",
-        description: "The improved version of the text.",
+        description:
+          "The improved version of the text. When rewriting bullet lists, keep one bullet per line.",
       },
       reasoning: {
         type: "string",

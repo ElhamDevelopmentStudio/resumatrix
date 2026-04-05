@@ -51,13 +51,13 @@ export function AiDiffOverlay({
           <div className="space-y-2">
             <div>
               <p className="text-xs font-medium text-on-surface-variant/70">Original</p>
-              <p className="mt-1 rounded-sm bg-destructive/10 px-2 py-1 text-sm text-destructive line-through">
+              <p className="mt-1 rounded-sm bg-destructive/10 px-2 py-1 text-sm text-destructive line-through whitespace-pre-wrap break-words">
                 {suggestion.original || "(empty)"}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium text-on-surface-variant/70">Suggested</p>
-              <p className="mt-1 rounded-sm bg-primary-soft/20 px-2 py-1 text-sm text-primary">
+              <p className="mt-1 rounded-sm bg-primary-soft/20 px-2 py-1 text-sm text-primary whitespace-pre-wrap break-words">
                 {suggestion.suggested}
               </p>
             </div>
