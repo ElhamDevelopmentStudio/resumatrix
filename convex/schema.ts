@@ -155,6 +155,7 @@ export const schema = defineSchema({
     name: v.string(),
     profile_id: v.string(),
     template_id: v.string(),
+    region_id: v.optional(v.string()),
     overrides: cvOverridesValidator,
     created_at: v.string(),
     updated_at: v.string(),

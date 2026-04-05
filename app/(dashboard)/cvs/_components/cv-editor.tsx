@@ -55,12 +55,26 @@ import {
   type CvSectionSelectorItem,
 } from "./cv-section-selector-dialog"
 import { deleteCv, updateCv } from "../actions"
+import { getAllRegionIds, getRegionStandard } from "@/lib/region-instructions"
 
 const inputClassName =
   "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20"
 
 const selectClassName =
   "w-full [&_[data-slot=native-select]]:h-11 [&_[data-slot=native-select]]:rounded-sm [&_[data-slot=native-select]]:border-outline-variant/70 [&_[data-slot=native-select]]:bg-background [&_[data-slot=native-select]]:px-3 [&_[data-slot=native-select]]:pr-8 [&_[data-slot=native-select]]:text-sm [&_[data-slot=native-select]]:text-on-surface [&_[data-slot=native-select]]:focus-visible:border-primary [&_[data-slot=native-select]]:focus-visible:ring-primary/20 [&_[data-slot=native-select-icon]]:right-3 [&_[data-slot=native-select-icon]]:size-4 [&_[data-slot=native-select-icon]]:text-on-surface-variant/60"
+
+const regionFlagEmoji: Record<string, string> = {
+  us: "🇺🇸",
+  ca: "🇨🇦",
+  uk: "🇬🇧",
+  eu: "🇪🇺",
+  de: "🇩🇪",
+  fr: "🇫🇷",
+  af: "🇦🇫",
+  ru: "🇷🇺",
+  au: "🇦🇺",
+  international: "🌐",
+}
 
 type TemplateOption = CvTemplateMetadata & {
   preview_blurb: string
@@ -92,6 +106,7 @@ function buildPayload(cv: CvData): CvPayload {
     name: cv.name,
     profile_id: cv.profile_id,
     template_id: cv.template_id,
+    region_id: cv.region_id,
     overrides: cv.overrides,
   }
 }
@@ -552,6 +567,15 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
               <Badge variant="outline" className="border-outline-variant/70 bg-card text-on-surface-variant/80">
                 {saveStatusLabel}
               </Badge>
+              {state.region_id ? (
+                <Badge
+                  variant="outline"
+                  className="border-outline-variant/70 bg-card text-on-surface-variant/80"
+                >
+                  {regionFlagEmoji[state.region_id] ?? "🌐"}{" "}
+                  {getRegionStandard(state.region_id).name}
+                </Badge>
+              ) : null}
             </div>
             <p className="text-sm text-on-surface-variant/75 md:text-base">
               {selectedProfile?.name || "No profile selected"} · {selectedTemplate?.name || "No template selected"}
@@ -853,6 +877,30 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                             ))}
                           </NativeSelect>
                           <FieldError>{validationErrors.template_id}</FieldError>
+                        </div>
+
+                        <div className="space-y-2">
+                          <FieldLabel className="text-sm font-medium text-on-surface">Region</FieldLabel>
+                          <FieldDescription>
+                            Pick the region whose CV conventions this CV should follow.
+                          </FieldDescription>
+                          <NativeSelect
+                            value={state.region_id}
+                            onChange={(event) =>
+                              updateState((currentState) => ({
+                                ...currentState,
+                                region_id: event.target.value,
+                              }))
+                            }
+                            className={selectClassName}
+                          >
+                            {getAllRegionIds().map((regionId) => (
+                              <NativeSelectOption key={regionId} value={regionId}>
+                                {regionFlagEmoji[regionId] ?? "🌐"} {getRegionStandard(regionId).name}
+                              </NativeSelectOption>
+                            ))}
+                          </NativeSelect>
+                          <FieldError>{validationErrors.region_id}</FieldError>
                         </div>
                       </div>
                     </Card>
