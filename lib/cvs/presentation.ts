@@ -7,6 +7,7 @@ const sectionLabels: Record<CvOverrideSection, string> = {
   experiences: "Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Skills",
 }
 
@@ -25,6 +26,7 @@ export function buildCvCoverageSummary(preview: CvPreview) {
   return [
     formatCount(preview.experienceCount, "experience"),
     formatCount(preview.projectCount, "project"),
+    formatCount(preview.achievementCount, "achievement"),
     formatCount(preview.skillCount, "skill"),
   ].join(" • ")
 }

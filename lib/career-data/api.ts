@@ -1,4 +1,6 @@
 import type {
+  AchievementData,
+  AchievementPayload,
   ApiResponse,
   CareerWorkspaceData,
   ContactData,
@@ -140,6 +142,30 @@ export function deleteEducation(id: string) {
   })
 }
 
+export function fetchAchievements() {
+  return requestData<AchievementData[]>("/api/achievements", { cache: "no-store" })
+}
+
+export function createAchievement(achievement: AchievementPayload) {
+  return requestData<AchievementData>("/api/achievements", {
+    method: "POST",
+    body: JSON.stringify(achievement),
+  })
+}
+
+export function updateAchievement(id: string, achievement: AchievementPayload) {
+  return requestData<AchievementData>(`/api/achievements/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(achievement),
+  })
+}
+
+export function deleteAchievement(id: string) {
+  return requestData<{ id: string }>(`/api/achievements/${id}`, {
+    method: "DELETE",
+  })
+}
+
 export function fetchSkills() {
   return requestData<SkillData[]>("/api/skills", { cache: "no-store" })
 }
@@ -165,12 +191,13 @@ export function deleteSkill(id: string) {
 }
 
 export async function fetchCareerWorkspace(): Promise<CareerWorkspaceData> {
-  const [personal, contacts, experiences, projects, education, skills] = await Promise.all([
+  const [personal, contacts, experiences, projects, education, achievements, skills] = await Promise.all([
     fetchPersonal(),
     fetchContacts(),
     fetchExperiences(),
     fetchProjects(),
     fetchEducation(),
+    fetchAchievements(),
     fetchSkills(),
   ])
 
@@ -180,6 +207,7 @@ export async function fetchCareerWorkspace(): Promise<CareerWorkspaceData> {
     experiences,
     projects,
     education,
+    achievements,
     skills,
   }
 }

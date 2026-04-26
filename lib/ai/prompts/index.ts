@@ -75,6 +75,20 @@ export function buildCareerDataContext(careerData: CareerWorkspaceData): string 
     lines.push("(none)")
   }
 
+  // Achievements
+  lines.push("", "### Achievements")
+  if (careerData.achievements.length > 0) {
+    careerData.achievements.forEach((achievement) => {
+      lines.push(`- ${achievement.title}`)
+      if (achievement.description) lines.push(`  Description: ${achievement.description}`)
+      if (achievement.link_url) {
+        lines.push(`  Link: ${achievement.link_label || achievement.link_url} (${achievement.link_url})`)
+      }
+    })
+  } else {
+    lines.push("(none)")
+  }
+
   // Skills
   lines.push("", "### Skills")
   if (careerData.skills.length > 0) {

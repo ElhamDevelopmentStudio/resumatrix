@@ -9,6 +9,7 @@ export function buildProfileCoverageSummary(preview: ProfilePreview) {
   return [
     formatProfileCount(preview.displayedExperiences, "experience"),
     formatProfileCount(preview.displayedProjects, "project"),
+    formatProfileCount(preview.achievementCount, "achievement"),
     formatProfileCount(preview.skillsCount, "skill"),
   ].join(" • ")
 }
@@ -30,6 +31,9 @@ export function buildProfileRuleSummary(profile: ProfileData) {
       : null,
     profile.config.selections.education !== null
       ? `${profile.config.selections.education.length} chosen education item${profile.config.selections.education.length === 1 ? "" : "s"}`
+      : null,
+    profile.config.selections.achievements !== null
+      ? `${profile.config.selections.achievements.length} chosen achievement${profile.config.selections.achievements.length === 1 ? "" : "s"}`
       : null,
     profile.config.selections.skills !== null
       ? `${profile.config.selections.skills.length} chosen skill${profile.config.selections.skills.length === 1 ? "" : "s"}`

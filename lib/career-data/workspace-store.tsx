@@ -5,17 +5,20 @@ import { useStore } from "zustand"
 import { createStore, type StoreApi } from "zustand/vanilla"
 
 import {
+  createAchievement,
   createContact,
   createEducation,
   createExperience,
   createProject,
   createSkill,
+  deleteAchievement,
   deleteContact,
   deleteEducation,
   deleteExperience,
   deleteProject,
   deleteSkill,
   fetchCareerWorkspace,
+  updateAchievement,
   updateContact,
   updateEducation,
   updateExperience,
@@ -24,11 +27,14 @@ import {
   updateSkill,
 } from "@/lib/career-data/api"
 import {
+  buildBlankAchievement,
   buildBlankContact,
   buildBlankEducation,
   buildBlankExperience,
   buildBlankProject,
   buildBlankSkill,
+  toAchievementDraft,
+  toAchievementPayload,
   toContactDraft,
   toContactPayload,
   toEducationDraft,
@@ -39,6 +45,7 @@ import {
   toProjectPayload,
   toSkillDraft,
   toSkillPayload,
+  type AchievementDraft,
   type ContactDraft,
   type EducationDraft,
   type ExperienceDraft,
@@ -46,6 +53,8 @@ import {
   type SkillDraft,
 } from "@/lib/career-data/drafts"
 import {
+  type AchievementData,
+  type AchievementPayload,
   type CareerWorkspaceData,
   emptyPersonalData,
   type ContactData,
@@ -64,17 +73,20 @@ import {
 } from "@/lib/career-data/types"
 import {
   hasValidationError,
+  isBlankAchievement,
   isBlankContact,
   isBlankEducation,
   isBlankExperience,
   isBlankProject,
   isBlankSkill,
+  validateAchievement,
   validateContact,
   validateEducation,
   validateExperience,
   validatePersonal,
   validateProject,
   validateSkill,
+  type AchievementErrorState,
   type ContactErrorState,
   type DraftErrorMap,
   type EducationErrorState,
@@ -95,6 +107,7 @@ type SavedWorkspaceState = {
   experiences: ExperienceData[]
   projects: ProjectData[]
   education: EducationData[]
+  achievements: AchievementData[]
   skills: SkillData[]
 }
 
@@ -145,6 +158,7 @@ type CareerDataStore = {
   experiences: ExperienceDraft[]
   projects: ProjectDraft[]
   education: EducationDraft[]
+  achievements: AchievementDraft[]
   skills: SkillDraft[]
   saved: SavedWorkspaceState
   sectionMeta: ListSectionMeta
@@ -153,6 +167,7 @@ type CareerDataStore = {
   experienceErrors: DraftErrorMap<ExperienceErrorState>
   projectErrors: DraftErrorMap<ProjectErrorState>
   educationErrors: DraftErrorMap<EducationErrorState>
+  achievementErrors: DraftErrorMap<AchievementErrorState>
   skillErrors: DraftErrorMap<SkillErrorState>
   hydrate: () => Promise<void>
   openSection: (section: SectionKey) => void
@@ -172,6 +187,9 @@ type CareerDataStore = {
   addEducation: () => void
   updateEducationField: (clientId: string, field: keyof EducationDraft, value: string) => void
   removeEducation: (clientId: string) => Promise<void>
+  addAchievement: () => void
+  updateAchievementField: (clientId: string, field: keyof AchievementDraft, value: string) => void
+  removeAchievement: (clientId: string) => Promise<void>
   addSkill: () => void
   updateSkillField: (clientId: string, field: keyof SkillDraft, value: string) => void
   removeSkill: (clientId: string) => Promise<void>
@@ -180,6 +198,7 @@ type CareerDataStore = {
   saveExperiences: () => Promise<void>
   saveProjects: () => Promise<void>
   saveEducation: () => Promise<void>
+  saveAchievements: () => Promise<void>
   saveSkills: () => Promise<void>
   saveAllSections: () => Promise<void>
 }
@@ -190,6 +209,7 @@ const allSections: SectionKey[] = [
   "experiences",
   "projects",
   "education",
+  "achievements",
   "skills",
 ]
 
@@ -202,6 +222,7 @@ function createSectionMeta(): ListSectionMeta {
     experiences: { status: "idle", lastSavedAt: null, errorMessage: null },
     projects: { status: "idle", lastSavedAt: null, errorMessage: null },
     education: { status: "idle", lastSavedAt: null, errorMessage: null },
+    achievements: { status: "idle", lastSavedAt: null, errorMessage: null },
     skills: { status: "idle", lastSavedAt: null, errorMessage: null },
   }
 }
@@ -213,6 +234,7 @@ function createEmptySavedState(): SavedWorkspaceState {
     experiences: [],
     projects: [],
     education: [],
+    achievements: [],
     skills: [],
   }
 }
@@ -224,6 +246,7 @@ function createSavedWorkspaceState(workspace: CareerWorkspaceData): SavedWorkspa
     experiences: [...workspace.experiences],
     projects: [...workspace.projects],
     education: [...workspace.education],
+    achievements: [...workspace.achievements],
     skills: [...workspace.skills],
   }
 }
@@ -240,6 +263,7 @@ function createHydratedWorkspaceState(workspace: CareerWorkspaceData) {
     experiences: savedState.experiences.map(toExperienceDraft),
     projects: savedState.projects.map(toProjectDraft),
     education: savedState.education.map(toEducationDraft),
+    achievements: savedState.achievements.map(toAchievementDraft),
     skills: savedState.skills.map(toSkillDraft),
     saved: savedState,
     sectionMeta: createSectionMeta(),
@@ -248,6 +272,7 @@ function createHydratedWorkspaceState(workspace: CareerWorkspaceData) {
     experienceErrors: {},
     projectErrors: {},
     educationErrors: {},
+    achievementErrors: {},
     skillErrors: {},
   }
 }
@@ -262,6 +287,7 @@ function createEmptyWorkspaceState() {
     experiences: [],
     projects: [],
     education: [],
+    achievements: [],
     skills: [],
     saved: createEmptySavedState(),
     sectionMeta: createSectionMeta(),
@@ -270,6 +296,7 @@ function createEmptyWorkspaceState() {
     experienceErrors: {},
     projectErrors: {},
     educationErrors: {},
+    achievementErrors: {},
     skillErrors: {},
   }
 }
@@ -299,6 +326,10 @@ function buildExpandedSections(saved: SavedWorkspaceState): SectionKey[] {
 
   if (!saved.education.length) {
     return ["education"]
+  }
+
+  if (!saved.achievements.length) {
+    return ["achievements"]
   }
 
   if (!saved.skills.length) {
@@ -333,6 +364,10 @@ function isProjectEqual(saved: ProjectData, payload: ProjectPayload) {
 }
 
 function isEducationEqual(saved: EducationData, payload: EducationPayload) {
+  return JSON.stringify({ ...saved, id: undefined }) === JSON.stringify({ ...payload, id: undefined })
+}
+
+function isAchievementEqual(saved: AchievementData, payload: AchievementPayload) {
   return JSON.stringify({ ...saved, id: undefined }) === JSON.stringify({ ...payload, id: undefined })
 }
 
@@ -788,6 +823,70 @@ function createCareerDataStore(initialWorkspace?: CareerWorkspaceData) {
       }
     },
 
+    addAchievement() {
+      clearSectionError("achievements")
+      set((state) => ({
+        achievements: [...state.achievements, buildBlankAchievement()],
+      }))
+    },
+
+    updateAchievementField(clientId, field, value) {
+      clearSectionError("achievements")
+      set((state) => ({
+        achievements: state.achievements.map((achievement) =>
+          achievement.clientId === clientId ? { ...achievement, [field]: value } : achievement
+        ),
+        achievementErrors: removeDraftError(state.achievementErrors, clientId),
+      }))
+    },
+
+    async removeAchievement(clientId) {
+      const currentState = get()
+      const achievementToRemove = currentState.achievements.find(
+        (achievement) => achievement.clientId === clientId
+      )
+
+      if (!achievementToRemove) {
+        return
+      }
+
+      const previousAchievements = currentState.achievements
+      const previousErrors = currentState.achievementErrors
+
+      clearSectionError("achievements")
+      set((state) => ({
+        achievements: state.achievements.filter(
+          (achievement) => achievement.clientId !== clientId
+        ),
+        achievementErrors: removeDraftError(state.achievementErrors, clientId),
+      }))
+
+      if (!achievementToRemove.id) {
+        return
+      }
+
+      setSectionSaving("achievements")
+
+      try {
+        await deleteAchievement(achievementToRemove.id)
+        set((state) => ({
+          saved: {
+            ...state.saved,
+            achievements: state.saved.achievements.filter(
+              (achievement) => achievement.id !== achievementToRemove.id
+            ),
+          },
+        }))
+        setSectionSaved("achievements")
+      } catch (error) {
+        set({ achievements: previousAchievements, achievementErrors: previousErrors })
+        setSectionError(
+          "achievements",
+          getErrorMessage(error, "We couldn’t remove this achievement.")
+        )
+      }
+    },
+
     addSkill() {
       clearSectionError("skills")
       set((state) => ({
@@ -1037,6 +1136,49 @@ function createCareerDataStore(initialWorkspace?: CareerWorkspaceData) {
       })
     },
 
+    async saveAchievements() {
+      const state = get()
+
+      await syncListSection({
+        drafts: state.achievements,
+        savedItems: state.saved.achievements,
+        validate: validateAchievement,
+        isBlank: isBlankAchievement,
+        toPayload: toAchievementPayload,
+        isEqual: isAchievementEqual,
+        createItem: createAchievement,
+        updateItem: updateAchievement,
+        setErrors: (achievementErrors) => set({ achievementErrors }),
+        onCreate: (clientId, createdAchievement) => {
+          set((currentState) => ({
+            achievements: currentState.achievements.map((achievement) =>
+              achievement.clientId === clientId
+                ? { ...achievement, id: createdAchievement.id }
+                : achievement
+            ),
+            saved: {
+              ...currentState.saved,
+              achievements: [...currentState.saved.achievements, createdAchievement],
+            },
+          }))
+        },
+        onUpdate: (updatedAchievement) => {
+          set((currentState) => ({
+            saved: {
+              ...currentState.saved,
+              achievements: currentState.saved.achievements.map((achievement) =>
+                achievement.id === updatedAchievement.id ? updatedAchievement : achievement
+              ),
+            },
+          }))
+        },
+        startSaving: () => setSectionSaving("achievements"),
+        finishSaving: () => setSectionSaved("achievements"),
+        failSaving: (message) => setSectionError("achievements", message),
+        fallbackErrorMessage: "We couldn’t save your achievements.",
+      })
+    },
+
     async saveSkills() {
       const state = get()
 
@@ -1084,6 +1226,7 @@ function createCareerDataStore(initialWorkspace?: CareerWorkspaceData) {
       await get().saveExperiences()
       await get().saveProjects()
       await get().saveEducation()
+      await get().saveAchievements()
       await get().saveSkills()
     },
   }

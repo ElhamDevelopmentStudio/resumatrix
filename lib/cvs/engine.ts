@@ -97,6 +97,7 @@ export function applyCvContentOverrides(
     experiences: applyEntryOverrides(dataset.experiences, overrides.experiences),
     projects: applyEntryOverrides(dataset.projects, overrides.projects),
     education: applyEntryOverrides(dataset.education, overrides.education),
+    achievements: applyEntryOverrides(dataset.achievements, overrides.achievements),
     skills: applyEntryOverrides(dataset.skills, overrides.skills),
   }
 }
@@ -131,6 +132,11 @@ export function buildCvDataset(
       contentAdjustedProfileDataset.education,
       contentAdjustedCareerData.education,
       cv.overrides.selections.education
+    ),
+    achievements: resolveCvSectionEntries(
+      contentAdjustedProfileDataset.achievements,
+      contentAdjustedCareerData.achievements,
+      cv.overrides.selections.achievements
     ),
     skills: resolveCvSectionEntries(
       contentAdjustedProfileDataset.skills,
@@ -179,6 +185,7 @@ export function buildCvRenderModel(
       end_date: entry.end_date || null,
       date_label: formatDateRange(entry.start_date, entry.end_date),
     })),
+    achievements: dataset.achievements,
     skills: dataset.skills,
     section_order: sectionOrder,
     hidden_sections: hiddenSections,
@@ -191,6 +198,7 @@ export function buildCvPreview(model: CvRenderModel): CvPreview {
     model.experiences.length,
     model.projects.length,
     model.education.length,
+    model.achievements.length,
     model.skills.length,
   ]
 
@@ -204,6 +212,7 @@ export function buildCvPreview(model: CvRenderModel): CvPreview {
     experienceCount: model.experiences.length,
     projectCount: model.projects.length,
     educationCount: model.education.length,
+    achievementCount: model.achievements.length,
     skillCount: model.skills.length,
     totalItemCount,
     visibleSectionCount: sections.filter((value) => value > 0).length,

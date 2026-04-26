@@ -5,6 +5,8 @@ import {
   splitMultilineInput,
 } from "@/lib/career-data/serializers"
 import type {
+  AchievementData,
+  AchievementPayload,
   ContactData,
   ContactPayload,
   EducationData,
@@ -60,6 +62,15 @@ export type EducationDraft = {
   details: string
 }
 
+export type AchievementDraft = {
+  clientId: string
+  id: string | null
+  title: string
+  description: string
+  link_url: string
+  link_label: string
+}
+
 export type SkillDraft = {
   clientId: string
   id: string | null
@@ -112,6 +123,17 @@ export function buildBlankEducation(): EducationDraft {
     start_date: "",
     end_date: "",
     details: "",
+  }
+}
+
+export function buildBlankAchievement(): AchievementDraft {
+  return {
+    clientId: buildClientId(),
+    id: null,
+    title: "",
+    description: "",
+    link_url: "",
+    link_label: "",
   }
 }
 
@@ -208,6 +230,26 @@ export function toEducationPayload(education: EducationDraft): EducationPayload 
     start_date: education.start_date.trim(),
     end_date: education.end_date.trim(),
     details: education.details.trim(),
+  }
+}
+
+export function toAchievementDraft(achievement: AchievementData): AchievementDraft {
+  return {
+    clientId: achievement.id,
+    id: achievement.id,
+    title: achievement.title,
+    description: achievement.description,
+    link_url: achievement.link_url,
+    link_label: achievement.link_label,
+  }
+}
+
+export function toAchievementPayload(achievement: AchievementDraft): AchievementPayload {
+  return {
+    title: achievement.title.trim(),
+    description: achievement.description.trim(),
+    link_url: achievement.link_url.trim(),
+    link_label: achievement.link_label.trim(),
   }
 }
 

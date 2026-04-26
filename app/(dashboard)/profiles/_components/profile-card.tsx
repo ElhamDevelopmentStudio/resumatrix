@@ -150,7 +150,7 @@ export function ProfileCard({
           />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-5">
           <MetricTile
             label="Experience"
             value={String(preview.displayedExperiences)}
@@ -161,6 +161,7 @@ export function ProfileCard({
             value={String(preview.displayedProjects)}
             helper={`${preview.matchedProjects} matched before limits`}
           />
+          <MetricTile label="Achievements" value={String(preview.achievementCount)} />
           <MetricTile label="Skills" value={String(preview.skillsCount)} />
           <MetricTile label="Total visible" value={String(preview.totalDisplayedItems)} />
         </div>

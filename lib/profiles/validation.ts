@@ -69,6 +69,9 @@ function normalizeProfileSelections(value: unknown): ProfileSelections {
     education: Array.isArray(nextSelections.education)
       ? normalizeIdList(nextSelections.education)
       : defaultProfileConfig.selections.education,
+    achievements: Array.isArray(nextSelections.achievements)
+      ? normalizeIdList(nextSelections.achievements)
+      : defaultProfileConfig.selections.achievements,
     skills: Array.isArray(nextSelections.skills)
       ? normalizeIdList(nextSelections.skills)
       : defaultProfileConfig.selections.skills,

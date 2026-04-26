@@ -7,6 +7,7 @@ import {
   type CvContentOverrides,
   type CvEducationContentOverride,
   type CvExperienceContentOverride,
+  type CvAchievementContentOverride,
   type CvOverrideSection,
   type CvOverrides,
   type CvPayload,
@@ -87,6 +88,7 @@ function normalizeSelections(value: unknown): CvSelections {
     experiences: normalizeIdList(nextValue.experiences),
     projects: normalizeIdList(nextValue.projects),
     education: normalizeIdList(nextValue.education),
+    achievements: normalizeIdList(nextValue.achievements),
     skills: normalizeIdList(nextValue.skills),
   }
 }
@@ -258,6 +260,33 @@ function normalizeSkillContentOverride(value: unknown): CvSkillContentOverride {
   return nextOverride
 }
 
+function normalizeAchievementContentOverride(value: unknown): CvAchievementContentOverride {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const nextValue = value as Partial<CvAchievementContentOverride>
+  const nextOverride: CvAchievementContentOverride = {}
+
+  if (typeof nextValue.title === "string") {
+    nextOverride.title = nextValue.title.trim()
+  }
+
+  if (typeof nextValue.description === "string") {
+    nextOverride.description = nextValue.description.trim()
+  }
+
+  if (typeof nextValue.link_url === "string") {
+    nextOverride.link_url = nextValue.link_url.trim()
+  }
+
+  if (typeof nextValue.link_label === "string") {
+    nextOverride.link_label = nextValue.link_label.trim()
+  }
+
+  return nextOverride
+}
+
 function normalizePersonalContentOverride(value: unknown) {
   if (!value || typeof value !== "object") {
     return emptyCvContentOverrides.personal
@@ -297,6 +326,10 @@ function normalizeContentOverrides(value: unknown): CvContentOverrides {
     ),
     projects: normalizeMappedEntries(nextValue.projects, normalizeProjectContentOverride),
     education: normalizeMappedEntries(nextValue.education, normalizeEducationContentOverride),
+    achievements: normalizeMappedEntries(
+      nextValue.achievements,
+      normalizeAchievementContentOverride
+    ),
     skills: normalizeMappedEntries(nextValue.skills, normalizeSkillContentOverride),
   }
 }

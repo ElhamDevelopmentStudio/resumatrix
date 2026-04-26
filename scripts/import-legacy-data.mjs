@@ -23,6 +23,8 @@ const convexFunctions = {
     deleteProject: makeFunctionReference("career_data:deleteProject"),
     createEducation: makeFunctionReference("career_data:createEducation"),
     deleteEducation: makeFunctionReference("career_data:deleteEducation"),
+    createAchievement: makeFunctionReference("career_data:createAchievement"),
+    deleteAchievement: makeFunctionReference("career_data:deleteAchievement"),
     createSkill: makeFunctionReference("career_data:createSkill"),
     deleteSkill: makeFunctionReference("career_data:deleteSkill"),
   },
@@ -133,6 +135,7 @@ function buildDefaultWorkspace() {
     experiences: [],
     projects: [],
     education: [],
+    achievements: [],
     skills: [],
   }
 }
@@ -246,6 +249,22 @@ function sanitizeSkills(value) {
     }))
 }
 
+function sanitizeAchievements(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((achievement) => typeof achievement?.id === "string" && typeof achievement?.title === "string")
+    .map((achievement) => ({
+      id: achievement.id,
+      title: readText(achievement.title),
+      description: readText(achievement.description),
+      link_url: readText(achievement.link_url),
+      link_label: readText(achievement.link_label),
+    }))
+}
+
 function sanitizeWorkspace(value) {
   if (!value || typeof value !== "object") {
     return buildDefaultWorkspace()
@@ -257,6 +276,7 @@ function sanitizeWorkspace(value) {
     experiences: sanitizeExperiences(value.experiences),
     projects: sanitizeProjects(value.projects),
     education: sanitizeEducation(value.education),
+    achievements: sanitizeAchievements(value.achievements),
     skills: sanitizeSkills(value.skills),
   }
 }
@@ -389,6 +409,7 @@ function printSnapshotSummary(snapshot, sourceDir) {
   console.log(`- experiences: ${snapshot.workspace.experiences.length}`)
   console.log(`- projects: ${snapshot.workspace.projects.length}`)
   console.log(`- education entries: ${snapshot.workspace.education.length}`)
+  console.log(`- achievements: ${snapshot.workspace.achievements.length}`)
   console.log(`- skills: ${snapshot.workspace.skills.length}`)
   console.log(`- profiles: ${snapshot.profiles.length}`)
   console.log(`- CVs: ${snapshot.cvs.length}`)
@@ -433,6 +454,7 @@ function hasExistingConvexContent(snapshot) {
     snapshot.workspace.experiences.length > 0 ||
     snapshot.workspace.projects.length > 0 ||
     snapshot.workspace.education.length > 0 ||
+    snapshot.workspace.achievements.length > 0 ||
     snapshot.workspace.skills.length > 0 ||
     snapshot.profiles.length > 0 ||
     snapshot.cvs.length > 0
@@ -446,6 +468,7 @@ function printExistingConvexSummary(snapshot) {
   console.log(`- experiences: ${snapshot.workspace.experiences.length}`)
   console.log(`- projects: ${snapshot.workspace.projects.length}`)
   console.log(`- education entries: ${snapshot.workspace.education.length}`)
+  console.log(`- achievements: ${snapshot.workspace.achievements.length}`)
   console.log(`- skills: ${snapshot.workspace.skills.length}`)
   console.log(`- profiles: ${snapshot.profiles.length}`)
   console.log(`- CVs: ${snapshot.cvs.length}`)
@@ -476,6 +499,10 @@ async function clearExistingConvexData(client, existingData) {
     await client.mutation(convexFunctions.careerData.deleteEducation, { id: education.id })
   }
 
+  for (const achievement of existingData.workspace.achievements) {
+    await client.mutation(convexFunctions.careerData.deleteAchievement, { id: achievement.id })
+  }
+
   for (const skill of existingData.workspace.skills) {
     await client.mutation(convexFunctions.careerData.deleteSkill, { id: skill.id })
   }
@@ -504,6 +531,10 @@ async function importSnapshot(client, snapshot) {
 
   for (const education of snapshot.workspace.education) {
     await client.mutation(convexFunctions.careerData.createEducation, education)
+  }
+
+  for (const achievement of snapshot.workspace.achievements) {
+    await client.mutation(convexFunctions.careerData.createAchievement, achievement)
   }
 
   for (const skill of snapshot.workspace.skills) {

@@ -7,6 +7,7 @@ export type ProfileSelectableSection =
   | "experiences"
   | "projects"
   | "education"
+  | "achievements"
   | "skills"
   | "contacts"
 
@@ -14,6 +15,7 @@ export type ProfileSelections = {
   experiences: string[] | null
   projects: string[] | null
   education: string[] | null
+  achievements: string[] | null
   skills: string[] | null
   contacts: string[] | null
 }
@@ -49,6 +51,7 @@ export type ProfilePreview = {
   matchedProjects: number
   displayedProjects: number
   educationCount: number
+  achievementCount: number
   skillsCount: number
   contactsCount: number
   totalDisplayedItems: number
@@ -77,6 +80,7 @@ export const profileSelectableSections: ProfileSelectableSection[] = [
   "experiences",
   "projects",
   "education",
+  "achievements",
   "skills",
   "contacts",
 ]
@@ -95,6 +99,7 @@ export const defaultProfileConfig: ProfileConfig = {
     experiences: null,
     projects: null,
     education: null,
+    achievements: null,
     skills: null,
     contacts: null,
   },

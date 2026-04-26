@@ -167,7 +167,7 @@ This fallback is for local development only. Set real values before deploying.
 ## Session behavior
 
 - `/dashboard`, `/career-data`, `/profiles`, `/cvs`, `/cv-print/:id`, and `/personal` require an active session.
-- The data APIs under `/api/personal`, `/api/contacts`, `/api/experiences`, `/api/projects`, `/api/education`, `/api/skills`, `/api/templates`, and `/api/cvs/:id/export` also require an active session.
+- The data APIs under `/api/personal`, `/api/contacts`, `/api/experiences`, `/api/projects`, `/api/education`, `/api/achievements`, `/api/skills`, `/api/templates`, and `/api/cvs/:id/export` also require an active session.
 - Profile and CV create, update, and delete flows use Server Actions instead of internal `/api/profiles` and `/api/cvs` CRUD endpoints.
 - Visiting `/` with a valid session redirects to `/dashboard`.
 
@@ -195,6 +195,8 @@ This fallback is for local development only. Set real values before deploying.
 - `PUT, DELETE /api/projects/:id` — single project API
 - `GET, POST /api/education` — education collection API
 - `PUT, DELETE /api/education/:id` — single education API
+- `GET, POST /api/achievements` — achievements collection API
+- `PUT, DELETE /api/achievements/:id` — single achievement API
 - `GET, POST /api/skills` — skills collection API
 - `PUT, DELETE /api/skills/:id` — single skill API
 - `GET /api/templates` — available CV templates

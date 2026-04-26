@@ -312,6 +312,26 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
         selection: state.selections.education,
       },
       {
+        key: "achievements",
+        label: "Achievements",
+        itemLabel: "achievement",
+        description: "Turn saved achievements on or off for this profile.",
+        automaticDescription: "Every achievement is on by default.",
+        items: careerData.achievements.map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          description: entry.description || "No description added",
+          meta: [entry.link_label || entry.link_url].filter(Boolean),
+          available: true,
+        })),
+        currentCount: preview.achievementCount,
+        helper:
+          payload.config.selections.achievements === null
+            ? `All ${careerData.achievements.length} saved achievements are on.`
+            : `${payload.config.selections.achievements.length} of ${careerData.achievements.length} saved achievements are on.`,
+        selection: state.selections.achievements,
+      },
+      {
         key: "skills",
         label: "Skills",
         itemLabel: "skill",
@@ -594,10 +614,11 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <SummaryMetric label="Experience" value={preview.displayedExperiences} helper={`${preview.matchedExperiences} matched`} />
             <SummaryMetric label="Projects" value={preview.displayedProjects} helper={`${preview.matchedProjects} matched`} />
             <SummaryMetric label="Education" value={preview.educationCount} />
+            <SummaryMetric label="Achievements" value={preview.achievementCount} />
             <SummaryMetric label="Skills" value={preview.skillsCount} />
             <SummaryMetric label="Contacts" value={preview.contactsCount} />
           </div>
@@ -914,10 +935,11 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
                   </Card>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                   <SummaryMetric label="Experience" value={preview.displayedExperiences} helper={`${preview.matchedExperiences} matched`} />
                   <SummaryMetric label="Projects" value={preview.displayedProjects} helper={`${preview.matchedProjects} matched`} />
                   <SummaryMetric label="Education" value={preview.educationCount} />
+                  <SummaryMetric label="Achievements" value={preview.achievementCount} />
                   <SummaryMetric label="Skills" value={preview.skillsCount} />
                   <SummaryMetric label="Contacts" value={preview.contactsCount} />
                 </div>

@@ -15,7 +15,13 @@ import { schema } from "./schema"
 type DataModel = DataModelFromSchemaDefinition<typeof schema>
 type QueryCtx = GenericQueryCtx<DataModel>
 type MutationCtx = GenericMutationCtx<DataModel>
-type CollectionTableName = "contacts" | "experiences" | "projects" | "education" | "skills"
+type CollectionTableName =
+  | "contacts"
+  | "experiences"
+  | "projects"
+  | "education"
+  | "achievements"
+  | "skills"
 type CollectionDocument<Table extends CollectionTableName> = DocumentByName<DataModel, Table>
 type StoredCollectionDocument<Table extends CollectionTableName> = CollectionDocument<Table> & {
   _creationTime: number
@@ -75,6 +81,11 @@ async function getDocumentById<Table extends CollectionTableName>(
         .query("education")
         .withIndex("by_record_id", (q) => q.eq("id", id))
         .unique()) as CollectionDocument<Table> | null
+    case "achievements":
+      return (await ctx.db
+        .query("achievements")
+        .withIndex("by_record_id", (q) => q.eq("id", id))
+        .unique()) as CollectionDocument<Table> | null
     case "skills":
       return (await ctx.db
         .query("skills")
@@ -91,12 +102,13 @@ async function listDocuments<Table extends CollectionTableName>(ctx: QueryCtx, t
 export const getWorkspace = query({
   args: {},
   handler: async (ctx) => {
-    const [personalDocument, contacts, experiences, projects, education, skills] = await Promise.all([
+    const [personalDocument, contacts, experiences, projects, education, achievements, skills] = await Promise.all([
       getPersonalDocument(ctx),
       listDocuments(ctx, "contacts"),
       listDocuments(ctx, "experiences"),
       listDocuments(ctx, "projects"),
       listDocuments(ctx, "education"),
+      listDocuments(ctx, "achievements"),
       listDocuments(ctx, "skills"),
     ])
 
@@ -116,6 +128,7 @@ export const getWorkspace = query({
       experiences,
       projects,
       education,
+      achievements,
       skills,
     }
   },
@@ -412,6 +425,67 @@ export const deleteEducation = mutation({
   },
   handler: async (ctx, args) => {
     const existing = await getDocumentById(ctx, "education", args.id)
+
+    if (!existing) {
+      return null
+    }
+
+    await ctx.db.delete(existing._id)
+    return withoutSystemFields(existing)
+  },
+})
+
+export const listAchievements = query({
+  args: {},
+  handler: async (ctx) => listDocuments(ctx, "achievements"),
+})
+
+export const createAchievement = mutation({
+  args: {
+    id: v.string(),
+    title: v.string(),
+    description: v.string(),
+    link_url: v.string(),
+    link_label: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("achievements", args)
+    return args
+  },
+})
+
+export const updateAchievement = mutation({
+  args: {
+    id: v.string(),
+    payload: v.object({
+      title: v.string(),
+      description: v.string(),
+      link_url: v.string(),
+      link_label: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const existing = await getDocumentById(ctx, "achievements", args.id)
+
+    if (!existing) {
+      return null
+    }
+
+    await ctx.db.patch(existing._id, args.payload)
+
+    return {
+      ...withoutSystemFields(existing),
+      ...args.payload,
+    }
+  },
+})
+
+export const deleteAchievement = mutation({
+  args: {
+    id: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await getDocumentById(ctx, "achievements", args.id)
 
     if (!existing) {
       return null

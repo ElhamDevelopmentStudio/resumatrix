@@ -298,6 +298,7 @@ const sectionTitles: Record<Exclude<CvOverrideSection, "contacts">, string> = {
   experiences: "Professional Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Core Skills",
 }
 
@@ -389,7 +390,9 @@ function getLeftSections(model: CvRenderModel) {
 }
 
 function getRightSections(model: CvRenderModel) {
-  return model.section_order.filter((section) => section === "experiences" || section === "projects")
+  return model.section_order.filter(
+    (section) => section === "experiences" || section === "projects" || section === "achievements"
+  )
 }
 
 function getBodyClassName(hasSidebar: boolean, hasMain: boolean) {
@@ -548,6 +551,31 @@ function renderProjectsSection(model: CvRenderModel) {
   )
 }
 
+function renderAchievementsSection(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return null
+  }
+
+  return (
+    <section className="editorial-sidebar-column-section" aria-label={sectionTitles.achievements}>
+      <h2 className="editorial-sidebar-section-title">{sectionTitles.achievements}</h2>
+      {model.achievements.map((achievement) => (
+        <article key={achievement.id} className="editorial-sidebar-project-item">
+          <h3 className="editorial-sidebar-project-name">{achievement.title || "Achievement"}</h3>
+          {achievement.description ? (
+            <p className="editorial-sidebar-project-description">{achievement.description}</p>
+          ) : null}
+          {achievement.link_url ? (
+            <p className="editorial-sidebar-project-meta">
+              <a href={achievement.link_url}>{achievement.link_label || achievement.link_url}</a>
+            </p>
+          ) : null}
+        </article>
+      ))}
+    </section>
+  )
+}
+
 function renderLeftSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "education":
@@ -565,6 +593,8 @@ function renderRightSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderExperienceSection(model)
     case "projects":
       return renderProjectsSection(model)
+    case "achievements":
+      return renderAchievementsSection(model)
     default:
       return null
   }
@@ -760,6 +790,30 @@ function renderProjectsSectionHtml(model: CvRenderModel) {
   `
 }
 
+function renderAchievementsSectionHtml(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return ""
+  }
+
+  return `
+    <section class="editorial-sidebar-column-section" aria-label="${sectionTitles.achievements}">
+      <h2 class="editorial-sidebar-section-title">${sectionTitles.achievements}</h2>
+      ${model.achievements
+        .map((achievement) => {
+          const linkLabel = achievement.link_label || achievement.link_url
+          return `
+            <article class="editorial-sidebar-project-item">
+              <h3 class="editorial-sidebar-project-name">${escapeHtml(achievement.title || "Achievement")}</h3>
+              ${achievement.description ? `<p class="editorial-sidebar-project-description">${escapeHtml(achievement.description)}</p>` : ""}
+              ${achievement.link_url ? `<p class="editorial-sidebar-project-meta"><a href="${escapeHtml(achievement.link_url)}">${escapeHtml(linkLabel)}</a></p>` : ""}
+            </article>
+          `
+        })
+        .join("")}
+    </section>
+  `
+}
+
 function renderLeftSectionHtml(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "education":
@@ -777,6 +831,8 @@ function renderRightSectionHtml(section: CvOverrideSection, model: CvRenderModel
       return renderExperienceSectionHtml(model)
     case "projects":
       return renderProjectsSectionHtml(model)
+    case "achievements":
+      return renderAchievementsSectionHtml(model)
     default:
       return ""
   }

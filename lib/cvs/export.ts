@@ -72,6 +72,16 @@ export function buildCvMarkdownExport(model: CvRenderModel) {
     }
   }
 
+  if (model.achievements.length) {
+    lines.push("## Achievements")
+    for (const achievement of model.achievements) {
+      const linkLabel = achievement.link_label || achievement.link_url
+      const link = achievement.link_url && linkLabel ? ` ([${linkLabel}](${achievement.link_url}))` : ""
+      lines.push(`- **${achievement.title}:** ${achievement.description}${link}`)
+    }
+    lines.push("")
+  }
+
   if (model.skills.length) {
     lines.push("## Skills")
     for (const skill of model.skills) {

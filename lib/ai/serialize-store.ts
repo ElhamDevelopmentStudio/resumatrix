@@ -84,6 +84,15 @@ function extractWorkspaceData(data: Record<string, unknown>): CareerWorkspaceDat
           details: readText(ed.details),
         }))
       : [],
+    achievements: Array.isArray(data.achievements)
+      ? (data.achievements as Record<string, unknown>[]).map((achievement) => ({
+          id: String(achievement.id ?? ""),
+          title: readText(achievement.title),
+          description: readText(achievement.description),
+          link_url: readText(achievement.link_url),
+          link_label: readText(achievement.link_label),
+        }))
+      : [],
     skills: Array.isArray(data.skills)
       ? (data.skills as Record<string, unknown>[]).map((sk) => ({
           id: String(sk.id ?? ""),

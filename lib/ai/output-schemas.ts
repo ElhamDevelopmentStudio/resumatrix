@@ -90,7 +90,7 @@ export const layoutSuggestionSchema: StructuredOutputSchema<LayoutSuggestion> = 
         type: "array",
         items: {
           type: "string",
-          enum: ["contacts", "experiences", "projects", "education", "skills"],
+          enum: ["contacts", "experiences", "projects", "education", "achievements", "skills"],
         },
       },
       reasoning_per_section: {
@@ -101,9 +101,10 @@ export const layoutSuggestionSchema: StructuredOutputSchema<LayoutSuggestion> = 
           experiences: { type: "string" },
           projects: { type: "string" },
           education: { type: "string" },
+          achievements: { type: "string" },
           skills: { type: "string" },
         },
-        required: ["contacts", "experiences", "projects", "education", "skills"],
+        required: ["contacts", "experiences", "projects", "education", "achievements", "skills"],
       },
     },
     required: ["section_order", "reasoning_per_section"],
@@ -127,7 +128,7 @@ export const layoutSuggestionSchema: StructuredOutputSchema<LayoutSuggestion> = 
     if (!isRecord(value.reasoning_per_section)) {
       issues.push('"reasoning_per_section" must be an object.')
     } else {
-      const allowedReasoningKeys = ["contacts", "experiences", "projects", "education", "skills"]
+      const allowedReasoningKeys = ["contacts", "experiences", "projects", "education", "achievements", "skills"]
       const reasoningUnknownKeys = collectUnknownKeys(value.reasoning_per_section, allowedReasoningKeys)
 
       if (reasoningUnknownKeys.length) {

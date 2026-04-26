@@ -7,6 +7,7 @@ const profileSelectionIdsValidator = v.object({
   experiences: nullableStringListValidator,
   projects: nullableStringListValidator,
   education: nullableStringListValidator,
+  achievements: v.optional(nullableStringListValidator),
   skills: nullableStringListValidator,
   contacts: nullableStringListValidator,
 })
@@ -29,6 +30,7 @@ const cvOverrideSectionValidator = v.union(
   v.literal("experiences"),
   v.literal("projects"),
   v.literal("education"),
+  v.literal("achievements"),
   v.literal("skills")
 )
 
@@ -37,6 +39,7 @@ const cvSelectionsValidator = v.object({
   experiences: nullableStringListValidator,
   projects: nullableStringListValidator,
   education: nullableStringListValidator,
+  achievements: v.optional(nullableStringListValidator),
   skills: nullableStringListValidator,
 })
 
@@ -75,6 +78,13 @@ const cvEducationContentOverrideValidator = v.object({
   details: v.optional(v.string()),
 })
 
+const cvAchievementContentOverrideValidator = v.object({
+  title: v.optional(v.string()),
+  description: v.optional(v.string()),
+  link_url: v.optional(v.string()),
+  link_label: v.optional(v.string()),
+})
+
 const cvSkillContentOverrideValidator = v.object({
   name: v.optional(v.string()),
   category: v.optional(v.string()),
@@ -91,6 +101,7 @@ export const cvOverridesValidator = v.object({
     experiences: v.record(v.string(), cvExperienceContentOverrideValidator),
     projects: v.record(v.string(), cvProjectContentOverrideValidator),
     education: v.record(v.string(), cvEducationContentOverrideValidator),
+    achievements: v.optional(v.record(v.string(), cvAchievementContentOverrideValidator)),
     skills: v.record(v.string(), cvSkillContentOverrideValidator),
   }),
 })
@@ -132,6 +143,13 @@ export const schema = defineSchema({
     start_date: v.string(),
     end_date: v.string(),
     details: v.string(),
+  }).index("by_record_id", ["id"]),
+  achievements: defineTable({
+    id: v.string(),
+    title: v.string(),
+    description: v.string(),
+    link_url: v.string(),
+    link_label: v.string(),
   }).index("by_record_id", ["id"]),
   skills: defineTable({
     id: v.string(),

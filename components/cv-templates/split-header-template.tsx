@@ -262,6 +262,7 @@ const sectionTitles: Record<CvOverrideSection, string> = {
   experiences: "Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Skills",
 }
 
@@ -395,6 +396,36 @@ function renderSkillEntries(model: CvRenderModel) {
   )
 }
 
+function renderAchievementEntries(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return null
+  }
+
+  return (
+    <section className="split-header-section" aria-label="Achievements">
+      <h2 className="split-header-section-title">{sectionTitles.achievements}</h2>
+      <ul className="split-header-bullet-list">
+        {model.achievements.map((achievement) => (
+          <li key={achievement.id}>
+            <strong>{achievement.title}</strong>
+            {achievement.description ? <span>: {achievement.description}</span> : null}
+            {achievement.link_url ? (
+              <span>
+                {" "}
+                (
+                <a href={achievement.link_url}>
+                  {achievement.link_label || achievement.link_url}
+                </a>
+                )
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function renderSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -405,6 +436,8 @@ function renderSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjectEntries(model)
     case "education":
       return renderEducationEntries(model)
+    case "achievements":
+      return renderAchievementEntries(model)
     case "skills":
       return renderSkillEntries(model)
     default:
@@ -585,6 +618,29 @@ function renderSkillEntriesHtml(model: CvRenderModel) {
   `
 }
 
+function renderAchievementEntriesHtml(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return ""
+  }
+
+  return `
+    <section class="split-header-section" aria-label="Achievements">
+      <h2 class="split-header-section-title">${sectionTitles.achievements}</h2>
+      <ul class="split-header-bullet-list">
+        ${model.achievements
+          .map((achievement) => {
+            const linkLabel = achievement.link_label || achievement.link_url
+            const link = achievement.link_url
+              ? ` (<a href="${escapeHtml(achievement.link_url)}">${escapeHtml(linkLabel)}</a>)`
+              : ""
+            return `<li><strong>${escapeHtml(achievement.title)}</strong>${achievement.description ? `: ${escapeHtml(achievement.description)}` : ""}${link}</li>`
+          })
+          .join("")}
+      </ul>
+    </section>
+  `
+}
+
 function renderHtmlSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -595,6 +651,8 @@ function renderHtmlSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjectEntriesHtml(model)
     case "education":
       return renderEducationEntriesHtml(model)
+    case "achievements":
+      return renderAchievementEntriesHtml(model)
     case "skills":
       return renderSkillEntriesHtml(model)
     default:

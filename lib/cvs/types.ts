@@ -2,6 +2,7 @@ import type {
   ContactData,
   EducationData,
   ExperienceData,
+  AchievementData,
   PersonalData,
   ProjectData,
   SkillData,
@@ -12,6 +13,7 @@ export type CvOverrideSection =
   | "experiences"
   | "projects"
   | "education"
+  | "achievements"
   | "skills"
 
 export type CvExportFormat = "pdf" | "html" | "json" | "markdown"
@@ -21,6 +23,7 @@ export type CvSelections = {
   experiences: string[] | null
   projects: string[] | null
   education: string[] | null
+  achievements: string[] | null
   skills: string[] | null
 }
 
@@ -35,6 +38,9 @@ export type CvProjectContentOverride = Partial<
 export type CvEducationContentOverride = Partial<
   Pick<EducationData, "institution" | "degree" | "start_date" | "end_date" | "details">
 >
+export type CvAchievementContentOverride = Partial<
+  Pick<AchievementData, "title" | "description" | "link_url" | "link_label">
+>
 export type CvSkillContentOverride = Partial<Pick<SkillData, "name" | "category" | "level">>
 
 export type CvContentOverrides = {
@@ -43,6 +49,7 @@ export type CvContentOverrides = {
   experiences: Record<string, CvExperienceContentOverride>
   projects: Record<string, CvProjectContentOverride>
   education: Record<string, CvEducationContentOverride>
+  achievements: Record<string, CvAchievementContentOverride>
   skills: Record<string, CvSkillContentOverride>
 }
 
@@ -93,6 +100,7 @@ export type CvRenderEducation = Omit<EducationData, "end_date"> & {
 }
 
 export type CvRenderSkill = SkillData
+export type CvRenderAchievement = AchievementData
 
 export type CvRenderModel = {
   meta: {
@@ -110,6 +118,7 @@ export type CvRenderModel = {
   experiences: CvRenderExperience[]
   projects: CvRenderProject[]
   education: CvRenderEducation[]
+  achievements: CvRenderAchievement[]
   skills: CvRenderSkill[]
   section_order: CvOverrideSection[]
   hidden_sections: CvOverrideSection[]
@@ -120,6 +129,7 @@ export type CvPreview = {
   experienceCount: number
   projectCount: number
   educationCount: number
+  achievementCount: number
   skillCount: number
   totalItemCount: number
   visibleSectionCount: number
@@ -131,6 +141,7 @@ export const cvOverrideSections: CvOverrideSection[] = [
   "experiences",
   "projects",
   "education",
+  "achievements",
   "skills",
 ]
 
@@ -140,6 +151,7 @@ export const emptyCvContentOverrides: CvContentOverrides = {
   experiences: {},
   projects: {},
   education: {},
+  achievements: {},
   skills: {},
 }
 
@@ -151,6 +163,7 @@ export const defaultCvOverrides: CvOverrides = {
     experiences: null,
     projects: null,
     education: null,
+    achievements: null,
     skills: null,
   },
   content: emptyCvContentOverrides,

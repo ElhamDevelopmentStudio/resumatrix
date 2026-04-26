@@ -20,6 +20,7 @@ import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
 import type { RewriteSuggestion } from "@/lib/ai/types"
 import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import type {
+  CvAchievementContentOverride,
   CvContactContentOverride,
   CvEducationContentOverride,
   CvExperienceContentOverride,
@@ -34,6 +35,7 @@ type ContentSectionKey =
   | "experiences"
   | "projects"
   | "education"
+  | "achievements"
   | "skills"
 
 type SelectableSectionKey = Exclude<ContentSectionKey, "header">
@@ -47,6 +49,7 @@ type CvContentEditorProps = {
   onExperienceChange: (id: string, patch: CvExperienceContentOverride) => void
   onProjectChange: (id: string, patch: CvProjectContentOverride) => void
   onEducationChange: (id: string, patch: CvEducationContentOverride) => void
+  onAchievementChange: (id: string, patch: CvAchievementContentOverride) => void
   onSkillChange: (id: string, patch: CvSkillContentOverride) => void
   onOpenLayout: () => void
   onOpenItems: () => void
@@ -151,6 +154,7 @@ export function CvContentEditor({
   onExperienceChange,
   onProjectChange,
   onEducationChange,
+  onAchievementChange,
   onSkillChange,
   onOpenLayout,
   onOpenItems,
@@ -440,6 +444,7 @@ export function CvContentEditor({
   const selectedExperience = getCurrentItem(model.experiences, selectedItemIds.experiences)
   const selectedProject = getCurrentItem(model.projects, selectedItemIds.projects)
   const selectedEducation = getCurrentItem(model.education, selectedItemIds.education)
+  const selectedAchievement = getCurrentItem(model.achievements, selectedItemIds.achievements)
   const selectedSkill = getCurrentItem(model.skills, selectedItemIds.skills)
 
   return (
@@ -475,6 +480,9 @@ export function CvContentEditor({
             </TabsTrigger>
             <TabsTrigger value="education" className="rounded-none px-3 py-2 text-sm">
               Education
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="rounded-none px-3 py-2 text-sm">
+              Achievements
             </TabsTrigger>
             <TabsTrigger value="skills" className="rounded-none px-3 py-2 text-sm">
               Skills
@@ -1054,6 +1062,107 @@ export function CvContentEditor({
             ) : (
               <EmptySectionNotice
                 message="No education entries are showing in this CV right now. Turn one on when you want to edit it here."
+                onOpenItems={onOpenItems}
+              />
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="achievements" className="mt-0 outline-none">
+          <div className="space-y-4">
+            <SectionIntro
+              title="Achievements"
+              description="Choose one achievement, then adjust its title, description, or proof link for this CV."
+              count={model.achievements.length}
+              hidden={hiddenSectionSet.has("achievements")}
+            />
+
+            {hiddenSectionSet.has("achievements") ? <HiddenNotice onOpenLayout={onOpenLayout} /> : null}
+
+            {selectedAchievement ? (
+              <>
+                <div className="space-y-2">
+                  <FieldLabel className="text-sm font-medium text-on-surface">Editing</FieldLabel>
+                  <NativeSelect
+                    value={selectedAchievement.id}
+                    onChange={(event) =>
+                      setSelectedItemIds((current) => ({
+                        ...current,
+                        achievements: event.target.value,
+                      }))
+                    }
+                    className={selectClassName}
+                  >
+                    {model.achievements.map((achievement) => (
+                      <NativeSelectOption key={achievement.id} value={achievement.id}>
+                        {achievement.title || "Achievement"}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </div>
+
+                <Card className={panelClassName}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Title</FieldLabel>
+                      <Input
+                        value={selectedAchievement.title}
+                        onChange={(event) =>
+                          onAchievementChange(selectedAchievement.id, { title: event.target.value })
+                        }
+                        placeholder="ICPC World Finalist"
+                        className={inputClassName}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <FieldLabel className="text-sm font-medium text-on-surface">Description</FieldLabel>
+                      <Textarea
+                        value={selectedAchievement.description}
+                        onChange={(event) =>
+                          onAchievementChange(selectedAchievement.id, {
+                            description: event.target.value,
+                          })
+                        }
+                        placeholder="Qualified among the top global competitive programming teams."
+                        className={textareaClassName}
+                      />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.6fr)]">
+                      <div className="space-y-2">
+                        <FieldLabel className="text-sm font-medium text-on-surface">Link</FieldLabel>
+                        <Input
+                          value={selectedAchievement.link_url}
+                          onChange={(event) =>
+                            onAchievementChange(selectedAchievement.id, {
+                              link_url: event.target.value,
+                            })
+                          }
+                          placeholder="https://example.com"
+                          className={inputClassName}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <FieldLabel className="text-sm font-medium text-on-surface">Link label</FieldLabel>
+                        <Input
+                          value={selectedAchievement.link_label}
+                          onChange={(event) =>
+                            onAchievementChange(selectedAchievement.id, {
+                              link_label: event.target.value,
+                            })
+                          }
+                          placeholder="Contest page"
+                          className={inputClassName}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <EmptySectionNotice
+                message="No achievements are showing in this CV right now. Turn one on when you want to edit it here."
                 onOpenItems={onOpenItems}
               />
             )}

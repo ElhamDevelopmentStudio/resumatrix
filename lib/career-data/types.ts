@@ -39,6 +39,14 @@ export type EducationData = {
   details: string
 }
 
+export type AchievementData = {
+  id: string
+  title: string
+  description: string
+  link_url: string
+  link_label: string
+}
+
 export type SkillData = {
   id: string
   name: string
@@ -50,6 +58,7 @@ export type ContactPayload = Omit<ContactData, "id">
 export type ExperiencePayload = Omit<ExperienceData, "id">
 export type ProjectPayload = Omit<ProjectData, "id">
 export type EducationPayload = Omit<EducationData, "id">
+export type AchievementPayload = Omit<AchievementData, "id">
 export type SkillPayload = Omit<SkillData, "id">
 
 export type CareerWorkspaceData = {
@@ -58,6 +67,7 @@ export type CareerWorkspaceData = {
   experiences: ExperienceData[]
   projects: ProjectData[]
   education: EducationData[]
+  achievements: AchievementData[]
   skills: SkillData[]
 }
 
@@ -119,6 +129,7 @@ export type SectionKey =
   | "experiences"
   | "projects"
   | "education"
+  | "achievements"
   | "skills"
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error"

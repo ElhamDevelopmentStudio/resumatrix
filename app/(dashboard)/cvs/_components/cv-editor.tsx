@@ -34,6 +34,7 @@ import { getCvSectionLabel } from "@/lib/cvs/presentation"
 import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import {
   type CvContactContentOverride,
+  type CvAchievementContentOverride,
   type CvData,
   type CvEducationContentOverride,
   type CvExperienceContentOverride,
@@ -160,6 +161,7 @@ function buildSelectionSections(
   const automaticExperienceIds = new Set(automaticDataset.experiences.map((entry) => entry.id))
   const automaticProjectIds = new Set(automaticDataset.projects.map((project) => project.id))
   const automaticEducationIds = new Set(automaticDataset.education.map((entry) => entry.id))
+  const automaticAchievementIds = new Set(automaticDataset.achievements.map((entry) => entry.id))
   const automaticSkillIds = new Set(automaticDataset.skills.map((skill) => skill.id))
 
   return [
@@ -284,6 +286,36 @@ function buildSelectionSections(
       })),
     },
     {
+      key: "achievements",
+      label: "Achievements",
+      itemLabel: "achievement",
+      description:
+        "Profile matches stay on by default. Switch to choosing by hand if you want to add or remove specific achievements for this CV.",
+      helper:
+        payload.overrides.selections.achievements === null
+          ? buildAutomaticHelper(
+              "achievement",
+              "achievements",
+              automaticDataset.achievements.length,
+              allItemsDataset.achievements.length
+            )
+          : buildCustomHelper(
+              "achievements",
+              payload.overrides.selections.achievements.length,
+              allItemsDataset.achievements.length
+            ),
+      currentCount: counts.achievements,
+      automaticCount: automaticDataset.achievements.length,
+      selection: payload.overrides.selections.achievements,
+      items: allItemsDataset.achievements.map((achievement) => ({
+        id: achievement.id,
+        title: achievement.title || "Achievement",
+        description: achievement.description || "No description added",
+        meta: [achievement.link_label || achievement.link_url].filter(Boolean),
+        available: automaticAchievementIds.has(achievement.id),
+      })),
+    },
+    {
       key: "skills",
       label: "Skills",
       itemLabel: "skill",
@@ -376,6 +408,7 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
       experiences: renderModel.experiences.length,
       projects: renderModel.projects.length,
       education: renderModel.education.length,
+      achievements: renderModel.achievements.length,
       skills: renderModel.skills.length,
     })
   }, [allItemsDataset, automaticSelectionDataset, renderModel, state])
@@ -702,6 +735,9 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                     }
                     onEducationChange={(id, patch: CvEducationContentOverride) =>
                       updateContentItem("education", id, patch)
+                    }
+                    onAchievementChange={(id, patch: CvAchievementContentOverride) =>
+                      updateContentItem("achievements", id, patch)
                     }
                     onSkillChange={(id, patch: CvSkillContentOverride) =>
                       updateContentItem("skills", id, patch)

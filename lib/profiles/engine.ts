@@ -18,6 +18,7 @@ type ProfileCollections = {
   matchingProjects: ProjectData[]
   visibleProjects: ProjectData[]
   education: EducationData[]
+  achievements: CareerWorkspaceData["achievements"]
   skills: CareerWorkspaceData["skills"]
   contacts: CareerWorkspaceData["contacts"]
 }
@@ -134,6 +135,10 @@ function buildProfileCollections(
     careerData.skills,
     getProfileSelection(profile, "skills")
   )
+  const achievements = filterEntriesBySelection(
+    careerData.achievements,
+    getProfileSelection(profile, "achievements")
+  )
   const contacts = filterEntriesBySelection(
     careerData.contacts,
     getProfileSelection(profile, "contacts")
@@ -145,6 +150,7 @@ function buildProfileCollections(
     matchingProjects,
     visibleProjects,
     education,
+    achievements,
     skills,
     contacts,
   }
@@ -162,6 +168,7 @@ export function buildProfileDataset(
     experiences: collections.visibleExperiences,
     projects: collections.visibleProjects,
     education: collections.education,
+    achievements: collections.achievements,
     skills: collections.skills,
   }
 }
@@ -178,12 +185,14 @@ export function buildProfilePreview(
     matchedProjects: collections.matchingProjects.length,
     displayedProjects: collections.visibleProjects.length,
     educationCount: collections.education.length,
+    achievementCount: collections.achievements.length,
     skillsCount: collections.skills.length,
     contactsCount: collections.contacts.length,
     totalDisplayedItems:
       collections.visibleExperiences.length +
       collections.visibleProjects.length +
       collections.education.length +
+      collections.achievements.length +
       collections.skills.length +
       collections.contacts.length,
     primaryMatchCount:

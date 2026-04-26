@@ -80,6 +80,7 @@ export default async function DashboardPage() {
       careerData.experiences.length +
       careerData.projects.length +
       careerData.education.length +
+      careerData.achievements.length +
       careerData.skills.length >
       0
 

@@ -28,7 +28,7 @@ export function SkillsSection() {
   return (
     <CareerSectionCard
       id="career-section-skills"
-      step="06"
+      step="07"
       title="Skills"
       description="Skills, categories, and optional levels for later filtering."
       summary={summary}

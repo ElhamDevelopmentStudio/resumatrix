@@ -1,5 +1,6 @@
 import type { PersonalData } from "@/lib/career-data/types"
 import type {
+  AchievementDraft,
   ContactDraft,
   EducationDraft,
   ExperienceDraft,
@@ -29,6 +30,10 @@ export type ProjectErrorState = {
 export type EducationErrorState = {
   institution?: string
   degree?: string
+}
+
+export type AchievementErrorState = {
+  title?: string
 }
 
 export type SkillErrorState = {
@@ -124,6 +129,25 @@ export function validateEducation(education: EducationDraft): EducationErrorStat
   return {
     institution: hasText(education.institution) ? undefined : "Enter the school or institution.",
     degree: hasText(education.degree) ? undefined : "Enter the degree or program.",
+  }
+}
+
+export function isBlankAchievement(achievement: AchievementDraft) {
+  return ![
+    achievement.title,
+    achievement.description,
+    achievement.link_url,
+    achievement.link_label,
+  ].some(hasText)
+}
+
+export function validateAchievement(achievement: AchievementDraft): AchievementErrorState {
+  if (isBlankAchievement(achievement)) {
+    return {}
+  }
+
+  return {
+    title: hasText(achievement.title) ? undefined : "Enter an achievement title.",
   }
 }
 

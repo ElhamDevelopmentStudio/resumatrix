@@ -1,6 +1,8 @@
 import { makeFunctionReference } from "convex/server"
 
 import type {
+  AchievementData,
+  AchievementPayload,
   CareerWorkspaceData,
   ContactData,
   ContactPayload,
@@ -75,6 +77,20 @@ export const convexFunctionReferences = {
     >("career_data:updateEducation"),
     deleteEducation: makeFunctionReference<"mutation", { id: string }, EducationData | null>(
       "career_data:deleteEducation"
+    ),
+    listAchievements: makeFunctionReference<"query", EmptyArgs, AchievementData[]>(
+      "career_data:listAchievements"
+    ),
+    createAchievement: makeFunctionReference<"mutation", AchievementData, AchievementData>(
+      "career_data:createAchievement"
+    ),
+    updateAchievement: makeFunctionReference<
+      "mutation",
+      { id: string; payload: AchievementPayload },
+      AchievementData | null
+    >("career_data:updateAchievement"),
+    deleteAchievement: makeFunctionReference<"mutation", { id: string }, AchievementData | null>(
+      "career_data:deleteAchievement"
     ),
     listSkills: makeFunctionReference<"query", EmptyArgs, SkillData[]>("career_data:listSkills"),
     createSkill: makeFunctionReference<"mutation", SkillData, SkillData>("career_data:createSkill"),

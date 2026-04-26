@@ -278,6 +278,7 @@ const sectionTitles: Record<Exclude<CvOverrideSection, "contacts">, string> = {
   experiences: "Professional Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Skills",
 }
 
@@ -480,6 +481,35 @@ function renderSkillsSection(model: CvRenderModel) {
   )
 }
 
+function renderAchievementsSection(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return null
+  }
+
+  return (
+    <section className="teal-timeline-section" aria-label={sectionTitles.achievements}>
+      <h2 className="teal-timeline-section-title">{sectionTitles.achievements}</h2>
+      <div className="teal-timeline-timeline">
+        {model.achievements.map((achievement) => (
+          <article key={achievement.id} className="teal-timeline-entry">
+            <div className="teal-timeline-entry-heading">
+              <h3 className="teal-timeline-entry-title">{achievement.title || "Achievement"}</h3>
+              {achievement.link_url ? (
+                <p className="teal-timeline-entry-accent">
+                  <a href={achievement.link_url}>{achievement.link_label || achievement.link_url}</a>
+                </p>
+              ) : null}
+            </div>
+            {achievement.description ? (
+              <p className="teal-timeline-entry-subtitle">{achievement.description}</p>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function renderSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -490,6 +520,8 @@ function renderSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjectsSection(model)
     case "education":
       return renderEducationSection(model)
+    case "achievements":
+      return renderAchievementsSection(model)
     case "skills":
       return renderSkillsSection(model)
     default:
@@ -697,6 +729,34 @@ function renderSkillsSectionHtml(model: CvRenderModel) {
   `
 }
 
+function renderAchievementsSectionHtml(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return ""
+  }
+
+  return `
+    <section class="teal-timeline-section" aria-label="${sectionTitles.achievements}">
+      <h2 class="teal-timeline-section-title">${sectionTitles.achievements}</h2>
+      <div class="teal-timeline-timeline">
+        ${model.achievements
+          .map((achievement) => {
+            const linkLabel = achievement.link_label || achievement.link_url
+            return `
+              <article class="teal-timeline-entry">
+                <div class="teal-timeline-entry-heading">
+                  <h3 class="teal-timeline-entry-title">${escapeHtml(achievement.title || "Achievement")}</h3>
+                  ${achievement.link_url ? `<p class="teal-timeline-entry-accent"><a href="${escapeHtml(achievement.link_url)}">${escapeHtml(linkLabel)}</a></p>` : ""}
+                </div>
+                ${achievement.description ? `<p class="teal-timeline-entry-subtitle">${escapeHtml(achievement.description)}</p>` : ""}
+              </article>
+            `
+          })
+          .join("")}
+      </div>
+    </section>
+  `
+}
+
 function renderSectionHtml(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -707,6 +767,8 @@ function renderSectionHtml(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjectsSectionHtml(model)
     case "education":
       return renderEducationSectionHtml(model)
+    case "achievements":
+      return renderAchievementsSectionHtml(model)
     case "skills":
       return renderSkillsSectionHtml(model)
     default:

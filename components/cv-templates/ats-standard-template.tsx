@@ -224,6 +224,7 @@ const sectionTitles: Record<CvOverrideSection, string> = {
   experiences: "Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Skills",
 }
 
@@ -364,6 +365,36 @@ function renderSkills(model: CvRenderModel) {
   )
 }
 
+function renderAchievements(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return null
+  }
+
+  return (
+    <section className="cv-section" aria-label="Achievements">
+      <h2 className="cv-section-title">{sectionTitles.achievements}</h2>
+      <ul className="cv-bullet-list">
+        {model.achievements.map((achievement) => (
+          <li key={achievement.id}>
+            <strong>{achievement.title}</strong>
+            {achievement.description ? <span>: {achievement.description}</span> : null}
+            {achievement.link_url ? (
+              <span>
+                {" "}
+                (
+                <a href={achievement.link_url}>
+                  {achievement.link_label || achievement.link_url}
+                </a>
+                )
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function renderSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -374,6 +405,8 @@ function renderSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjects(model)
     case "education":
       return renderEducation(model)
+    case "achievements":
+      return renderAchievements(model)
     case "skills":
       return renderSkills(model)
     default:
@@ -582,6 +615,29 @@ function renderSkillsHtml(model: CvRenderModel) {
   `
 }
 
+function renderAchievementsHtml(model: CvRenderModel) {
+  if (!model.achievements.length) {
+    return ""
+  }
+
+  return `
+    <section class="cv-section" aria-label="Achievements">
+      <h2 class="cv-section-title">${sectionTitles.achievements}</h2>
+      <ul class="cv-bullet-list">
+        ${model.achievements
+          .map((achievement) => {
+            const linkLabel = achievement.link_label || achievement.link_url
+            const link = achievement.link_url
+              ? ` (<a href="${escapeHtml(achievement.link_url)}">${escapeHtml(linkLabel)}</a>)`
+              : ""
+            return `<li><strong>${escapeHtml(achievement.title)}</strong>${achievement.description ? `: ${escapeHtml(achievement.description)}` : ""}${link}</li>`
+          })
+          .join("")}
+      </ul>
+    </section>
+  `
+}
+
 function renderHtmlSection(section: CvOverrideSection, model: CvRenderModel) {
   switch (section) {
     case "contacts":
@@ -592,6 +648,8 @@ function renderHtmlSection(section: CvOverrideSection, model: CvRenderModel) {
       return renderProjectsHtml(model)
     case "education":
       return renderEducationHtml(model)
+    case "achievements":
+      return renderAchievementsHtml(model)
     case "skills":
       return renderSkillsHtml(model)
     default:

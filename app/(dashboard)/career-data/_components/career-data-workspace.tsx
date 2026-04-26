@@ -12,6 +12,7 @@ import { Progress, ProgressLabel } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import type { CareerWorkspaceData, SectionKey } from "@/lib/career-data/types"
 import {
+  isBlankAchievement,
   isBlankContact,
   isBlankEducation,
   isBlankExperience,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/career-data/workspace-store"
 
 import { CareerDataSectionNav } from "./career-data-section-nav"
+import { AchievementsSection } from "./achievements-section"
 import { ContactsSection } from "./contacts-section"
 import { EducationSection } from "./education-section"
 import { ExperienceSection } from "./experience-section"
@@ -38,6 +40,7 @@ const sectionLabels: Record<SectionKey, string> = {
   experiences: "Experience",
   projects: "Projects",
   education: "Education",
+  achievements: "Achievements",
   skills: "Skills",
 }
 
@@ -47,7 +50,8 @@ const sectionSteps: Record<SectionKey, string> = {
   experiences: "03",
   projects: "04",
   education: "05",
-  skills: "06",
+  achievements: "06",
+  skills: "07",
 }
 
 const sectionIds: Record<SectionKey, string> = {
@@ -56,6 +60,7 @@ const sectionIds: Record<SectionKey, string> = {
   experiences: "career-section-experience",
   projects: "career-section-projects",
   education: "career-section-education",
+  achievements: "career-section-achievements",
   skills: "career-section-skills",
 }
 
@@ -82,6 +87,7 @@ function CareerDataWorkspaceContent({
   const saveExperiences = useCareerDataStore((state) => state.saveExperiences)
   const saveProjects = useCareerDataStore((state) => state.saveProjects)
   const saveEducation = useCareerDataStore((state) => state.saveEducation)
+  const saveAchievements = useCareerDataStore((state) => state.saveAchievements)
   const saveSkills = useCareerDataStore((state) => state.saveSkills)
 
   const isLoading = useCareerDataStore((state) => state.isLoading)
@@ -94,6 +100,7 @@ function CareerDataWorkspaceContent({
   const experiences = useCareerDataStore((state) => state.experiences)
   const projects = useCareerDataStore((state) => state.projects)
   const education = useCareerDataStore((state) => state.education)
+  const achievements = useCareerDataStore((state) => state.achievements)
   const skills = useCareerDataStore((state) => state.skills)
 
   useEffect(() => {
@@ -109,6 +116,7 @@ function CareerDataWorkspaceContent({
   useCareerDataAutosave({ enabled: !isLoading, value: experiences, save: saveExperiences })
   useCareerDataAutosave({ enabled: !isLoading, value: projects, save: saveProjects })
   useCareerDataAutosave({ enabled: !isLoading, value: education, save: saveEducation })
+  useCareerDataAutosave({ enabled: !isLoading, value: achievements, save: saveAchievements })
   useCareerDataAutosave({ enabled: !isLoading, value: skills, save: saveSkills })
 
   const sectionCounts = useMemo(
@@ -118,13 +126,14 @@ function CareerDataWorkspaceContent({
       experiences: experiences.filter((entry) => !isBlankExperience(entry)).length,
       projects: projects.filter((entry) => !isBlankProject(entry)).length,
       education: education.filter((entry) => !isBlankEducation(entry)).length,
+      achievements: achievements.filter((entry) => !isBlankAchievement(entry)).length,
       skills: skills.filter((entry) => !isBlankSkill(entry)).length,
     }),
-    [contacts, education, experiences, personal, projects, skills]
+    [achievements, contacts, education, experiences, personal, projects, skills]
   )
 
   const completedSections = Object.values(sectionCounts).filter((count) => count > 0).length
-  const progressValue = Math.round((completedSections / 6) * 100)
+  const progressValue = Math.round((completedSections / 7) * 100)
   const activeSection = expandedSections[0] ?? null
   const hasActiveSave = Object.values(sectionMeta).some((meta) => meta.status === "saving")
   const hasSaveError = Object.values(sectionMeta).some((meta) => meta.status === "error")
@@ -175,6 +184,15 @@ function CareerDataWorkspaceContent({
         countLabel: pluralize(sectionCounts.education, "entry"),
         meta: sectionMeta.education,
         isActive: activeSection === "education",
+      },
+      {
+        key: "achievements" as const,
+        step: sectionSteps.achievements,
+        label: sectionLabels.achievements,
+        helper: "Awards, rankings, and recognitions.",
+        countLabel: pluralize(sectionCounts.achievements, "entry"),
+        meta: sectionMeta.achievements,
+        isActive: activeSection === "achievements",
       },
       {
         key: "skills" as const,
@@ -280,7 +298,7 @@ function CareerDataWorkspaceContent({
           <div className="flex w-full items-center justify-between gap-3">
             <ProgressLabel className="text-sm font-medium text-on-surface">Progress</ProgressLabel>
             <span className="text-sm text-on-surface-variant/75">
-              {completedSections} of 6 sections started
+              {completedSections} of 7 sections started
             </span>
           </div>
         </Progress>
@@ -306,6 +324,7 @@ function CareerDataWorkspaceContent({
         <ExperienceSection />
         <ProjectsSection />
         <EducationSection />
+        <AchievementsSection />
         <SkillsSection />
       </div>
     </main>

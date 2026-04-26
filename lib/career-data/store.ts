@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto"
 import { unstable_noStore as noStore } from "next/cache"
 
 import {
+  type AchievementData,
+  type AchievementPayload,
   emptyPersonalData,
   type CareerWorkspaceData,
   type ContactData,
@@ -22,7 +24,13 @@ import {
 import { createConvexClient } from "@/lib/convex/client"
 import { convexFunctionReferences } from "@/lib/convex/function-references"
 
-type CollectionKey = "contacts" | "experiences" | "projects" | "education" | "skills"
+type CollectionKey =
+  | "contacts"
+  | "experiences"
+  | "projects"
+  | "education"
+  | "achievements"
+  | "skills"
 
 type CollectionItem<K extends CollectionKey> = CareerWorkspaceData[K][number]
 type CollectionPayload<K extends CollectionKey> = Omit<CollectionItem<K>, "id">
@@ -53,6 +61,7 @@ function buildDefaultWorkspace(): CareerWorkspaceData {
     experiences: [],
     projects: [],
     education: [],
+    achievements: [],
     skills: [],
   }
 }
@@ -156,6 +165,25 @@ function sanitizeEducation(value: unknown): EducationData[] {
     }))
 }
 
+function sanitizeAchievements(value: unknown): AchievementData[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter(
+      (achievement): achievement is AchievementData =>
+        typeof achievement?.id === "string" && typeof achievement?.title === "string"
+    )
+    .map((achievement) => ({
+      id: achievement.id,
+      title: readText(achievement.title),
+      description: readText(achievement.description),
+      link_url: readText(achievement.link_url),
+      link_label: readText(achievement.link_label),
+    }))
+}
+
 function sanitizeSkills(value: unknown): SkillData[] {
   if (!Array.isArray(value)) {
     return []
@@ -187,6 +215,7 @@ function sanitizeWorkspace(value: unknown): CareerWorkspaceData {
     experiences: sanitizeExperiences(nextValue.experiences),
     projects: sanitizeProjects(nextValue.projects),
     education: sanitizeEducation(nextValue.education),
+    achievements: sanitizeAchievements(nextValue.achievements),
     skills: sanitizeSkills(nextValue.skills),
   }
 }
@@ -215,6 +244,10 @@ async function listCollection<K extends CollectionKey>(key: K): Promise<CareerWo
     case "education":
       return sanitizeEducation(
         await client.query(convexFunctionReferences.careerData.listEducation, {})
+      ) as CareerWorkspaceData[K]
+    case "achievements":
+      return sanitizeAchievements(
+        await client.query(convexFunctionReferences.careerData.listAchievements, {})
       ) as CareerWorkspaceData[K]
     case "skills":
       return sanitizeSkills(
@@ -285,6 +318,19 @@ async function createCollectionItem<K extends CollectionKey>(
 
       return sanitizeEducation([
         await client.mutation(convexFunctionReferences.careerData.createEducation, nextItem),
+      ])[0] as CollectionItem<K>
+    }
+    case "achievements": {
+      const nextItem: AchievementData = {
+        id: randomUUID(),
+        title: readText((payload as unknown as AchievementPayload).title),
+        description: readText((payload as unknown as AchievementPayload).description),
+        link_url: readText((payload as unknown as AchievementPayload).link_url),
+        link_label: readText((payload as unknown as AchievementPayload).link_label),
+      }
+
+      return sanitizeAchievements([
+        await client.mutation(convexFunctionReferences.careerData.createAchievement, nextItem),
       ])[0] as CollectionItem<K>
     }
     case "skills": {
@@ -367,6 +413,19 @@ async function updateCollectionItem<K extends CollectionKey>(
       })
       return sanitizeEducation(education ? [education] : [])[0] as CollectionItem<K> | null
     }
+    case "achievements": {
+      const nextPayload: AchievementPayload = {
+        title: readText((payload as unknown as AchievementPayload).title),
+        description: readText((payload as unknown as AchievementPayload).description),
+        link_url: readText((payload as unknown as AchievementPayload).link_url),
+        link_label: readText((payload as unknown as AchievementPayload).link_label),
+      }
+      const achievement = await client.mutation(convexFunctionReferences.careerData.updateAchievement, {
+        id,
+        payload: nextPayload,
+      })
+      return sanitizeAchievements(achievement ? [achievement] : [])[0] as CollectionItem<K> | null
+    }
     case "skills": {
       const nextPayload: SkillPayload = {
         name: readText((payload as unknown as SkillPayload).name),
@@ -408,6 +467,10 @@ async function deleteCollectionItem<K extends CollectionKey>(
     case "education": {
       const education = await client.mutation(convexFunctionReferences.careerData.deleteEducation, { id })
       return sanitizeEducation(education ? [education] : [])[0] as CollectionItem<K> | null
+    }
+    case "achievements": {
+      const achievement = await client.mutation(convexFunctionReferences.careerData.deleteAchievement, { id })
+      return sanitizeAchievements(achievement ? [achievement] : [])[0] as CollectionItem<K> | null
     }
     case "skills": {
       const skill = await client.mutation(convexFunctionReferences.careerData.deleteSkill, { id })
@@ -502,6 +565,22 @@ export function updateEducationData(id: string, payload: EducationPayload) {
 
 export function deleteEducationData(id: string) {
   return deleteCollectionItem("education", id)
+}
+
+export function listAchievements() {
+  return listCollection("achievements")
+}
+
+export function createAchievementData(payload: AchievementPayload) {
+  return createCollectionItem("achievements", payload)
+}
+
+export function updateAchievementData(id: string, payload: AchievementPayload) {
+  return updateCollectionItem("achievements", id, payload)
+}
+
+export function deleteAchievementData(id: string) {
+  return deleteCollectionItem("achievements", id)
 }
 
 export function listSkills() {
