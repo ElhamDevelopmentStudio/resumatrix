@@ -19,6 +19,7 @@ export type CvValidationErrors = {
   name?: string
   profile_id?: string
   template_id?: string
+  region_id?: string
 }
 
 function readText(value: unknown) {
@@ -326,6 +327,7 @@ export function normalizeCvPayload(value: unknown): CvPayload {
     name: readText(nextValue.name),
     profile_id: readText(nextValue.profile_id),
     template_id: readText(nextValue.template_id),
+    region_id: readText(nextValue.region_id),
     overrides: normalizeCvOverrides(nextValue.overrides),
   }
 }
@@ -349,7 +351,7 @@ export function validateCvPayload(payload: CvPayload): CvValidationErrors {
 }
 
 export function hasCvValidationErrors(errors: CvValidationErrors) {
-  return Boolean(errors.name || errors.profile_id || errors.template_id)
+  return Boolean(errors.name || errors.profile_id || errors.template_id || errors.region_id)
 }
 
 export function getFirstCvValidationMessage(errors: CvValidationErrors) {
@@ -357,6 +359,7 @@ export function getFirstCvValidationMessage(errors: CvValidationErrors) {
     errors.name ??
     errors.profile_id ??
     errors.template_id ??
+    errors.region_id ??
     "Check the CV details and try again."
   )
 }

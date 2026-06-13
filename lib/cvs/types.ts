@@ -58,6 +58,7 @@ export type CvData = {
   name: string
   profile_id: string
   template_id: string
+  region_id: string
   overrides: CvOverrides
   created_at: string
   updated_at: string
@@ -159,6 +160,7 @@ export const emptyCvPayload: CvPayload = {
   name: "",
   profile_id: "",
   template_id: "",
+  region_id: "",
   overrides: defaultCvOverrides,
 }
 

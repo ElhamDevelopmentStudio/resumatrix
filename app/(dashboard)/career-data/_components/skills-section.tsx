@@ -1,21 +1,14 @@
 "use client"
 
 import { DynamicList } from "@/components/ui/dynamic-list"
-import { FieldError, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
-import { skillCategoryOptions, skillLevelOptions } from "@/lib/career-data/types"
 import { isBlankSkill } from "@/lib/career-data/validation"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
 
 import {
   emptyStateClassName,
-  fieldLabelClassName,
-  selectClassName,
-  textInputClassName,
 } from "./career-form-styles"
 import { CareerSectionCard } from "./career-section-card"
-import { ItemCard } from "./item-card"
+import { SkillsItem } from "./skills-item"
 import { SectionAddButton } from "./section-add-button"
 
 export function SkillsSection() {
@@ -52,67 +45,14 @@ export function SkillsSection() {
             Add the tools, technologies, and capabilities you may want to highlight later.
           </div>
         }
-        renderItem={(skill) => {
-          const nextErrors = skillErrors[skill.clientId] ?? {}
-
-          return (
-            <ItemCard
-              title={skill.name || "New skill"}
-              subtitle={skill.category || "Choose a category and optional level."}
-              onRemove={() => void removeSkill(skill.clientId)}
-              removeLabel={`Remove ${skill.name || "skill"}`}
-            >
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <FieldLabel className={fieldLabelClassName}>Skill</FieldLabel>
-                  <Input
-                    type="text"
-                    value={skill.name}
-                    onChange={(event) => updateSkillField(skill.clientId, "name", event.target.value)}
-                    aria-invalid={Boolean(nextErrors.name)}
-                    placeholder="e.g. React"
-                    className={textInputClassName}
-                  />
-                  <FieldError>{nextErrors.name}</FieldError>
-                </div>
-
-                <div className="space-y-2">
-                  <FieldLabel className={fieldLabelClassName}>Category</FieldLabel>
-                  <NativeSelect
-                    value={skill.category}
-                    onChange={(event) => updateSkillField(skill.clientId, "category", event.target.value)}
-                    aria-invalid={Boolean(nextErrors.category)}
-                    className={selectClassName}
-                  >
-                    <NativeSelectOption value="">Select category</NativeSelectOption>
-                    {skillCategoryOptions.map((option) => (
-                      <NativeSelectOption key={option} value={option}>
-                        {option}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                  <FieldError>{nextErrors.category}</FieldError>
-                </div>
-
-                <div className="space-y-2">
-                  <FieldLabel className={fieldLabelClassName}>Level</FieldLabel>
-                  <NativeSelect
-                    value={skill.level}
-                    onChange={(event) => updateSkillField(skill.clientId, "level", event.target.value)}
-                    className={selectClassName}
-                  >
-                    <NativeSelectOption value="">Optional</NativeSelectOption>
-                    {skillLevelOptions.map((option) => (
-                      <NativeSelectOption key={option} value={option}>
-                        {option}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </div>
-              </div>
-            </ItemCard>
-          )
-        }}
+        renderItem={(skill) => (
+          <SkillsItem
+            skill={skill}
+            errors={skillErrors[skill.clientId] ?? {}}
+            updateSkillField={updateSkillField}
+            removeSkill={removeSkill}
+          />
+        )}
       />
 
       <SectionAddButton label="Add skill" onClick={addSkill} />

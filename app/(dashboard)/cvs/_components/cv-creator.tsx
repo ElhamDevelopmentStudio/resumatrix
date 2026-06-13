@@ -70,6 +70,7 @@ export function CvCreator({ profiles, careerData, templates }: CvCreatorProps) {
       name: name.trim(),
       profile_id: profileId,
       template_id: templateId,
+      region_id: "",
       overrides: defaultCvOverrides,
     }),
     [name, profileId, templateId]
