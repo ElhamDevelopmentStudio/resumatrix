@@ -118,6 +118,10 @@ Set these environment variables in `.env` or `.env.local`:
 
 AI requests now use an env-based provider switch.
 
+Production AI requests run inside Convex actions, so set these provider variables on the
+Convex production deployment with `npx convex env set --prod`. Setting them only in
+Vercel is not enough for AI actions.
+
 ### Required AI variables
 
 | Variable | Description |
@@ -144,6 +148,9 @@ This app asks MiniMax to return raw JSON and validates it locally. That keeps `M
 | `GROQ_MODEL` | Groq model ID |
 | `GROQ_RESPONSE_FORMAT` | `json_schema` or `json_object` |
 | `GROQ_JSON_SCHEMA_STRICT` | `true` or `false` for Groq structured outputs |
+
+Use `GROQ_RESPONSE_FORMAT=json_object` for Groq models that do not support
+`json_schema` structured outputs.
 
 ### NVIDIA settings
 
