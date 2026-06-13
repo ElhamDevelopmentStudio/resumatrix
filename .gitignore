@@ -39,7 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# convex generated files
-convex/_generated/
-convex/tsconfig.json
