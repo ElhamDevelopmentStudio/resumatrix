@@ -36,6 +36,10 @@ const pdfDocumentHeadMarkup = `
 <style>
   @page {
     size: A4;
+    margin: 8mm 0 0;
+  }
+
+  @page:first {
     margin: 0;
   }
 
