@@ -50,6 +50,7 @@ Resumatrix stores career data, profiles, and CVs in Convex.
 
 - Local development uses the Convex dev deployment you start with `npm run convex:dev`.
 - The app needs `NEXT_PUBLIC_CONVEX_URL` set to the target Convex deployment.
+- Server-side production environments can set `CONVEX_URL` instead of, or alongside, `NEXT_PUBLIC_CONVEX_URL`.
 - If Convex also gives you `CONVEX_DEPLOYMENT` or `NEXT_PUBLIC_CONVEX_SITE_URL`, you can keep them, but this app does not require them.
 
 ## Import legacy local data into Convex
@@ -111,6 +112,7 @@ Set these environment variables in `.env` or `.env.local`:
 | `RESUMATRIX_AUTH_PASSWORD` | The password for that user |
 | `RESUMATRIX_SESSION_SECRET` | A long random string used to sign the session cookie |
 | `NEXT_PUBLIC_CONVEX_URL` | The Convex deployment URL used for app data |
+| `CONVEX_URL` | Optional server-side Convex deployment URL fallback for production runtimes |
 
 ### Local development fallback
 
