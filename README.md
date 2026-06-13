@@ -97,10 +97,11 @@ The importer looks for:
 
 ## PDF export requirements
 
-PDF export uses a local Chrome or Chromium installation through Puppeteer.
+PDF export uses Puppeteer.
 
-- If Chrome is installed in a standard location, no extra setup is needed.
-- If it is installed elsewhere, set `PUPPETEER_EXECUTABLE_PATH` in `.env` or `.env.local`.
+- On Vercel/Linux production, the app uses the bundled serverless Chromium package.
+- In local development, if Chrome is installed in a standard location, no extra setup is needed.
+- If local Chrome is installed elsewhere, set `PUPPETEER_EXECUTABLE_PATH` in `.env` or `.env.local`.
 
 ## Auth configuration
 

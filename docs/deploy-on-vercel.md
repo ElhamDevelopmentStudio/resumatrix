@@ -26,19 +26,11 @@ You will need:
 
 > This app supports **one authenticated user only**. There is no signup flow in production.
 
-## Important production caveat: PDF export
+## PDF export
 
-The current PDF export implementation in `lib/cvs/pdf.ts` looks for a system Chrome or Chromium binary at runtime.
+PDF export uses `puppeteer-core` with bundled `@sparticuz/chromium` for the Vercel/Linux runtime.
 
-**Inference from this repository plus Vercel's Puppeteer guide:** PDF export will likely fail on Vercel as-is, because the project currently uses `puppeteer-core` but does **not** bundle a Vercel-compatible Chromium package.
-
-What this means in practice:
-
-- the app itself can be deployed on Vercel,
-- HTML, Markdown, and JSON CV exports should still work,
-- **PDF export needs extra work** before you should rely on it in production.
-
-If you want PDF export on Vercel, update the implementation to use a Vercel-compatible approach such as `@sparticuz/chromium-min` with `puppeteer-core`, or use an external browser service.
+Local development can still use a system Chrome or Chromium binary. If Chrome is installed outside a standard location, set `PUPPETEER_EXECUTABLE_PATH` in `.env` or `.env.local`.
 
 ## 1. Create a Convex production deploy key
 
@@ -123,11 +115,11 @@ Run these checks after deploy:
 3. Sign in with the production username and password you configured.
 4. Open `/dashboard` and confirm the app loads.
 5. Open profiles and CV pages to confirm Convex-backed data loads correctly.
-6. Test non-PDF export formats first:
+6. Test export formats:
+   - PDF
    - HTML
    - Markdown
    - JSON
-7. Treat PDF export as unsupported on Vercel until the Puppeteer runtime is adapted.
 
 ## Optional: enable Preview Deployments with Convex
 
@@ -166,9 +158,7 @@ You are missing one or more of these production variables in Vercel:
 
 ### PDF export fails in production
 
-That is expected with the current implementation.
-
-This repository currently expects a system Chrome binary, while Vercel's Puppeteer guidance requires a Vercel-compatible Chromium setup for serverless deployments.
+Check the Vercel function logs first. The app bundles `@sparticuz/chromium` for Vercel/Linux, while local development can use `PUPPETEER_EXECUTABLE_PATH` when Chrome is installed outside a standard location.
 
 ## References
 

@@ -2,6 +2,7 @@ import { constants } from "node:fs"
 import { access } from "node:fs/promises"
 import path from "node:path"
 import puppeteer from "puppeteer-core"
+import chromium from "@sparticuz/chromium"
 
 import type { CvRenderModel } from "@/lib/cvs/types"
 import type { CvTemplateDefinition } from "@/lib/templates/types"
@@ -111,7 +112,13 @@ async function fileExists(pathname: string) {
   }
 }
 
-async function resolveChromeExecutablePath() {
+type BrowserLaunchConfig = {
+  args: string[]
+  executablePath: string
+  headless: true | "shell"
+}
+
+async function resolveLocalChromeExecutablePath() {
   for (const candidate of executablePathCandidates) {
     if (await fileExists(candidate)) {
       return candidate
@@ -121,7 +128,7 @@ async function resolveChromeExecutablePath() {
   return null
 }
 
-function getLaunchArgs() {
+function getLocalLaunchArgs() {
   const args = ["--disable-dev-shm-usage"]
 
   if (process.platform === "linux" && process.getuid?.() === 0) {
@@ -131,22 +138,49 @@ function getLaunchArgs() {
   return args
 }
 
+async function resolveBrowserLaunchConfig(): Promise<BrowserLaunchConfig | null> {
+  const localExecutablePath = await resolveLocalChromeExecutablePath()
+
+  if (localExecutablePath) {
+    return {
+      args: getLocalLaunchArgs(),
+      executablePath: localExecutablePath,
+      headless: true,
+    }
+  }
+
+  if (process.platform !== "linux") {
+    return null
+  }
+
+  chromium.setGraphicsMode = false
+
+  return {
+    args: puppeteer.defaultArgs({
+      args: chromium.args,
+      headless: "shell",
+    }),
+    executablePath: await chromium.executablePath(),
+    headless: "shell",
+  }
+}
+
 export async function buildCvPdfExport(
   template: Pick<CvTemplateDefinition, "html_builder">,
   model: CvRenderModel
 ) {
-  const executablePath = await resolveChromeExecutablePath()
+  const launchConfig = await resolveBrowserLaunchConfig()
 
-  if (!executablePath) {
+  if (!launchConfig) {
     throw new Error(
       "Chrome was not found for PDF export. Install Chrome or set PUPPETEER_EXECUTABLE_PATH."
     )
   }
 
   const browser = await puppeteer.launch({
-    executablePath,
-    headless: true,
-    args: getLaunchArgs(),
+    executablePath: launchConfig.executablePath,
+    headless: launchConfig.headless,
+    args: launchConfig.args,
   })
 
   try {
