@@ -5,6 +5,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useAction } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { ProfileSuggestion } from "@/lib/ai/types"
+import { getAllRegionIds, getRegionStandard } from "@/lib/region-instructions"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -25,6 +29,7 @@ import { FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner"
+import { Textarea } from "@/components/ui/textarea"
 import type { CareerWorkspaceData } from "@/lib/career-data/types"
 import {
   buildProfilePreview,
@@ -53,6 +58,7 @@ import {
   validateProfilePayload,
 } from "@/lib/profiles/validation"
 import { cn } from "@/lib/utils"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 
 import {
   ProfileSectionSelectorDialog,
@@ -64,10 +70,13 @@ import { createProfile, deleteProfile, updateProfile } from "../actions"
 const inputClassName =
   "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20 md:text-sm"
 
+const textareaClassName =
+  "min-h-[120px] rounded-sm border-outline-variant/70 bg-background px-3 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20 md:text-sm resize-y"
+
 const selectClassName =
   "w-full [&_[data-slot=native-select]]:h-11 [&_[data-slot=native-select]]:rounded-sm [&_[data-slot=native-select]]:border-outline-variant/70 [&_[data-slot=native-select]]:bg-background [&_[data-slot=native-select]]:px-3 [&_[data-slot=native-select]]:pr-8 [&_[data-slot=native-select]]:text-sm [&_[data-slot=native-select]]:text-on-surface [&_[data-slot=native-select]]:focus-visible:border-primary [&_[data-slot=native-select]]:focus-visible:ring-primary/20 [&_[data-slot=native-select-icon]]:right-3 [&_[data-slot=native-select-icon]]:size-4 [&_[data-slot=native-select-icon]]:text-on-surface-variant/60"
 
-const stepOrder = ["name", "filters", "items", "review"] as const
+const stepOrder = ["name", "generate", "filters", "items", "review"] as const
 
 const stepContent = {
   name: {
@@ -75,6 +84,12 @@ const stepContent = {
     description: "Pick a short name so you can recognize this version later.",
     helper: "You can save a profile with only a name. Everything else is optional.",
     navLabel: "Name",
+  },
+  generate: {
+    title: "Step 2: Generate with AI",
+    description: "Describe the CV you want and let AI build a profile for you.",
+    helper: "Or skip this and set up tags and items manually in the next steps.",
+    navLabel: "AI Generate",
   },
   filters: {
     title: "Step 2: Add tags if you want a focused profile",
@@ -204,6 +219,13 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
   const [activeSelectionSection, setActiveSelectionSection] =
     useState<ProfileSelectableSection | null>(null)
   const [activeStep, setActiveStep] = useState<StepKey>("name")
+  const [aiPrompt, setAiPrompt] = useState("")
+  const [aiRegionId, setAiRegionId] = useState("international")
+  const [aiGenLoading, setAiGenLoading] = useState(false)
+  const [aiGenError, setAiGenError] = useState<string | null>(null)
+  const [aiSuggestion, setAiSuggestion] = useState<ProfileSuggestion | null>(null)
+
+  const generateProfileMutation = useAction(api.ai_functions.generate_profile.generate_profile)
 
   const payload = useMemo(() => buildPayload(state), [state])
   const payloadSnapshot = useMemo(() => buildSnapshot(payload), [payload])
@@ -447,6 +469,46 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
     }
   }
 
+  const handleGenerateProfile = async () => {
+    setAiGenLoading(true)
+    setAiGenError(null)
+    setAiSuggestion(null)
+
+    try {
+      const result = await generateProfileMutation({
+        userPrompt: aiPrompt,
+        careerDataSerialized: JSON.stringify(careerData),
+        regionId: aiRegionId,
+      })
+
+      if (result.ok) {
+        setAiSuggestion(result.data)
+      } else {
+        setAiGenError(result.error)
+      }
+    } catch (error) {
+      setAiGenError(getAiClientErrorMessage(error))
+    } finally {
+      setAiGenLoading(false)
+    }
+  }
+
+  const handleApplySuggestion = () => {
+    if (!aiSuggestion) return
+    updateState((currentState) => ({
+      ...currentState,
+      name: aiSuggestion.name || currentState.name,
+      include_tags: aiSuggestion.include_tags,
+      exclude_tags: aiSuggestion.exclude_tags,
+      experience_order: aiSuggestion.ordering.experiences,
+      project_order: aiSuggestion.ordering.projects,
+      experience_limit: aiSuggestion.limits.experiences?.toString() ?? "",
+      project_limit: aiSuggestion.limits.projects?.toString() ?? "",
+    }))
+    setAiSuggestion(null)
+    setActiveStep("filters")
+  }
+
   const saveStatusLabel = isSubmitting
     ? "Saving…"
     : submitError
@@ -633,6 +695,84 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
                     ))}
                   </div>
                 </Card>
+              </div>
+            ) : null}
+
+            {activeStep === "generate" ? (
+              <div className="space-y-4">
+                <Card className="rounded-sm border border-primary/20 bg-primary-soft/10 p-4">
+                  <p className="text-sm font-medium text-on-surface">AI Profile Generation</p>
+                  <p className="mt-1 text-sm text-on-surface-variant/75">
+                    Describe the CV you want and AI will suggest tags, limits, and ordering.
+                  </p>
+                </Card>
+
+                <div className="space-y-2">
+                  <FieldLabel>What kind of CV do you want?</FieldLabel>
+                  <FieldDescription>
+                    Example: Senior frontend engineer for US tech companies, 5 years of experience.
+                  </FieldDescription>
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Senior frontend engineer, US market, focused on React and TypeScript"
+                    className={textareaClassName}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <FieldLabel>Region</FieldLabel>
+                  <NativeSelect
+                    value={aiRegionId}
+                    onChange={(e) => setAiRegionId(e.target.value)}
+                    className={selectClassName}
+                  >
+                    {getAllRegionIds().map((id) => (
+                      <NativeSelectOption key={id} value={id}>
+                        {getRegionStandard(id).name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </div>
+
+                {aiGenLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                    <Spinner className="size-4" />
+                    <span>Generating profile…</span>
+                  </div>
+                ) : aiGenError ? (
+                  <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+                    <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} className="size-4" />
+                    <AlertTitle>We couldn’t generate a profile.</AlertTitle>
+                    <AlertDescription>{aiGenError}</AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <div className="flex gap-3">
+                  <Button onClick={handleGenerateProfile} disabled={aiGenLoading || !aiPrompt.trim()}>
+                    Generate
+                  </Button>
+                  {aiSuggestion && (
+                    <Button variant="outline" onClick={handleApplySuggestion}>
+                      Apply Suggestion
+                    </Button>
+                  )}
+                </div>
+
+                {aiSuggestion && (
+                  <Card className="rounded-sm border border-primary/20 bg-primary-soft/10 p-4">
+                    <p className="text-sm font-medium text-on-surface">Suggested Profile</p>
+                    <div className="mt-2 space-y-1 text-sm text-on-surface-variant">
+                      <p><strong>Name:</strong> {aiSuggestion.name}</p>
+                      <p><strong>Include tags:</strong> {aiSuggestion.include_tags.join(", ") || "(none)"}</p>
+                      <p><strong>Exclude tags:</strong> {aiSuggestion.exclude_tags.join(", ") || "(none)"}</p>
+                      <p><strong>Experience order:</strong> {aiSuggestion.ordering.experiences}</p>
+                      <p><strong>Project order:</strong> {aiSuggestion.ordering.projects}</p>
+                      <p><strong>Experience limit:</strong> {aiSuggestion.limits.experiences ?? "none"}</p>
+                      <p><strong>Project limit:</strong> {aiSuggestion.limits.projects ?? "none"}</p>
+                    </div>
+                  </Card>
+                )}
               </div>
             ) : null}
 
@@ -929,6 +1069,31 @@ export function ProfileBuilder({ mode, careerData, profile }: ProfileBuilderProp
             </div>
           </div>
         </Card>
+
+        {currentMode === "edit" ? (
+          <Card className="rounded-sm border border-primary/20 bg-card p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold text-on-surface">Regenerate with AI</h2>
+                <p className="text-sm text-on-surface-variant/75">
+                  Start fresh with a new AI-generated profile based on your career data.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAiPrompt("")
+                  setAiSuggestion(null)
+                  setAiGenError(null)
+                  setActiveStep("generate")
+                }}
+              >
+                Regenerate with AI
+              </Button>
+            </div>
+          </Card>
+        ) : null}
 
         {currentMode === "edit" ? (
           <Card className="rounded-sm border border-destructive/20 bg-card p-5 shadow-sm">

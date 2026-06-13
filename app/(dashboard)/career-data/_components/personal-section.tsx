@@ -1,9 +1,17 @@
 "use client"
 
+import { HugeiconsIcon } from "@hugeicons/react"
+import { SparklesIcon } from "@hugeicons/core-free-icons"
+import { useAction } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { AiDiffOverlay } from "@/components/ai-diff-overlay"
 import { FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCareerDataStore } from "@/lib/career-data/workspace-store"
+import type { RewriteSuggestion } from "@/lib/ai/types"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
+import { useState } from "react"
 
 import { fieldLabelClassName, textAreaClassName, textInputClassName } from "./career-form-styles"
 import { CareerSectionCard } from "./career-section-card"
@@ -15,9 +23,49 @@ export function PersonalSection() {
   const sectionMeta = useCareerDataStore((state) => state.sectionMeta.personal)
   const updatePersonalField = useCareerDataStore((state) => state.updatePersonalField)
   const toggleSection = useCareerDataStore((state) => state.toggleSection)
+  const careerData = useCareerDataStore((state) => state)
+
+  const rewriteField = useAction(api.ai_functions.rewrite_field.rewrite_field)
 
   const isOpen = expandedSections.includes("personal")
   const summary = personal.full_name ? personal.full_name : "Name and summary"
+
+  // AI state for summary field
+  const [summaryAiState, setSummaryAiState] = useState<"idle" | "loading" | "suggestion" | "error">("idle")
+  const [summarySuggestion, setSummarySuggestion] = useState<RewriteSuggestion | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  async function handleSummaryRewrite() {
+    setSummaryAiState("loading")
+    setSummaryError(null)
+    setSummarySuggestion(null)
+
+    try {
+      const result = await rewriteField({
+        fieldType: "summary",
+        originalValue: personal.summary,
+        careerDataSerialized: JSON.stringify(careerData),
+      })
+
+      if (result.ok) {
+        setSummarySuggestion(result.data)
+        setSummaryAiState("suggestion")
+      } else {
+        setSummaryError(result.error)
+        setSummaryAiState("error")
+      }
+    } catch (error) {
+      setSummaryError(getAiClientErrorMessage(error))
+      setSummaryAiState("error")
+    }
+  }
+
+  function handleSummaryApply(newValue: string) {
+    updatePersonalField("summary", newValue)
+    setSummaryAiState("idle")
+    setSummarySuggestion(null)
+    setSummaryError(null)
+  }
 
   return (
     <CareerSectionCard
@@ -59,13 +107,36 @@ export function PersonalSection() {
       </div>
 
       <div className="space-y-2">
-        <FieldLabel className={fieldLabelClassName}>Summary</FieldLabel>
+        <div className="flex items-center justify-between">
+          <FieldLabel className={fieldLabelClassName}>Summary</FieldLabel>
+          <button
+            type="button"
+            onClick={handleSummaryRewrite}
+            disabled={summaryAiState === "loading"}
+            className="flex size-7 items-center justify-center rounded-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+            aria-label="Rewrite summary with AI"
+          >
+            <HugeiconsIcon icon={SparklesIcon} className="size-4" />
+          </button>
+        </div>
         <Textarea
           id="career-summary"
           value={personal.summary}
           onChange={(event) => updatePersonalField("summary", event.target.value)}
           placeholder="Write a short summary about your strengths, specialties, and impact."
           className={textAreaClassName}
+        />
+        <AiDiffOverlay
+          suggestion={summarySuggestion}
+          isLoading={summaryAiState === "loading"}
+          error={summaryError}
+          onApply={handleSummaryApply}
+          onRegenerate={handleSummaryRewrite}
+          onCancel={() => {
+            setSummaryAiState("idle")
+            setSummarySuggestion(null)
+            setSummaryError(null)
+          }}
         />
       </div>
     </CareerSectionCard>

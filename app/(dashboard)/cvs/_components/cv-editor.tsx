@@ -1,6 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useAction } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { LayoutSuggestion } from "@/lib/ai/types"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -28,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CareerWorkspaceData, PersonalData } from "@/lib/career-data/types"
 import { applyCvContentOverrides, buildCvRenderModel } from "@/lib/cvs/engine"
 import { getCvSectionLabel } from "@/lib/cvs/presentation"
+import { getAiClientErrorMessage } from "@/lib/ai/client-error"
 import {
   type CvContactContentOverride,
   type CvData,
@@ -55,12 +59,26 @@ import {
   type CvSectionSelectorItem,
 } from "./cv-section-selector-dialog"
 import { deleteCv, updateCv } from "../actions"
+import { getAllRegionIds, getRegionStandard } from "@/lib/region-instructions"
 
 const inputClassName =
   "h-11 rounded-sm border-outline-variant/70 bg-background px-3 text-sm text-on-surface placeholder:text-on-surface-variant/55 focus-visible:border-primary focus-visible:ring-primary/20"
 
 const selectClassName =
   "w-full [&_[data-slot=native-select]]:h-11 [&_[data-slot=native-select]]:rounded-sm [&_[data-slot=native-select]]:border-outline-variant/70 [&_[data-slot=native-select]]:bg-background [&_[data-slot=native-select]]:px-3 [&_[data-slot=native-select]]:pr-8 [&_[data-slot=native-select]]:text-sm [&_[data-slot=native-select]]:text-on-surface [&_[data-slot=native-select]]:focus-visible:border-primary [&_[data-slot=native-select]]:focus-visible:ring-primary/20 [&_[data-slot=native-select-icon]]:right-3 [&_[data-slot=native-select-icon]]:size-4 [&_[data-slot=native-select-icon]]:text-on-surface-variant/60"
+
+const regionFlagEmoji: Record<string, string> = {
+  us: "🇺🇸",
+  ca: "🇨🇦",
+  uk: "🇬🇧",
+  eu: "🇪🇺",
+  de: "🇩🇪",
+  fr: "🇫🇷",
+  af: "🇦🇫",
+  ru: "🇷🇺",
+  au: "🇦🇺",
+  international: "🌐",
+}
 
 type TemplateOption = CvTemplateMetadata & {
   preview_blurb: string
@@ -92,6 +110,7 @@ function buildPayload(cv: CvData): CvPayload {
     name: cv.name,
     profile_id: cv.profile_id,
     template_id: cv.template_id,
+    region_id: cv.region_id,
     overrides: cv.overrides,
   }
 }
@@ -311,6 +330,10 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<
     "content" | "layout" | "items" | "document"
   >("content")
+  const [layoutSuggestion, setLayoutSuggestion] = useState<LayoutSuggestion | null>(null)
+  const [layoutAiLoading, setLayoutAiLoading] = useState(false)
+  const [layoutAiError, setLayoutAiError] = useState<string | null>(null)
+  const suggestLayout = useAction(api.ai_functions.suggest_layout.suggest_layout)
 
   const selectedProfile = profiles.find((profile) => profile.id === state.profile_id)
   const selectedTemplate = templates.find((template) => template.id === state.template_id)
@@ -483,6 +506,41 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
     })
   }
 
+  async function handleGetLayoutSuggestions() {
+    setLayoutAiLoading(true)
+    setLayoutAiError(null)
+    setLayoutSuggestion(null)
+
+    try {
+      const result = await suggestLayout({
+        careerDataSerialized: JSON.stringify(careerData),
+        currentSectionOrder: state.overrides.section_order,
+        regionId: cv.region_id,
+      })
+      if (result.ok) {
+        setLayoutSuggestion(result.data)
+      } else {
+        setLayoutAiError(result.error)
+      }
+    } catch (error) {
+      setLayoutAiError(getAiClientErrorMessage(error))
+    } finally {
+      setLayoutAiLoading(false)
+    }
+  }
+
+  function applyLayoutSuggestion() {
+    if (!layoutSuggestion) return
+    updateState((currentState) => ({
+      ...currentState,
+      overrides: {
+        ...currentState.overrides,
+        section_order: layoutSuggestion.section_order as CvOverrideSection[],
+      },
+    }))
+    setLayoutSuggestion(null)
+  }
+
   const handleSelectionSave = (section: CvOverrideSection, nextSelection: string[] | null) => {
     updateState((currentState) => ({
       ...currentState,
@@ -552,6 +610,15 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
               <Badge variant="outline" className="border-outline-variant/70 bg-card text-on-surface-variant/80">
                 {saveStatusLabel}
               </Badge>
+              {state.region_id ? (
+                <Badge
+                  variant="outline"
+                  className="border-outline-variant/70 bg-card text-on-surface-variant/80"
+                >
+                  {regionFlagEmoji[state.region_id] ?? "🌐"}{" "}
+                  {getRegionStandard(state.region_id).name}
+                </Badge>
+              ) : null}
             </div>
             <p className="text-sm text-on-surface-variant/75 md:text-base">
               {selectedProfile?.name || "No profile selected"} · {selectedTemplate?.name || "No template selected"}
@@ -621,6 +688,8 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                 <TabsContent value="content" className="mt-0 outline-none">
                   <CvContentEditor
                     model={renderModel}
+                    careerData={careerData}
+                    regionId={cv.region_id}
                     onPersonalChange={updatePersonalContent}
                     onContactChange={(id, patch: CvContactContentOverride) =>
                       updateContentItem("contacts", id, patch)
@@ -651,6 +720,59 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                           Move sections up or down, or hide a section when you do not want it in this version.
                         </p>
                       </div>
+
+                      <div className="mb-4 flex items-center gap-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleGetLayoutSuggestions}
+                          disabled={layoutAiLoading}
+                        >
+                          {layoutAiLoading ? "Getting suggestions..." : "Get AI Suggestions"}
+                        </Button>
+                        {layoutSuggestion && (
+                          <Button type="button" size="sm" onClick={applyLayoutSuggestion}>
+                            Accept All
+                          </Button>
+                        )}
+                        {layoutSuggestion && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setLayoutSuggestion(null)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+
+                      {layoutSuggestion && (
+                        <div className="mb-4 space-y-2 rounded-sm border border-primary/20 bg-primary-soft/10 p-3">
+                          <p className="text-sm font-medium text-primary">Suggested Order</p>
+                          {layoutSuggestion.section_order.map((section, index) => (
+                            <div key={section} className="flex items-center justify-between text-sm">
+                              <span>
+                                <span className="font-medium">
+                                  {index + 1}. {getCvSectionLabel(section as CvOverrideSection)}
+                                </span>
+                                {layoutSuggestion.reasoning_per_section[section] && (
+                                  <span className="ml-2 text-xs text-on-surface-variant/70">
+                                    — {layoutSuggestion.reasoning_per_section[section]}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {layoutAiError ? (
+                        <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+                          <AlertTitle>We couldn’t get layout suggestions.</AlertTitle>
+                          <AlertDescription>{layoutAiError}</AlertDescription>
+                        </Alert>
+                      ) : null}
 
                       <div className="space-y-3">
                         {state.overrides.section_order.map((section, index) => {
@@ -853,6 +975,30 @@ export function CvEditor({ cv, profiles, careerData, templates }: CvEditorProps)
                             ))}
                           </NativeSelect>
                           <FieldError>{validationErrors.template_id}</FieldError>
+                        </div>
+
+                        <div className="space-y-2">
+                          <FieldLabel className="text-sm font-medium text-on-surface">Region</FieldLabel>
+                          <FieldDescription>
+                            Pick the region whose CV conventions this CV should follow.
+                          </FieldDescription>
+                          <NativeSelect
+                            value={state.region_id}
+                            onChange={(event) =>
+                              updateState((currentState) => ({
+                                ...currentState,
+                                region_id: event.target.value,
+                              }))
+                            }
+                            className={selectClassName}
+                          >
+                            {getAllRegionIds().map((regionId) => (
+                              <NativeSelectOption key={regionId} value={regionId}>
+                                {regionFlagEmoji[regionId] ?? "🌐"} {getRegionStandard(regionId).name}
+                              </NativeSelectOption>
+                            ))}
+                          </NativeSelect>
+                          <FieldError>{validationErrors.region_id}</FieldError>
                         </div>
                       </div>
                     </Card>
