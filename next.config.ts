@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["puppeteer-core"],
+  outputFileTracingIncludes: {
+    "/api/cvs/\\[id\\]/export": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+  },
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
 }
 
 export default nextConfig
